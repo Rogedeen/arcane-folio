@@ -2,11 +2,13 @@ import { useState, useEffect } from 'react';
 import { AppHealth, PhaseInfo } from './types/app';
 import { defaultDatabaseClient } from './data/supabaseClient';
 import { CharacterCreator } from './components/CharacterCreator';
+import { ResourceTracker } from './components/ResourceTracker';
+import { DiceTray } from './components/DiceTray';
 
 const PHASES: PhaseInfo[] = [
   { id: 0, name: 'Faz 0: Temel (İskelet)', description: 'Vite, React, TypeScript, PWA, Vitest, Playwright', status: 'completed' },
-  { id: 1, name: 'Faz 1: Karakter Çekirdeği', description: 'Statlar, ırk, sınıf, türetilmiş değerler (SRD 5.1)', status: 'in_progress' },
-  { id: 2, name: 'Faz 2: Kaynak Takibi', description: 'HP, Dinlenme, Büyü slotları', status: 'planned' },
+  { id: 1, name: 'Faz 1: Karakter Çekirdeği', description: 'Statlar, ırk, sınıf, türetilmiş değerler (SRD 5.1)', status: 'completed' },
+  { id: 2, name: 'Faz 2: Kaynak Takibi & Zarlar', description: 'HP, Dinlenme, Büyü slotları, D4-D100 animasyonlu zar', status: 'in_progress' },
   { id: 3, name: 'Faz 3: Envanter & Büyüler', description: 'Eşyalar, 50 büyü, 50 eşya', status: 'planned' },
   { id: 4, name: 'Faz 4: Sınıf & Durumlar', description: 'Alt sınıflar, koşullar, seviye atlama', status: 'planned' },
   { id: 5, name: 'Faz 5: DM & Senkron', description: 'Realtime veri, kampanya paneli', status: 'planned' },
@@ -16,25 +18,19 @@ const PHASES: PhaseInfo[] = [
 export function App() {
   const [health, setHealth] = useState<AppHealth>({
     status: 'ok',
-    version: '0.2.0',
+    version: '0.3.0',
     timestamp: new Date().toISOString(),
     pwaReady: true,
     storageReady: true
   });
 
   const [dbMessage, setDbMessage] = useState<string>('Kontrol ediliyor...');
-  const [quickRoll, setQuickRoll] = useState<number | null>(null);
 
   useEffect(() => {
     defaultDatabaseClient.getHealthStatus().then((res) => {
       setDbMessage(res.message);
     });
   }, []);
-
-  const handleRollD20 = () => {
-    const roll = Math.floor(Math.random() * 20) + 1;
-    setQuickRoll(roll);
-  };
 
   const handleRefreshHealth = () => {
     setHealth((prev) => ({
@@ -51,7 +47,7 @@ export function App() {
           <img src="/icons/icon-192.svg" alt="D&D Logo" className="logo-icon" id="header-logo" />
           <div>
             <h1 className="logo-title font-cinzel">D&D 5e Takip</h1>
-            <p className="logo-subtitle">Kampanya & Karakter Asistanı</p>
+            <p className="logo-subtitle">D&D Beyond Seviyesinde Kampanya Asistanı</p>
           </div>
         </div>
         <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
@@ -67,20 +63,24 @@ export function App() {
       {/* Hero */}
       <section className="hero-card" aria-labelledby="hero-title">
         <h2 id="hero-title" className="hero-title font-cinzel">
-          Faz 1: Karakter Çekirdeği
+          Faz 2: Kaynak Takibi & Polhedral Zarlar
         </h2>
         <p className="hero-desc">
-          SRD 5.1 kurallarıyla güçlendirilen karakter motoru aktif. Seviye 1–20 ustalık bonusu, 
-          yetenek modifikatörleri, sınıf can zarları ve dinamik zırh sınıfı hesaplanmaktadır.
+          D&D Beyond tarzı dokunsal deneyim: Animasyonlu d4–d100 zar tepsisi, 
+          can barı (HP / Temp HP), kısa ve uzun dinlenme sıfırlaması ile kurala uygun büyü slotları.
         </p>
         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
           <button
-            id="btn-roll-d20"
+            id="btn-hero-roll-d20"
             className="action-button"
-            onClick={handleRollD20}
-            aria-label="D20 Zarı At"
+            onClick={() => {
+              const r = Math.floor(Math.random() * 20) + 1;
+              const el = document.getElementById('btn-hero-roll-d20');
+              if (el) el.textContent = `🎲 D20 Zarı At (${r})`;
+            }}
+            aria-label="Hızlı D20 Zarı At"
           >
-            🎲 D20 Zarı At {quickRoll !== null ? `(${quickRoll})` : ''}
+            🎲 D20 Zarı At
           </button>
           <button
             id="btn-refresh-health"
@@ -93,7 +93,18 @@ export function App() {
         </div>
       </section>
 
-      {/* Faz 1: Character Creator Component */}
+      {/* Faz 2: D&D Beyond Tarzı Polhedral Zar Tepsisi */}
+      <DiceTray />
+
+      {/* Faz 2: Kaynak Takibi (HP & Büyü Slotları) */}
+      <ResourceTracker
+        charClass="wizard"
+        level={5}
+        maxHp={32}
+        conModifier={2}
+      />
+
+      {/* Faz 1: Karakter Çekirdeği Formu */}
       <CharacterCreator />
 
       {/* Grid: Health & Roadmap */}
@@ -174,7 +185,7 @@ export function App() {
 
       {/* Footer */}
       <footer className="app-footer">
-        <p>D&D 5e Kampanya Takip • SRD 5.1 Lisansı (CC-BY-4.0) Uyumlu • Faz 1 Karakter Çekirdeği</p>
+        <p>D&D 5e Kampanya Takip • SRD 5.1 Lisansı (CC-BY-4.0) Uyumlu • Faz 2 Kaynak & Zar Takibi</p>
       </footer>
     </div>
   );

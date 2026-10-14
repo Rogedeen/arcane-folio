@@ -22,7 +22,7 @@ test.describe('Faz 0 İskelet ve Çoklu Viewport Doğrulama', () => {
     await expect(page.locator('#health-status-badge')).toContainText('Sistem: OK');
 
     // D20 Zar atma interaktivitesi
-    const rollButton = page.locator('#btn-roll-d20');
+    const rollButton = page.locator('#btn-hero-roll-d20');
     await expect(rollButton).toBeVisible();
     await rollButton.click();
     await expect(rollButton).toHaveText(/🎲 D20 Zarı At \(\d+\)/);

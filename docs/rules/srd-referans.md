@@ -85,3 +85,66 @@ Bu belge, System Reference Document 5.1 ("SRD 5.1", CC-BY-4.0 lisanslı) metnind
 - Half-Elf: CHA +2, Oyuncu seçimi iki farklı stat +1
 - Half-Orc: STR +2, CON +1
 - Tiefling: CHA +2, INT +1
+
+---
+
+## Bölüm 6: Dinlenme Kuralları (Resting)
+- **Kaynak:** SRD 5.1, sf. 78, "Resting"
+- **Kısa Dinlenme (Short Rest):**
+  - En az 1 saat sürer.
+  - Karakter sahip olduğu Can Zarlarından (Hit Dice) istediği kadarını harcayarak can doldurabilir.
+  - Her harcanan zar için: $\text{Zar Atışı} + \text{CON Modifikatörü}$ kadar HP kazanılır.
+  - Warlock büyü slotları (Pact Magic) kısa dinlenme sonunda tamamen sıfırlanır (yenilenir).
+- **Uzun Dinlenme (Long Rest):**
+  - En az 8 saat sürer (en fazla 24 saatte bir kez yapılabilir).
+  - Karakterin Can Puanı (Current HP) maksimum değerine sıfırlanır (tamamen dolar).
+  - Geçici Can Puanı (Temporary HP) sıfırlanır.
+  - Harcanan can zarlarının yarısı (toplam zar sayısının yarısı, en az 1) geri kazanılır: $\max(1, \lfloor\text{Toplam Can Zarı} / 2\rfloor)$.
+  - Tüm harcanan büyü slotları (Spell Slots) tamamen sıfırlanır (yenilenir).
+
+---
+
+## Bölüm 7: Geçici Can Puanı (Temporary HP) ve Hasar Mekaniği
+- **Kaynak:** SRD 5.1, sf. 77, "Temporary Hit Points"
+- **Hasar Alma:** Gelen hasar önce Geçici Can (Temp HP)'dan düşülür. Temp HP sıfırlanırsa artan hasar normal HP'den düşer. HP 0'ın altına inemez.
+- **İyileşme (Healing):** Yalnızca normal HP'yi artırır, Temp HP vermez. Normal HP asla Maksimum HP'yi aşamaz.
+- **Geçici Can Birikmez (Do not stack):** Yeni bir geçici can kazanıldığında, oyuncu mevcut olanı korumak veya yenisini almak arasında seçim yapar (en yüksek olan kalır).
+
+---
+
+## Bölüm 8: Büyü Slotları Tablosu (Spell Slots)
+- **Kaynak:** SRD 5.1, sf. 13–55, "Spellcasting"
+- **Tam Büyücü Tablosu (Wizard, Sorcerer, Cleric, Druid, Bard):**
+  | Seviye | 1. | 2. | 3. | 4. | 5. | 6. | 7. | 8. | 9. |
+  |---|---|---|---|---|---|---|---|---|---|
+  | 1 | 2 | - | - | - | - | - | - | - | - |
+  | 2 | 3 | - | - | - | - | - | - | - | - |
+  | 3 | 4 | 2 | - | - | - | - | - | - | - |
+  | 4 | 4 | 3 | - | - | - | - | - | - | - |
+  | 5 | 4 | 3 | 2 | - | - | - | - | - | - |
+  | 6 | 4 | 3 | 3 | - | - | - | - | - | - |
+  | 7 | 4 | 3 | 3 | 1 | - | - | - | - | - |
+  | 8 | 4 | 3 | 3 | 2 | - | - | - | - | - |
+  | 9 | 4 | 3 | 3 | 3 | 1 | - | - | - | - |
+  | 10 | 4 | 3 | 3 | 3 | 2 | - | - | - | - |
+  | 11 | 4 | 3 | 3 | 3 | 2 | 1 | - | - | - |
+  | 13 | 4 | 3 | 3 | 3 | 2 | 1 | 1 | - | - |
+  | 15 | 4 | 3 | 3 | 3 | 2 | 1 | 1 | 1 | - |
+  | 17 | 4 | 3 | 3 | 3 | 2 | 1 | 1 | 1 | 1 |
+  | 19 | 4 | 3 | 3 | 3 | 3 | 2 | 1 | 1 | 1 |
+  | 20 | 4 | 3 | 3 | 3 | 3 | 2 | 2 | 1 | 1 |
+- **Yarı Büyücü Tablosu (Paladin, Ranger):**
+  - Seviye 1: Slot yok (0)
+  - Seviye 2: 2x 1. seviye slot
+  - Seviye 3: 3x 1. seviye slot
+  - Seviye 5: 4x 1., 2x 2. seviye slot
+- **Warlock (Pact Magic):**
+  - Seviye 1: 1 slot (1. seviye)
+  - Seviye 2: 2 slot (1. seviye)
+  - Seviye 3–4: 2 slot (2. seviye)
+  - Seviye 5–6: 2 slot (3. seviye)
+  - Seviye 7–8: 2 slot (4. seviye)
+  - Seviye 9–10: 2 slot (5. seviye)
+  - Seviye 11–16: 3 slot (5. seviye)
+  - Seviye 17–20: 4 slot (5. seviye)
+
