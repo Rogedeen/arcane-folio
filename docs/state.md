@@ -1,45 +1,50 @@
 # Proje Durumu (State)
 
-- **Mevcut Faz:** Faz 0: Temel (İskelet)
+- **Mevcut Faz:** Faz 1: Karakter Çekirdeği
 - **Tur Sayısı (Bu Faz):** 1 / 40
 - **Son Güncelleme:** 2026-10-14
-- **Faz Durumu:** Faz 0 Bitiş Kriterlerini Karşıladı (Onay Kapısı Bekleniyor)
+- **Faz Durumu:** Faz 1 Bitiş Kriterlerini Karşıladı (Onay Kapısı Bekleniyor)
 
 ---
 
-## 1. Faz 0 Hedefleri ve Bitiş Kriterleri
-- [x] Vite + React + TypeScript + Vanilla CSS / modern responsive stil altyapısı (TAMAMLANDI)
-- [x] Vitest birim test altyapısı çalışır durumda (`npm test` 4/4 passed) (TAMAMLANDI)
-- [x] Playwright E2E test altyapısı ve 3 viewport (Desktop, Tablet, Mobil 390x844) (`npm run e2e` 6/6 passed) (TAMAMLANDI)
-- [x] PWA altyapısı (manifest.webmanifest, service worker kaydı, 192x192 & 512x512 SVG ikonlar) (TAMAMLANDI)
-- [x] Supabase istemci katmanı arayüz sözleşmesi (`src/data/supabaseClient.ts`) (TAMAMLANDI)
-- [x] CI iş akışı (`.github/workflows/ci.yml`) (TAMAMLANDI)
+## 1. Faz 1 Hedefleri ve Bitiş Kriterleri
+- [x] SRD 5.1 referans kılavuzunun oluşturulması (`docs/rules/srd-referans.md`) (TAMAMLANDI)
+- [x] Yetenek skoru ve modifikatör motoru (`floor((skor - 10) / 2)`) (TAMAMLANDI)
+- [x] Seviye 1–20 ustalık bonusu (Proficiency Bonus) tablosu (TAMAMLANDI)
+- [x] Sınıf can zarları ve dinamik HP hesaplama saf fonksiyonu (TAMAMLANDI)
+- [x] Zırh Sınıfı (Unarmored, Barbarian, Monk, Hafif/Orta/Ağır Zırh, Kalkan) (TAMAMLANDI)
+- [x] Irksal yetenek bonusları (Human, Elf, Dwarf, Halfling vb.) (TAMAMLANDI)
+- [x] 5e Kural Denetçisi onayı (`docs/rules-audit/faz1-01-karakter-cekirdegi.md`) (ONAYLANDI)
+- [x] Karakter oluşturma ve canlı türetilmiş stat arayüzü (`CharacterCreator.tsx`) (TAMAMLANDI)
+- [x] Tüm birim, kural ve E2E testleri yeşil (`npm test` 31/31 passed, `npm run e2e` 9/9 passed) (TAMAMLANDI)
 
 ---
 
 ## 2. Açık Görevler
-- **Faz 1 Onayı Bekleniyor:** Faz 1: Karakter Çekirdeği (statlar, ırk, sınıf, ustalık bonusu, AC, HP)
+- **Faz 2 Onayı Bekleniyor:** Faz 2: Kaynak Takibi (HP ve geçici HP, Short/Long Rest döngüsü, büyü slotları tablosu)
 
 ---
 
 ## 3. Tamamlanan Görevler
-- **Görev 0.1 (`faz0-01-temel-iskelet`):**
-  - Mimar: `docs/decisions/faz0-01-temel-iskelet.md` arayüz sözleşmesi ve kabul kriterleri oluşturuldu.
-  - Geliştirici: Vite, React 18, TypeScript strict, PWA desteği, koyu tema tasarım sistemi ve Supabase istemci katmanı kodlandı.
-  - Doğrulayıcı: `tests/e2e/skeleton.spec.ts` 3 viewport'ta (Desktop, Tablet, Mobil) test edildi, ekran görüntüleri alındı, `docs/qa/faz0-01-temel-iskelet.md` raporu yayınlandı. Karar: GEÇTİ.
-  - Git Commit: `faz0: temel iskelet, pwa ve test altyapisi kuruldu` (daldan main'e birleştirildi).
+- **Görev 0.1 (`faz0-01-temel-iskelet`):** Vite + React + TS + PWA + Vitest + Playwright temel iskeleti.
+- **Görev 1.1 (`faz1-01-karakter-cekirdegi`):**
+  - Mimar: `docs/decisions/faz1-01-karakter-cekirdegi.md`
+  - Kural Denetçisi: `docs/rules-audit/faz1-01-karakter-cekirdegi.md` (23 kural testi yeşil)
+  - Geliştirici: `src/rules/` saf fonksiyonları ve `src/components/CharacterCreator.tsx`
+  - Doğrulayıcı: `docs/qa/faz1-01-karakter-cekirdegi.md` (9/9 Playwright E2E yeşil)
+  - Git Commit: `faz1: karakter cekirdegi ve srd 5.1 kural motoru tamamlandi`
 
 ---
 
 ## 4. Son Sonuçlar ve Kanıtlar
-- **Birim Testleri (`npm test`):** 4 passed, 0 failed.
-- **E2E Testleri (`npm run e2e`):** 6 passed, 0 failed.
+- **Birim & Kural Testleri (`npm test`):** 31 passed, 0 failed.
+- **E2E Testleri (`npm run e2e`):** 9 passed, 0 failed.
 - **Ekran Görüntüleri:**
-  - `docs/qa/screenshots/skeleton_desktop__1440x900_.png`
-  - `docs/qa/screenshots/skeleton_tablet__768x1024_.png`
-  - `docs/qa/screenshots/skeleton_mobile_phone__390x844_.png`
+  - `docs/qa/screenshots/character_desktop__1440x900_.png`
+  - `docs/qa/screenshots/character_tablet__768x1024_.png`
+  - `docs/qa/screenshots/character_mobile_phone__390x844_.png`
 
 ---
 
 ## 5. Bilinen Sorunlar ve Riskler
-- Bilinen açık sorun bulunmamaktadır.
+- Bilinen açık sorun veya kural uyuşmazlığı bulunmamaktadır.
