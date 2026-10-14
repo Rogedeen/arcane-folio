@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg512" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#020617" />
+    </linearGradient>
+    <linearGradient id="gold512" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbbf24" />
+      <stop offset="50%" stop-color="#f59e0b" />
+      <stop offset="100%" stop-color="#d97706" />
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="96" fill="url(#bg512)" stroke="#334155" stroke-width="6"/>
+  <!-- D20 Polygon -->
+  <polygon points="256,64 432,160 432,352 256,448 80,352 80,160" fill="#1e293b" stroke="url(#gold512)" stroke-width="10" stroke-linejoin="round"/>
+  <!-- Facets -->
+  <polygon points="256,64 256,256 432,160" fill="#334155" fill-opacity="0.3" stroke="url(#gold512)" stroke-width="5"/>
+  <polygon points="256,64 256,256 80,160" fill="#1e293b" stroke="url(#gold512)" stroke-width="5"/>
+  <polygon points="80,160 256,256 146,386" fill="#334155" fill-opacity="0.5" stroke="url(#gold512)" stroke-width="5"/>
+  <polygon points="432,160 256,256 366,386" fill="#1e293b" stroke="url(#gold512)" stroke-width="5"/>
+  <polygon points="256,256 146,386 256,448 366,386" fill="#0f172a" stroke="url(#gold512)" stroke-width="5"/>
+  <!-- Center Number 20 -->
+  <text x="256" y="275" font-family="'Cinzel', serif" font-weight="900" font-size="76" fill="#fbbf24" text-anchor="middle" dominant-baseline="middle">20</text>
+</svg>

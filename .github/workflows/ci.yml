@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, feature/* ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Kodu Klonla
+        uses: actions/checkout@v4
+
+      - name: Node.js Kurulumu
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Bağımlılıkları Yükle
+        run: npm ci
+
+      - name: Tip Kontrolü (TypeScript Strict)
+        run: npm run typecheck
+
+      - name: Birim Testleri (Vitest)
+        run: npm test
+
+      - name: Üretim Paketi Oluştur (Build & PWA)
+        run: npm run build
+
+      - name: Playwright Tarayıcılarını Kur
+        run: npx playwright install --with-deps chromium
+
+      - name: E2E Testleri (Playwright)
+        run: npm run e2e
