@@ -3,37 +3,43 @@
 - **Mevcut Faz:** Faz 0: Temel (İskelet)
 - **Tur Sayısı (Bu Faz):** 1 / 40
 - **Son Güncelleme:** 2026-10-14
-- **Faz Durumu:** Devam Ediyor
+- **Faz Durumu:** Faz 0 Bitiş Kriterlerini Karşıladı (Onay Kapısı Bekleniyor)
 
 ---
 
 ## 1. Faz 0 Hedefleri ve Bitiş Kriterleri
-- [ ] Vite + React + TypeScript + Vanilla CSS / modern responsive stil altyapısı
-- [ ] Vitest birim test altyapısı çalışır durumda (`npm test`)
-- [ ] Playwright E2E test altyapısı ve çoklu viewport desteği (`npm run e2e`)
-- [ ] PWA altyapısı (manifest.webmanifest, service worker kaydı, offline/installability)
-- [ ] Supabase istemci katmanı arayüz sözleşmesi (`src/data/supabaseClient.ts`)
-- [ ] CI iş akışı (`.github/workflows/ci.yml`)
+- [x] Vite + React + TypeScript + Vanilla CSS / modern responsive stil altyapısı (TAMAMLANDI)
+- [x] Vitest birim test altyapısı çalışır durumda (`npm test` 4/4 passed) (TAMAMLANDI)
+- [x] Playwright E2E test altyapısı ve 3 viewport (Desktop, Tablet, Mobil 390x844) (`npm run e2e` 6/6 passed) (TAMAMLANDI)
+- [x] PWA altyapısı (manifest.webmanifest, service worker kaydı, 192x192 & 512x512 SVG ikonlar) (TAMAMLANDI)
+- [x] Supabase istemci katmanı arayüz sözleşmesi (`src/data/supabaseClient.ts`) (TAMAMLANDI)
+- [x] CI iş akışı (`.github/workflows/ci.yml`) (TAMAMLANDI)
 
 ---
 
 ## 2. Açık Görevler
-- **Görev 0.1:** Vite + React + TypeScript + Vitest iskeleti ve temel sayfa yapısının kurulması
-- **Görev 0.2:** Playwright E2E konfigürasyonu ve viewport testlerinin eklenmesi
-- **Görev 0.3:** PWA manifest ve servis çalışanı (service worker) entegrasyonu
-- **Görev 0.4:** Supabase istemci arayüz sözleşmesi ve GitHub Actions CI konfigürasyonu
+- **Faz 1 Onayı Bekleniyor:** Faz 1: Karakter Çekirdeği (statlar, ırk, sınıf, ustalık bonusu, AC, HP)
 
 ---
 
 ## 3. Tamamlanan Görevler
-- Yok (Faz 0 başlangıcı)
+- **Görev 0.1 (`faz0-01-temel-iskelet`):**
+  - Mimar: `docs/decisions/faz0-01-temel-iskelet.md` arayüz sözleşmesi ve kabul kriterleri oluşturuldu.
+  - Geliştirici: Vite, React 18, TypeScript strict, PWA desteği, koyu tema tasarım sistemi ve Supabase istemci katmanı kodlandı.
+  - Doğrulayıcı: `tests/e2e/skeleton.spec.ts` 3 viewport'ta (Desktop, Tablet, Mobil) test edildi, ekran görüntüleri alındı, `docs/qa/faz0-01-temel-iskelet.md` raporu yayınlandı. Karar: GEÇTİ.
+  - Git Commit: `faz0: temel iskelet, pwa ve test altyapisi kuruldu` (daldan main'e birleştirildi).
 
 ---
 
 ## 4. Son Sonuçlar ve Kanıtlar
-- Orkestratör başlangıç denetimini tamamladı, `docs/roadmap.md` ve `docs/state.md` oluşturuldu.
+- **Birim Testleri (`npm test`):** 4 passed, 0 failed.
+- **E2E Testleri (`npm run e2e`):** 6 passed, 0 failed.
+- **Ekran Görüntüleri:**
+  - `docs/qa/screenshots/skeleton_desktop__1440x900_.png`
+  - `docs/qa/screenshots/skeleton_tablet__768x1024_.png`
+  - `docs/qa/screenshots/skeleton_mobile_phone__390x844_.png`
 
 ---
 
 ## 5. Bilinen Sorunlar ve Riskler
-- Yok
+- Bilinen açık sorun bulunmamaktadır.
