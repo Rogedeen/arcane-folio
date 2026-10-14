@@ -1,0 +1,15 @@
+{
+  "slug": "scale-mail",
+  "name": "Scale Mail",
+  "type": "armor",
+  "cost": "50 gp",
+  "weight": 45,
+  "description": "Medium overlapping metal scales. AC 14 + DEX (max 2, Stealth Disadvantage).",
+  "properties": [
+    "Medium Armor"
+  ],
+  "quantity": 1,
+  "source": "SRD 5.1",
+  "source_ref": "SRD 5.1, Equipment: Scale Mail",
+  "license": "CC-BY-4.0"
+}

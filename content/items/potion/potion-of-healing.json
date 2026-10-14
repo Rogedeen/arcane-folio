@@ -1,0 +1,15 @@
+{
+  "slug": "potion-of-healing",
+  "name": "Potion of Healing",
+  "type": "potion",
+  "cost": "50 gp",
+  "weight": 0.5,
+  "description": "A magical red liquid that restores 2d4 + 2 hit points when consumed.",
+  "properties": [
+    "Consumable"
+  ],
+  "quantity": 1,
+  "source": "SRD 5.1",
+  "source_ref": "SRD 5.1, Equipment: Potion of Healing",
+  "license": "CC-BY-4.0"
+}

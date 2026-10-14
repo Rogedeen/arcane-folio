@@ -1,0 +1,17 @@
+{
+  "slug": "dagger",
+  "name": "Dagger",
+  "type": "weapon",
+  "cost": "2 gp",
+  "weight": 1,
+  "description": "A simple light finessable dagger (1d4 piercing).",
+  "properties": [
+    "Finesse",
+    "Light",
+    "Thrown (20/60)"
+  ],
+  "quantity": 1,
+  "source": "SRD 5.1",
+  "source_ref": "SRD 5.1, Equipment: Dagger",
+  "license": "CC-BY-4.0"
+}

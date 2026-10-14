@@ -1,0 +1,17 @@
+{
+  "slug": "eldritch-blast",
+  "name": "Eldritch Blast",
+  "level": 0,
+  "school": "Evocation",
+  "castingTime": "1 action",
+  "range": "120 feet",
+  "components": "V, S",
+  "duration": "Instantaneous",
+  "description": "A beam of crackling energy streaks toward a creature within range. Make a ranged spell attack. On a hit, the target takes 1d10 force damage.",
+  "classes": [
+    "warlock"
+  ],
+  "source": "SRD 5.1",
+  "source_ref": "SRD 5.1, Spells: Eldritch Blast",
+  "license": "CC-BY-4.0"
+}

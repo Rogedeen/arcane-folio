@@ -1,0 +1,15 @@
+{
+  "slug": "quarterstaff",
+  "name": "Quarterstaff",
+  "type": "weapon",
+  "cost": "2 sp",
+  "weight": 4,
+  "description": "A simple wooden staff (1d6/1d8 bludgeoning).",
+  "properties": [
+    "Versatile"
+  ],
+  "quantity": 1,
+  "source": "SRD 5.1",
+  "source_ref": "SRD 5.1, Equipment: Quarterstaff",
+  "license": "CC-BY-4.0"
+}

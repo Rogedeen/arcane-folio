@@ -1,0 +1,15 @@
+{
+  "slug": "battleaxe",
+  "name": "Battleaxe",
+  "type": "weapon",
+  "cost": "10 gp",
+  "weight": 4,
+  "description": "A versatile chopping axe (1d8/1d10 slashing).",
+  "properties": [
+    "Versatile"
+  ],
+  "quantity": 1,
+  "source": "SRD 5.1",
+  "source_ref": "SRD 5.1, Equipment: Battleaxe",
+  "license": "CC-BY-4.0"
+}

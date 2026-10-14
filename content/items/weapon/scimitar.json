@@ -1,0 +1,16 @@
+{
+  "slug": "scimitar",
+  "name": "Scimitar",
+  "type": "weapon",
+  "cost": "25 gp",
+  "weight": 3,
+  "description": "A light curved martial blade (1d6 slashing).",
+  "properties": [
+    "Finesse",
+    "Light"
+  ],
+  "quantity": 1,
+  "source": "SRD 5.1",
+  "source_ref": "SRD 5.1, Equipment: Scimitar",
+  "license": "CC-BY-4.0"
+}

@@ -1,0 +1,13 @@
+{
+  "slug": "crowbar",
+  "name": "Crowbar",
+  "type": "gear",
+  "cost": "2 gp",
+  "weight": 5,
+  "description": "Grants advantage to Strength checks where leverage can be applied.",
+  "properties": [],
+  "quantity": 1,
+  "source": "SRD 5.1",
+  "source_ref": "SRD 5.1, Equipment: Crowbar",
+  "license": "CC-BY-4.0"
+}

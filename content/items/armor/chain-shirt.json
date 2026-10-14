@@ -1,0 +1,15 @@
+{
+  "slug": "chain-shirt",
+  "name": "Chain Shirt",
+  "type": "armor",
+  "cost": "50 gp",
+  "weight": 20,
+  "description": "Medium interlocking chain armor worn under clothing. AC 13 + DEX (max 2).",
+  "properties": [
+    "Medium Armor"
+  ],
+  "quantity": 1,
+  "source": "SRD 5.1",
+  "source_ref": "SRD 5.1, Equipment: Chain Shirt",
+  "license": "CC-BY-4.0"
+}

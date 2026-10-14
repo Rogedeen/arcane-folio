@@ -1,0 +1,19 @@
+{
+  "slug": "dancing-lights",
+  "name": "Dancing Lights",
+  "level": 0,
+  "school": "Evocation",
+  "castingTime": "1 action",
+  "range": "120 feet",
+  "components": "V, S, M",
+  "duration": "Concentration, up to 1 minute",
+  "description": "You create up to four torch-sized lights within range, making them shed dim light in a 10-foot radius.",
+  "classes": [
+    "bard",
+    "sorcerer",
+    "wizard"
+  ],
+  "source": "SRD 5.1",
+  "source_ref": "SRD 5.1, Spells: Dancing Lights",
+  "license": "CC-BY-4.0"
+}

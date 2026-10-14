@@ -1,0 +1,15 @@
+{
+  "slug": "potion-of-climbing",
+  "name": "Potion of Climbing",
+  "type": "potion",
+  "cost": "75 gp",
+  "weight": 0.5,
+  "description": "Grants a climbing speed equal to your walking speed for 1 hour.",
+  "properties": [
+    "Consumable"
+  ],
+  "quantity": 1,
+  "source": "SRD 5.1",
+  "source_ref": "SRD 5.1, Equipment: Potion of Climbing",
+  "license": "CC-BY-4.0"
+}

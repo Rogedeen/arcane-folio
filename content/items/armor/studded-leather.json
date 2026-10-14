@@ -1,0 +1,15 @@
+{
+  "slug": "studded-leather",
+  "name": "Studded Leather",
+  "type": "armor",
+  "cost": "45 gp",
+  "weight": 13,
+  "description": "Light leather reinforced with metal studs. AC 12 + DEX.",
+  "properties": [
+    "Light Armor"
+  ],
+  "quantity": 1,
+  "source": "SRD 5.1",
+  "source_ref": "SRD 5.1, Equipment: Studded Leather",
+  "license": "CC-BY-4.0"
+}

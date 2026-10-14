@@ -1,0 +1,18 @@
+{
+  "slug": "web",
+  "name": "Web",
+  "level": 2,
+  "school": "Conjuration",
+  "castingTime": "1 action",
+  "range": "60 feet",
+  "components": "V, S, M",
+  "duration": "Concentration, up to 1 hour",
+  "description": "You conjure a mass of thick, sticky webbing at a point within range. The webs fill a 20-foot cube and restrain creatures that fail a DEX save.",
+  "classes": [
+    "sorcerer",
+    "wizard"
+  ],
+  "source": "SRD 5.1",
+  "source_ref": "SRD 5.1, Spells: Web",
+  "license": "CC-BY-4.0"
+}

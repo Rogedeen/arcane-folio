@@ -1,0 +1,17 @@
+{
+  "slug": "thaumaturgy",
+  "name": "Thaumaturgy",
+  "level": 0,
+  "school": "Transmutation",
+  "castingTime": "1 action",
+  "range": "30 feet",
+  "components": "V",
+  "duration": "Up to 1 minute",
+  "description": "You manifest a minor wonder, a sign of supernatural power. Boom your voice, cause flames to flicker, or slam doors shut.",
+  "classes": [
+    "cleric"
+  ],
+  "source": "SRD 5.1",
+  "source_ref": "SRD 5.1, Spells: Thaumaturgy",
+  "license": "CC-BY-4.0"
+}

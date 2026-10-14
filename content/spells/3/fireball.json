@@ -1,0 +1,18 @@
+{
+  "slug": "fireball",
+  "name": "Fireball",
+  "level": 3,
+  "school": "Evocation",
+  "castingTime": "1 action",
+  "range": "150 feet",
+  "components": "V, S, M",
+  "duration": "Instantaneous",
+  "description": "A bright streak flashes from your pointing finger to a point you choose within range and then blossoms with a low roar into an explosion of flame (8d6 fire, DEX save half).",
+  "classes": [
+    "sorcerer",
+    "wizard"
+  ],
+  "source": "SRD 5.1",
+  "source_ref": "SRD 5.1, Spells: Fireball",
+  "license": "CC-BY-4.0"
+}

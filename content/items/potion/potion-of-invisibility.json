@@ -1,0 +1,15 @@
+{
+  "slug": "potion-of-invisibility",
+  "name": "Potion of Invisibility",
+  "type": "potion",
+  "cost": "200 gp",
+  "weight": 0.5,
+  "description": "You become invisible for 1 hour or until you attack or cast a spell.",
+  "properties": [
+    "Consumable"
+  ],
+  "quantity": 1,
+  "source": "SRD 5.1",
+  "source_ref": "SRD 5.1, Equipment: Potion of Invisibility",
+  "license": "CC-BY-4.0"
+}

@@ -1,0 +1,15 @@
+{
+  "slug": "longsword",
+  "name": "Longsword",
+  "type": "weapon",
+  "cost": "15 gp",
+  "weight": 3,
+  "description": "A versatile martial sword (1d8/1d10 slashing).",
+  "properties": [
+    "Versatile"
+  ],
+  "quantity": 1,
+  "source": "SRD 5.1",
+  "source_ref": "SRD 5.1, Equipment: Longsword",
+  "license": "CC-BY-4.0"
+}

@@ -1,0 +1,20 @@
+{
+  "slug": "thunderwave",
+  "name": "Thunderwave",
+  "level": 1,
+  "school": "Evocation",
+  "castingTime": "1 action",
+  "range": "Self (15-foot cube)",
+  "components": "V, S",
+  "duration": "Instantaneous",
+  "description": "A wave of thunderous force sweeps out from you. Each creature in a 15-foot cube takes 2d8 thunder damage and is pushed 10 feet away (CON save half).",
+  "classes": [
+    "bard",
+    "druid",
+    "sorcerer",
+    "wizard"
+  ],
+  "source": "SRD 5.1",
+  "source_ref": "SRD 5.1, Spells: Thunderwave",
+  "license": "CC-BY-4.0"
+}

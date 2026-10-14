@@ -1,0 +1,19 @@
+{
+  "slug": "fly",
+  "name": "Fly",
+  "level": 3,
+  "school": "Transmutation",
+  "castingTime": "1 action",
+  "range": "Touch",
+  "components": "V, S, M",
+  "duration": "Concentration, up to 10 minutes",
+  "description": "You touch a willing creature. The target gains a flying speed of 60 feet for the duration.",
+  "classes": [
+    "sorcerer",
+    "warlock",
+    "wizard"
+  ],
+  "source": "SRD 5.1",
+  "source_ref": "SRD 5.1, Spells: Fly",
+  "license": "CC-BY-4.0"
+}

@@ -1,0 +1,13 @@
+{
+  "slug": "torch",
+  "name": "Torch",
+  "type": "gear",
+  "cost": "1 cp",
+  "weight": 1,
+  "description": "Burns for 1 hour, providing bright light in a 20-foot radius and dim light for 20 more feet.",
+  "properties": [],
+  "quantity": 1,
+  "source": "SRD 5.1",
+  "source_ref": "SRD 5.1, Equipment: Torch",
+  "license": "CC-BY-4.0"
+}

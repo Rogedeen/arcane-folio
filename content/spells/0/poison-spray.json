@@ -1,0 +1,20 @@
+{
+  "slug": "poison-spray",
+  "name": "Poison Spray",
+  "level": 0,
+  "school": "Conjuration",
+  "castingTime": "1 action",
+  "range": "10 feet",
+  "components": "V, S",
+  "duration": "Instantaneous",
+  "description": "You extend your hand toward a creature within range and project a puff of noxious gas. The target must succeed on a CON save or take 1d12 poison damage.",
+  "classes": [
+    "druid",
+    "sorcerer",
+    "warlock",
+    "wizard"
+  ],
+  "source": "SRD 5.1",
+  "source_ref": "SRD 5.1, Spells: Poison Spray",
+  "license": "CC-BY-4.0"
+}

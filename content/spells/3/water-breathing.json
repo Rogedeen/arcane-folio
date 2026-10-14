@@ -1,0 +1,20 @@
+{
+  "slug": "water-breathing",
+  "name": "Water Breathing",
+  "level": 3,
+  "school": "Transmutation",
+  "castingTime": "1 action (ritual)",
+  "range": "30 feet",
+  "components": "V, S, M",
+  "duration": "24 hours",
+  "description": "This spell grants up to ten willing creatures you can see within range the ability to breathe underwater until the spell ends.",
+  "classes": [
+    "druid",
+    "ranger",
+    "sorcerer",
+    "wizard"
+  ],
+  "source": "SRD 5.1",
+  "source_ref": "SRD 5.1, Spells: Water Breathing",
+  "license": "CC-BY-4.0"
+}

@@ -1,0 +1,20 @@
+{
+  "slug": "suggestion",
+  "name": "Suggestion",
+  "level": 2,
+  "school": "Enchantment",
+  "castingTime": "1 action",
+  "range": "30 feet",
+  "components": "V, M",
+  "duration": "Concentration, up to 8 hours",
+  "description": "You suggest a course of activity (limited to a sentence or two) and magically influence a creature you can see within range (WIS save negates).",
+  "classes": [
+    "bard",
+    "sorcerer",
+    "warlock",
+    "wizard"
+  ],
+  "source": "SRD 5.1",
+  "source_ref": "SRD 5.1, Spells: Suggestion",
+  "license": "CC-BY-4.0"
+}

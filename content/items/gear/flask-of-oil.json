@@ -1,0 +1,13 @@
+{
+  "slug": "flask-of-oil",
+  "name": "Flask of Oil",
+  "type": "gear",
+  "cost": "1 sp",
+  "weight": 1,
+  "description": "Can fuel a lantern or be thrown as an improvised splash weapon.",
+  "properties": [],
+  "quantity": 1,
+  "source": "SRD 5.1",
+  "source_ref": "SRD 5.1, Equipment: Flask of Oil",
+  "license": "CC-BY-4.0"
+}

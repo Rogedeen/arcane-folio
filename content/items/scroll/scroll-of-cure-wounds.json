@@ -1,0 +1,16 @@
+{
+  "slug": "scroll-of-cure-wounds",
+  "name": "Spell Scroll (Cure Wounds)",
+  "type": "scroll",
+  "cost": "50 gp",
+  "weight": 0.1,
+  "description": "Contains the Cure Wounds spell.",
+  "properties": [
+    "Scroll",
+    "Consumable"
+  ],
+  "quantity": 1,
+  "source": "SRD 5.1",
+  "source_ref": "SRD 5.1, Equipment: Spell Scroll (Cure Wounds)",
+  "license": "CC-BY-4.0"
+}

@@ -1,0 +1,15 @@
+{
+  "slug": "chain-mail",
+  "name": "Chain Mail",
+  "type": "armor",
+  "cost": "75 gp",
+  "weight": 55,
+  "description": "Heavy interlocking steel rings. AC 16 (Stealth Disadvantage).",
+  "properties": [
+    "Heavy Armor"
+  ],
+  "quantity": 1,
+  "source": "SRD 5.1",
+  "source_ref": "SRD 5.1, Equipment: Chain Mail",
+  "license": "CC-BY-4.0"
+}

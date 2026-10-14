@@ -1,0 +1,17 @@
+{
+  "slug": "spirit-guardians",
+  "name": "Spirit Guardians",
+  "level": 3,
+  "school": "Conjuration",
+  "castingTime": "1 action",
+  "range": "Self (15-foot radius)",
+  "components": "V, S, M",
+  "duration": "Concentration, up to 10 minutes",
+  "description": "You call forth spirits to protect you. They flit around you to a distance of 15 feet. Affected creatures take 3d8 radiant or necrotic damage (WIS save half).",
+  "classes": [
+    "cleric"
+  ],
+  "source": "SRD 5.1",
+  "source_ref": "SRD 5.1, Spells: Spirit Guardians",
+  "license": "CC-BY-4.0"
+}

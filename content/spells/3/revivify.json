@@ -1,0 +1,18 @@
+{
+  "slug": "revivify",
+  "name": "Revivify",
+  "level": 3,
+  "school": "Necromancy",
+  "castingTime": "1 action",
+  "range": "Touch",
+  "components": "V, S, M",
+  "duration": "Instantaneous",
+  "description": "You touch a creature that has died within the last minute. That creature returns to life with 1 hit point.",
+  "classes": [
+    "cleric",
+    "paladin"
+  ],
+  "source": "SRD 5.1",
+  "source_ref": "SRD 5.1, Spells: Revivify",
+  "license": "CC-BY-4.0"
+}

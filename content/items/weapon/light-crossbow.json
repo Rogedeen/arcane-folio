@@ -1,0 +1,17 @@
+{
+  "slug": "light-crossbow",
+  "name": "Light Crossbow",
+  "type": "weapon",
+  "cost": "25 gp",
+  "weight": 5,
+  "description": "A simple mechanical crossbow (1d8 piercing, range 80/320).",
+  "properties": [
+    "Ammunition",
+    "Loading",
+    "Two-Handed"
+  ],
+  "quantity": 1,
+  "source": "SRD 5.1",
+  "source_ref": "SRD 5.1, Equipment: Light Crossbow",
+  "license": "CC-BY-4.0"
+}

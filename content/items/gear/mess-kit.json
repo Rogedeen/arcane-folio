@@ -1,0 +1,13 @@
+{
+  "slug": "mess-kit",
+  "name": "Mess Kit",
+  "type": "gear",
+  "cost": "2 sp",
+  "weight": 1,
+  "description": "A tin box containing a cup, cutlery, and cooking tin.",
+  "properties": [],
+  "quantity": 1,
+  "source": "SRD 5.1",
+  "source_ref": "SRD 5.1, Equipment: Mess Kit",
+  "license": "CC-BY-4.0"
+}

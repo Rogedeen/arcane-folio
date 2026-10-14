@@ -1,0 +1,16 @@
+{
+  "slug": "handaxe",
+  "name": "Handaxe",
+  "type": "weapon",
+  "cost": "5 gp",
+  "weight": 2,
+  "description": "A simple throwing axe (1d6 slashing).",
+  "properties": [
+    "Light",
+    "Thrown (20/60)"
+  ],
+  "quantity": 1,
+  "source": "SRD 5.1",
+  "source_ref": "SRD 5.1, Equipment: Handaxe",
+  "license": "CC-BY-4.0"
+}

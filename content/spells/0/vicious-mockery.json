@@ -1,0 +1,17 @@
+{
+  "slug": "vicious-mockery",
+  "name": "Vicious Mockery",
+  "level": 0,
+  "school": "Enchantment",
+  "castingTime": "1 action",
+  "range": "60 feet",
+  "components": "V",
+  "duration": "Instantaneous",
+  "description": "You unleash a string of insults laced with subtle enchantments. Target must succeed on a WIS save or take 1d4 psychic damage and disadvantage on next attack.",
+  "classes": [
+    "bard"
+  ],
+  "source": "SRD 5.1",
+  "source_ref": "SRD 5.1, Spells: Vicious Mockery",
+  "license": "CC-BY-4.0"
+}

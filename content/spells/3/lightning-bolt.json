@@ -1,0 +1,18 @@
+{
+  "slug": "lightning-bolt",
+  "name": "Lightning Bolt",
+  "level": 3,
+  "school": "Evocation",
+  "castingTime": "1 action",
+  "range": "Self (100-foot line)",
+  "components": "V, S, M",
+  "duration": "Instantaneous",
+  "description": "A stroke of lightning forming a line 100 feet long and 5 feet wide blasts out from you in a direction you choose (8d6 lightning damage, DEX save half).",
+  "classes": [
+    "sorcerer",
+    "wizard"
+  ],
+  "source": "SRD 5.1",
+  "source_ref": "SRD 5.1, Spells: Lightning Bolt",
+  "license": "CC-BY-4.0"
+}

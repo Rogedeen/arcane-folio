@@ -1,0 +1,15 @@
+{
+  "slug": "shield",
+  "name": "Shield",
+  "type": "shield",
+  "cost": "10 gp",
+  "weight": 6,
+  "description": "A sturdy wooden or metal shield that grants +2 to Armor Class.",
+  "properties": [
+    "Shield"
+  ],
+  "quantity": 1,
+  "source": "SRD 5.1",
+  "source_ref": "SRD 5.1, Equipment: Shield",
+  "license": "CC-BY-4.0"
+}

@@ -1,0 +1,13 @@
+{
+  "slug": "mace",
+  "name": "Mace",
+  "type": "weapon",
+  "cost": "5 gp",
+  "weight": 4,
+  "description": "A simple blunt weapon with a flanged head (1d6 bludgeoning).",
+  "properties": [],
+  "quantity": 1,
+  "source": "SRD 5.1",
+  "source_ref": "SRD 5.1, Equipment: Mace",
+  "license": "CC-BY-4.0"
+}

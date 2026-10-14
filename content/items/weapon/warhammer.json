@@ -1,0 +1,15 @@
+{
+  "slug": "warhammer",
+  "name": "Warhammer",
+  "type": "weapon",
+  "cost": "15 gp",
+  "weight": 2,
+  "description": "A versatile martial hammer (1d8/1d10 bludgeoning).",
+  "properties": [
+    "Versatile"
+  ],
+  "quantity": 1,
+  "source": "SRD 5.1",
+  "source_ref": "SRD 5.1, Equipment: Warhammer",
+  "license": "CC-BY-4.0"
+}

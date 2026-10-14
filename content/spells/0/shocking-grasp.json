@@ -1,0 +1,18 @@
+{
+  "slug": "shocking-grasp",
+  "name": "Shocking Grasp",
+  "level": 0,
+  "school": "Evocation",
+  "castingTime": "1 action",
+  "range": "Touch",
+  "components": "V, S",
+  "duration": "Instantaneous",
+  "description": "Lightning springs from your hand to deliver a shock to a creature you try to touch. Deals 1d8 lightning damage and target cannot take reactions.",
+  "classes": [
+    "sorcerer",
+    "wizard"
+  ],
+  "source": "SRD 5.1",
+  "source_ref": "SRD 5.1, Spells: Shocking Grasp",
+  "license": "CC-BY-4.0"
+}

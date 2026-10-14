@@ -1,0 +1,15 @@
+{
+  "slug": "hide-armor",
+  "name": "Hide Armor",
+  "type": "armor",
+  "cost": "10 gp",
+  "weight": 12,
+  "description": "Medium armor made from thick furs and pelts. AC 12 + DEX (max 2).",
+  "properties": [
+    "Medium Armor"
+  ],
+  "quantity": 1,
+  "source": "SRD 5.1",
+  "source_ref": "SRD 5.1, Equipment: Hide Armor",
+  "license": "CC-BY-4.0"
+}

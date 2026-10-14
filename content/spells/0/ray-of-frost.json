@@ -1,0 +1,18 @@
+{
+  "slug": "ray-of-frost",
+  "name": "Ray of Frost",
+  "level": 0,
+  "school": "Evocation",
+  "castingTime": "1 action",
+  "range": "60 feet",
+  "components": "V, S",
+  "duration": "Instantaneous",
+  "description": "A frigid beam of blue-white light streaks toward a creature within range. Ranged spell attack deals 1d8 cold damage and reduces speed by 10 ft.",
+  "classes": [
+    "sorcerer",
+    "wizard"
+  ],
+  "source": "SRD 5.1",
+  "source_ref": "SRD 5.1, Spells: Ray of Frost",
+  "license": "CC-BY-4.0"
+}

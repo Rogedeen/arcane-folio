@@ -1,0 +1,20 @@
+{
+  "slug": "shatter",
+  "name": "Shatter",
+  "level": 2,
+  "school": "Evocation",
+  "castingTime": "1 action",
+  "range": "60 feet",
+  "components": "V, S, M",
+  "duration": "Instantaneous",
+  "description": "A sudden loud ringing noise, painfully intense, erupts from a point of your choice within range. Each creature in a 10-foot radius sphere takes 3d8 thunder damage.",
+  "classes": [
+    "bard",
+    "sorcerer",
+    "warlock",
+    "wizard"
+  ],
+  "source": "SRD 5.1",
+  "source_ref": "SRD 5.1, Spells: Shatter",
+  "license": "CC-BY-4.0"
+}

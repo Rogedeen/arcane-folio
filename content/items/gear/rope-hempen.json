@@ -1,0 +1,13 @@
+{
+  "slug": "rope-hempen",
+  "name": "Rope, Hempen (50 feet)",
+  "type": "gear",
+  "cost": "1 gp",
+  "weight": 10,
+  "description": "50 feet of hemp rope with 2 hit points and can burst with DC 17 STR check.",
+  "properties": [],
+  "quantity": 1,
+  "source": "SRD 5.1",
+  "source_ref": "SRD 5.1, Equipment: Rope, Hempen (50 feet)",
+  "license": "CC-BY-4.0"
+}

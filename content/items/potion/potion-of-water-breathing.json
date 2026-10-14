@@ -1,0 +1,15 @@
+{
+  "slug": "potion-of-water-breathing",
+  "name": "Potion of Water Breathing",
+  "type": "potion",
+  "cost": "100 gp",
+  "weight": 0.5,
+  "description": "You can breathe underwater for 1 hour after drinking this potion.",
+  "properties": [
+    "Consumable"
+  ],
+  "quantity": 1,
+  "source": "SRD 5.1",
+  "source_ref": "SRD 5.1, Equipment: Potion of Water Breathing",
+  "license": "CC-BY-4.0"
+}

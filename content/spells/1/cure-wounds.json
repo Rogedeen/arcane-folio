@@ -1,0 +1,21 @@
+{
+  "slug": "cure-wounds",
+  "name": "Cure Wounds",
+  "level": 1,
+  "school": "Evocation",
+  "castingTime": "1 action",
+  "range": "Touch",
+  "components": "V, S",
+  "duration": "Instantaneous",
+  "description": "A creature you touch regains a number of hit points equal to 1d8 + your spellcasting ability modifier.",
+  "classes": [
+    "bard",
+    "cleric",
+    "druid",
+    "paladin",
+    "ranger"
+  ],
+  "source": "SRD 5.1",
+  "source_ref": "SRD 5.1, Spells: Cure Wounds",
+  "license": "CC-BY-4.0"
+}

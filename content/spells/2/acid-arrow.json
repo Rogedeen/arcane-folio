@@ -1,0 +1,17 @@
+{
+  "slug": "acid-arrow",
+  "name": "Acid Arrow",
+  "level": 2,
+  "school": "Evocation",
+  "castingTime": "1 action",
+  "range": "90 feet",
+  "components": "V, S, M",
+  "duration": "Instantaneous",
+  "description": "A shimmering green arrow streaks toward a target within range and bursts in a spray of acid. Deals 4d4 acid damage on hit, and 2d4 at the end of its next turn.",
+  "classes": [
+    "wizard"
+  ],
+  "source": "SRD 5.1",
+  "source_ref": "SRD 5.1, Spells: Acid Arrow",
+  "license": "CC-BY-4.0"
+}

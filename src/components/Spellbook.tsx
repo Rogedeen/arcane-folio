@@ -1,0 +1,150 @@
+import React, { useState } from 'react';
+import { SpellData } from '../types/content';
+import { INITIAL_SPELLS } from '../data/sampleContent';
+import { calculateMaxPreparedSpells } from '../rules/spellPreparation';
+
+interface SpellbookProps {
+  level: number;
+  castingModifier: number;
+}
+
+export const Spellbook: React.FC<SpellbookProps> = ({ level, castingModifier }) => {
+  const [spells, setSpells] = useState<SpellData[]>(INITIAL_SPELLS);
+  const [levelFilter, setLevelFilter] = useState<number | 'all'>('all');
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [selectedSpell, setSelectedSpell] = useState<SpellData | null>(null);
+
+  const maxPrepared = calculateMaxPreparedSpells(level, castingModifier);
+  const currentPreparedCount = spells.filter((s) => s.level > 0 && s.prepared).length;
+
+  const togglePrepare = (slug: string) => {
+    setSpells((prev) =>
+      prev.map((s) => {
+        if (s.slug === slug) {
+          return { ...s, prepared: !s.prepared };
+        }
+        return s;
+      })
+    );
+  };
+
+  const filteredSpells = spells.filter((s) => {
+    const matchesLevel = levelFilter === 'all' || s.level === levelFilter;
+    const matchesSearch = s.name.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesLevel && matchesSearch;
+  });
+
+  return (
+    <div id="spellbook-container" className="spellbook-card">
+      <div className="spellbook-header">
+        <div>
+          <h3 className="font-cinzel" style={{ color: 'var(--accent-gold)', fontSize: '1.4rem' }}>
+            📜 Büyü Kitabı & Hazırlanan Büyüler (Faz 3)
+          </h3>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+            SRD 5.1 büyü kütüphanesi, hazırlık sınırı ve büyü detayları
+          </p>
+        </div>
+
+        {/* Hazırlanan Büyü Sayacı */}
+        <div className="prepared-counter-box" id="prepared-counter-box">
+          <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>
+            Hazırlanan Büyüler
+          </span>
+          <span className="prepared-numbers">
+            <strong id="display-prepared-count">{currentPreparedCount}</strong> / <span id="display-max-prepared">{maxPrepared}</span>
+          </span>
+        </div>
+      </div>
+
+      {/* Arama & Seviye Filtreleri */}
+      <div className="spellbook-toolbar">
+        <input
+          id="input-spell-search"
+          type="text"
+          placeholder="Büyü ara (örn: Fireball)..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="spell-search-input"
+        />
+
+        <div className="spell-level-tabs">
+          {['all', 0, 1, 2, 3].map((lvl) => (
+            <button
+              key={lvl}
+              id={`tab-spell-level-${lvl}`}
+              className={`spell-level-tab ${levelFilter === lvl ? 'active' : ''}`}
+              onClick={() => setLevelFilter(lvl as number | 'all')}
+              aria-label={`Seviye ${lvl} Büyüleri`}
+            >
+              {lvl === 'all' ? 'Tümü' : lvl === 0 ? 'Cantrips' : `${lvl}. Seviye`}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Büyü Listesi */}
+      <div className="spells-list-grid" id="spells-list-grid">
+        {filteredSpells.map((spell) => (
+          <div
+            key={spell.slug}
+            id={`spell-card-${spell.slug}`}
+            className={`spell-item-card ${spell.prepared ? 'prepared' : ''}`}
+            onClick={() => setSelectedSpell(spell)}
+          >
+            <div className="spell-card-top">
+              <span className="spell-name font-cinzel">{spell.name}</span>
+              <span className="spell-level-badge">
+                {spell.level === 0 ? 'Cantrip' : `${spell.level}. Seviye`}
+              </span>
+            </div>
+
+            <div className="spell-meta-row">
+              <span>{spell.school}</span> • <span>{spell.castingTime}</span> • <span>{spell.range}</span>
+            </div>
+
+            <p className="spell-snippet">{spell.description}</p>
+
+            <div className="spell-card-footer" onClick={(e) => e.stopPropagation()}>
+              {spell.level > 0 ? (
+                <button
+                  id={`btn-prepare-${spell.slug}`}
+                  className={`prepare-toggle-btn ${spell.prepared ? 'active' : ''}`}
+                  onClick={() => togglePrepare(spell.slug)}
+                  aria-label={`${spell.name} hazırla`}
+                >
+                  {spell.prepared ? '✓ Hazırlandı' : '+ Hazırla'}
+                </button>
+              ) : (
+                <span className="cantrip-tag">Sürekli Hazır</span>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Büyü Detay Modalı */}
+      {selectedSpell && (
+        <div className="modal-backdrop" onClick={() => setSelectedSpell(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3 className="font-cinzel" style={{ color: 'var(--accent-gold)' }}>
+                {selectedSpell.name}
+              </h3>
+              <button className="modal-close-btn" onClick={() => setSelectedSpell(null)}>✕</button>
+            </div>
+            <div className="modal-body">
+              <p><strong>Seviye & Okul:</strong> {selectedSpell.level === 0 ? 'Cantrip' : `${selectedSpell.level}. Seviye`} {selectedSpell.school}</p>
+              <p><strong>Kullanım Süresi:</strong> {selectedSpell.castingTime}</p>
+              <p><strong>Menzil:</strong> {selectedSpell.range}</p>
+              <p><strong>Bileşenler:</strong> {selectedSpell.components}</p>
+              <p><strong>Süre:</strong> {selectedSpell.duration}</p>
+              <hr style={{ margin: '1rem 0', borderColor: 'var(--border-subtle)' }} />
+              <p>{selectedSpell.description}</p>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};

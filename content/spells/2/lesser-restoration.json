@@ -1,0 +1,21 @@
+{
+  "slug": "lesser-restoration",
+  "name": "Lesser Restoration",
+  "level": 2,
+  "school": "Abjuration",
+  "castingTime": "1 action",
+  "range": "Touch",
+  "components": "V, S",
+  "duration": "Instantaneous",
+  "description": "You touch a creature and can end either one disease or one condition afflicting it. The condition can be blinded, deafened, paralyzed, or poisoned.",
+  "classes": [
+    "bard",
+    "cleric",
+    "druid",
+    "paladin",
+    "ranger"
+  ],
+  "source": "SRD 5.1",
+  "source_ref": "SRD 5.1, Spells: Lesser Restoration",
+  "license": "CC-BY-4.0"
+}

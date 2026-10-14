@@ -1,0 +1,21 @@
+{
+  "slug": "charm-person",
+  "name": "Charm Person",
+  "level": 1,
+  "school": "Enchantment",
+  "castingTime": "1 action",
+  "range": "30 feet",
+  "components": "V, S",
+  "duration": "1 hour",
+  "description": "You attempt to charm a humanoid you can see within range. It must make a WIS save, and does so with advantage if you or your companions are fighting it.",
+  "classes": [
+    "bard",
+    "druid",
+    "sorcerer",
+    "warlock",
+    "wizard"
+  ],
+  "source": "SRD 5.1",
+  "source_ref": "SRD 5.1, Spells: Charm Person",
+  "license": "CC-BY-4.0"
+}

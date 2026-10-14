@@ -1,0 +1,21 @@
+{
+  "slug": "tongues",
+  "name": "Tongues",
+  "level": 3,
+  "school": "Divination",
+  "castingTime": "1 action",
+  "range": "Touch",
+  "components": "V, M",
+  "duration": "1 hour",
+  "description": "This spell grants the creature you touch the ability to understand and speak all spoken languages it hears.",
+  "classes": [
+    "bard",
+    "cleric",
+    "sorcerer",
+    "warlock",
+    "wizard"
+  ],
+  "source": "SRD 5.1",
+  "source_ref": "SRD 5.1, Spells: Tongues",
+  "license": "CC-BY-4.0"
+}

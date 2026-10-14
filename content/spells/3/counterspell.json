@@ -1,0 +1,19 @@
+{
+  "slug": "counterspell",
+  "name": "Counterspell",
+  "level": 3,
+  "school": "Abjuration",
+  "castingTime": "1 reaction",
+  "range": "60 feet",
+  "components": "S",
+  "duration": "Instantaneous",
+  "description": "You attempt to interrupt a creature in the process of casting a spell. If the creature is casting a spell of 3rd level or lower, its spell fails and has no effect.",
+  "classes": [
+    "sorcerer",
+    "warlock",
+    "wizard"
+  ],
+  "source": "SRD 5.1",
+  "source_ref": "SRD 5.1, Spells: Counterspell",
+  "license": "CC-BY-4.0"
+}

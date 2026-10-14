@@ -1,0 +1,20 @@
+{
+  "slug": "mage-hand",
+  "name": "Mage Hand",
+  "level": 0,
+  "school": "Conjuration",
+  "castingTime": "1 action",
+  "range": "30 feet",
+  "components": "V, S",
+  "duration": "1 minute",
+  "description": "A spectral, floating hand appears at a point you choose within range. You can use your action to control the hand to manipulate objects or open doors.",
+  "classes": [
+    "bard",
+    "sorcerer",
+    "warlock",
+    "wizard"
+  ],
+  "source": "SRD 5.1",
+  "source_ref": "SRD 5.1, Spells: Mage Hand",
+  "license": "CC-BY-4.0"
+}

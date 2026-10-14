@@ -1,0 +1,15 @@
+{
+  "slug": "plate-armor",
+  "name": "Plate Armor",
+  "type": "armor",
+  "cost": "1500 gp",
+  "weight": 65,
+  "description": "Heavy interlocking steel plates. AC 18 (Stealth Disadvantage).",
+  "properties": [
+    "Heavy Armor"
+  ],
+  "quantity": 1,
+  "source": "SRD 5.1",
+  "source_ref": "SRD 5.1, Equipment: Plate Armor",
+  "license": "CC-BY-4.0"
+}

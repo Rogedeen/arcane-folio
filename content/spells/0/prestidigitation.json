@@ -1,0 +1,20 @@
+{
+  "slug": "prestidigitation",
+  "name": "Prestidigitation",
+  "level": 0,
+  "school": "Transmutation",
+  "castingTime": "1 action",
+  "range": "10 feet",
+  "components": "V, S",
+  "duration": "Up to 1 hour",
+  "description": "This spell is a minor magical trick that novice spellcasters use for practice. Create sparks, clean items, chill or warm food.",
+  "classes": [
+    "bard",
+    "sorcerer",
+    "warlock",
+    "wizard"
+  ],
+  "source": "SRD 5.1",
+  "source_ref": "SRD 5.1, Spells: Prestidigitation",
+  "license": "CC-BY-4.0"
+}

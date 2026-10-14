@@ -1,0 +1,19 @@
+{
+  "slug": "sleep",
+  "name": "Sleep",
+  "level": 1,
+  "school": "Enchantment",
+  "castingTime": "1 action",
+  "range": "90 feet",
+  "components": "V, S, M",
+  "duration": "1 minute",
+  "description": "This spell sends creatures into a magical slumber. Roll 5d8; the total is how many hit points of creatures this spell can affect.",
+  "classes": [
+    "bard",
+    "sorcerer",
+    "wizard"
+  ],
+  "source": "SRD 5.1",
+  "source_ref": "SRD 5.1, Spells: Sleep",
+  "license": "CC-BY-4.0"
+}

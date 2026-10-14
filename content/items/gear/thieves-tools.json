@@ -1,0 +1,15 @@
+{
+  "slug": "thieves-tools",
+  "name": "Thieves' Tools",
+  "type": "gear",
+  "cost": "25 gp",
+  "weight": 1,
+  "description": "Lock picks, small blades, and mirrors used to pick locks and disarm traps.",
+  "properties": [
+    "Tool"
+  ],
+  "quantity": 1,
+  "source": "SRD 5.1",
+  "source_ref": "SRD 5.1, Equipment: Thieves' Tools",
+  "license": "CC-BY-4.0"
+}

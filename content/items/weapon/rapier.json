@@ -1,0 +1,15 @@
+{
+  "slug": "rapier",
+  "name": "Rapier",
+  "type": "weapon",
+  "cost": "25 gp",
+  "weight": 2,
+  "description": "A martial thrusting blade favored by duelists (1d8 piercing).",
+  "properties": [
+    "Finesse"
+  ],
+  "quantity": 1,
+  "source": "SRD 5.1",
+  "source_ref": "SRD 5.1, Equipment: Rapier",
+  "license": "CC-BY-4.0"
+}

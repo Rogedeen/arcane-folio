@@ -1,0 +1,22 @@
+{
+  "slug": "hold-person",
+  "name": "Hold Person",
+  "level": 2,
+  "school": "Enchantment",
+  "castingTime": "1 action",
+  "range": "60 feet",
+  "components": "V, S, M",
+  "duration": "Concentration, up to 1 minute",
+  "description": "Choose a humanoid that you can see within range. The target must succeed on a WIS save or be paralyzed for the duration.",
+  "classes": [
+    "bard",
+    "cleric",
+    "druid",
+    "sorcerer",
+    "warlock",
+    "wizard"
+  ],
+  "source": "SRD 5.1",
+  "source_ref": "SRD 5.1, Spells: Hold Person",
+  "license": "CC-BY-4.0"
+}

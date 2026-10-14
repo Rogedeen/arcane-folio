@@ -1,0 +1,15 @@
+{
+  "slug": "padded-armor",
+  "name": "Padded Armor",
+  "type": "armor",
+  "cost": "5 gp",
+  "weight": 8,
+  "description": "Light quilted armor. AC 11 + DEX (Disadvantage on Stealth).",
+  "properties": [
+    "Light Armor"
+  ],
+  "quantity": 1,
+  "source": "SRD 5.1",
+  "source_ref": "SRD 5.1, Equipment: Padded Armor",
+  "license": "CC-BY-4.0"
+}

@@ -1,0 +1,18 @@
+{
+  "slug": "haste",
+  "name": "Haste",
+  "level": 3,
+  "school": "Transmutation",
+  "castingTime": "1 action",
+  "range": "30 feet",
+  "components": "V, S, M",
+  "duration": "Concentration, up to 1 minute",
+  "description": "Choose a willing creature that you can see within range. Its speed is doubled, it gains a +2 bonus to AC, it has advantage on DEX saves, and it gains an additional action.",
+  "classes": [
+    "sorcerer",
+    "wizard"
+  ],
+  "source": "SRD 5.1",
+  "source_ref": "SRD 5.1, Spells: Haste",
+  "license": "CC-BY-4.0"
+}

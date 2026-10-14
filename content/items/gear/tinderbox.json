@@ -1,0 +1,13 @@
+{
+  "slug": "tinderbox",
+  "name": "Tinderbox",
+  "type": "gear",
+  "cost": "5 sp",
+  "weight": 1,
+  "description": "Contains flint, fire steel, and tinder used to kindle a fire.",
+  "properties": [],
+  "quantity": 1,
+  "source": "SRD 5.1",
+  "source_ref": "SRD 5.1, Equipment: Tinderbox",
+  "license": "CC-BY-4.0"
+}

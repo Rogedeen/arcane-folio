@@ -1,0 +1,17 @@
+{
+  "slug": "longbow",
+  "name": "Longbow",
+  "type": "weapon",
+  "cost": "50 gp",
+  "weight": 2,
+  "description": "A martial bow with great range (1d8 piercing, range 150/600).",
+  "properties": [
+    "Ammunition",
+    "Heavy",
+    "Two-Handed"
+  ],
+  "quantity": 1,
+  "source": "SRD 5.1",
+  "source_ref": "SRD 5.1, Equipment: Longbow",
+  "license": "CC-BY-4.0"
+}

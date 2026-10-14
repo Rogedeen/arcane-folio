@@ -1,0 +1,18 @@
+{
+  "slug": "shield",
+  "name": "Shield",
+  "level": 1,
+  "school": "Abjuration",
+  "castingTime": "1 reaction",
+  "range": "Self",
+  "components": "V, S",
+  "duration": "1 round",
+  "description": "An invisible barrier of magical force appears and protects you. Until the start of your next turn, you have a +5 bonus to AC, including against the triggering attack.",
+  "classes": [
+    "sorcerer",
+    "wizard"
+  ],
+  "source": "SRD 5.1",
+  "source_ref": "SRD 5.1, Spells: Shield",
+  "license": "CC-BY-4.0"
+}

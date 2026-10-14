@@ -1,0 +1,15 @@
+{
+  "slug": "leather-armor",
+  "name": "Leather Armor",
+  "type": "armor",
+  "cost": "10 gp",
+  "weight": 10,
+  "description": "Light boiled leather armor. AC 11 + DEX.",
+  "properties": [
+    "Light Armor"
+  ],
+  "quantity": 1,
+  "source": "SRD 5.1",
+  "source_ref": "SRD 5.1, Equipment: Leather Armor",
+  "license": "CC-BY-4.0"
+}

@@ -1,0 +1,19 @@
+{
+  "slug": "chill-touch",
+  "name": "Chill Touch",
+  "level": 0,
+  "school": "Necromancy",
+  "castingTime": "1 action",
+  "range": "120 feet",
+  "components": "V, S",
+  "duration": "1 round",
+  "description": "You create a ghostly skeletal hand. Ranged spell attack deals 1d8 necrotic damage and target cannot regain hit points until the start of your next turn.",
+  "classes": [
+    "sorcerer",
+    "warlock",
+    "wizard"
+  ],
+  "source": "SRD 5.1",
+  "source_ref": "SRD 5.1, Spells: Chill Touch",
+  "license": "CC-BY-4.0"
+}

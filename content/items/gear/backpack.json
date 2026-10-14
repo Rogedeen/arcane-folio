@@ -1,0 +1,15 @@
+{
+  "slug": "backpack",
+  "name": "Backpack",
+  "type": "gear",
+  "cost": "2 gp",
+  "weight": 5,
+  "description": "A sturdy leather pack capable of holding 30 pounds of gear.",
+  "properties": [
+    "Container"
+  ],
+  "quantity": 1,
+  "source": "SRD 5.1",
+  "source_ref": "SRD 5.1, Equipment: Backpack",
+  "license": "CC-BY-4.0"
+}

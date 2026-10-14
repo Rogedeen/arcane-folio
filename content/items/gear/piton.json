@@ -1,0 +1,13 @@
+{
+  "slug": "piton",
+  "name": "Piton (x10)",
+  "type": "gear",
+  "cost": "5 sp",
+  "weight": 2.5,
+  "description": "Metal spikes driven into rock or masonry to secure climbing ropes.",
+  "properties": [],
+  "quantity": 1,
+  "source": "SRD 5.1",
+  "source_ref": "SRD 5.1, Equipment: Piton (x10)",
+  "license": "CC-BY-4.0"
+}

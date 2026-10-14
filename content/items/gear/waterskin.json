@@ -1,0 +1,15 @@
+{
+  "slug": "waterskin",
+  "name": "Waterskin",
+  "type": "gear",
+  "cost": "2 sp",
+  "weight": 5,
+  "description": "A leather container that holds up to 4 pints of liquid.",
+  "properties": [
+    "Container"
+  ],
+  "quantity": 1,
+  "source": "SRD 5.1",
+  "source_ref": "SRD 5.1, Equipment: Waterskin",
+  "license": "CC-BY-4.0"
+}

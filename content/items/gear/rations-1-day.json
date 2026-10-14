@@ -1,0 +1,13 @@
+{
+  "slug": "rations-1-day",
+  "name": "Rations (1 day)",
+  "type": "gear",
+  "cost": "5 sp",
+  "weight": 2,
+  "description": "Dry foods suitable for extended travel, including jerky, dried fruit, hardtack, and nuts.",
+  "properties": [],
+  "quantity": 1,
+  "source": "SRD 5.1",
+  "source_ref": "SRD 5.1, Equipment: Rations (1 day)",
+  "license": "CC-BY-4.0"
+}

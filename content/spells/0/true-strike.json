@@ -1,0 +1,20 @@
+{
+  "slug": "true-strike",
+  "name": "True Strike",
+  "level": 0,
+  "school": "Divination",
+  "castingTime": "1 action",
+  "range": "30 feet",
+  "components": "S",
+  "duration": "Concentration, up to 1 round",
+  "description": "You point a finger at a target in range. On your next turn, you gain advantage on your first attack roll against the target.",
+  "classes": [
+    "bard",
+    "sorcerer",
+    "warlock",
+    "wizard"
+  ],
+  "source": "SRD 5.1",
+  "source_ref": "SRD 5.1, Spells: True Strike",
+  "license": "CC-BY-4.0"
+}

@@ -1,0 +1,23 @@
+{
+  "slug": "detect-magic",
+  "name": "Detect Magic",
+  "level": 1,
+  "school": "Divination",
+  "castingTime": "1 action (ritual)",
+  "range": "Self",
+  "components": "V, S",
+  "duration": "Concentration, up to 10 minutes",
+  "description": "For the duration, you sense the presence of magic within 30 feet of you and see a faint aura around any visible creature or object bearing magic.",
+  "classes": [
+    "bard",
+    "cleric",
+    "druid",
+    "paladin",
+    "ranger",
+    "sorcerer",
+    "wizard"
+  ],
+  "source": "SRD 5.1",
+  "source_ref": "SRD 5.1, Spells: Detect Magic",
+  "license": "CC-BY-4.0"
+}
