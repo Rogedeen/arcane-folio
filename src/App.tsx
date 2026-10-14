@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { AppHealth, PhaseInfo } from './types/app';
 import { defaultDatabaseClient } from './data/supabaseClient';
+import { CharacterCreator } from './components/CharacterCreator';
 
 const PHASES: PhaseInfo[] = [
-  { id: 0, name: 'Faz 0: Temel (İskelet)', description: 'Vite, React, TypeScript, PWA, Vitest, Playwright', status: 'in_progress' },
-  { id: 1, name: 'Faz 1: Karakter Çekirdeği', description: 'Statlar, ırk, sınıf, türetilmiş değerler', status: 'planned' },
+  { id: 0, name: 'Faz 0: Temel (İskelet)', description: 'Vite, React, TypeScript, PWA, Vitest, Playwright', status: 'completed' },
+  { id: 1, name: 'Faz 1: Karakter Çekirdeği', description: 'Statlar, ırk, sınıf, türetilmiş değerler (SRD 5.1)', status: 'in_progress' },
   { id: 2, name: 'Faz 2: Kaynak Takibi', description: 'HP, Dinlenme, Büyü slotları', status: 'planned' },
   { id: 3, name: 'Faz 3: Envanter & Büyüler', description: 'Eşyalar, 50 büyü, 50 eşya', status: 'planned' },
   { id: 4, name: 'Faz 4: Sınıf & Durumlar', description: 'Alt sınıflar, koşullar, seviye atlama', status: 'planned' },
@@ -15,7 +16,7 @@ const PHASES: PhaseInfo[] = [
 export function App() {
   const [health, setHealth] = useState<AppHealth>({
     status: 'ok',
-    version: '0.1.0',
+    version: '0.2.0',
     timestamp: new Date().toISOString(),
     pwaReady: true,
     storageReady: true
@@ -66,11 +67,11 @@ export function App() {
       {/* Hero */}
       <section className="hero-card" aria-labelledby="hero-title">
         <h2 id="hero-title" className="hero-title font-cinzel">
-          Faz 0: Temel İskelet ve Altyapı
+          Faz 1: Karakter Çekirdeği
         </h2>
         <p className="hero-desc">
-          SRD 5.1 uyumlu, modern PWA mimarisiyle tasarlanan D&D 5e takip platformu. 
-          Vite, React 18, TypeScript strict mode ve mobil uyumlu responsive arayüz aktif.
+          SRD 5.1 kurallarıyla güçlendirilen karakter motoru aktif. Seviye 1–20 ustalık bonusu, 
+          yetenek modifikatörleri, sınıf can zarları ve dinamik zırh sınıfı hesaplanmaktadır.
         </p>
         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
           <button
@@ -91,6 +92,9 @@ export function App() {
           </button>
         </div>
       </section>
+
+      {/* Faz 1: Character Creator Component */}
+      <CharacterCreator />
 
       {/* Grid: Health & Roadmap */}
       <main className="dashboard-grid">
@@ -139,14 +143,28 @@ export function App() {
                 </div>
                 <span
                   className={`phase-badge ${
-                    phase.status === 'in_progress' ? 'badge-warning' : 'badge-secondary'
+                    phase.status === 'completed'
+                      ? 'badge-success'
+                      : phase.status === 'in_progress'
+                      ? 'badge-warning'
+                      : 'badge-secondary'
                   }`}
                   style={{
-                    background: phase.status === 'in_progress' ? 'rgba(245,158,11,0.2)' : 'rgba(255,255,255,0.05)',
-                    color: phase.status === 'in_progress' ? '#fbbf24' : '#94a3b8'
+                    background:
+                      phase.status === 'completed'
+                        ? 'rgba(16, 185, 129, 0.2)'
+                        : phase.status === 'in_progress'
+                        ? 'rgba(245, 158, 11, 0.2)'
+                        : 'rgba(255, 255, 255, 0.05)',
+                    color:
+                      phase.status === 'completed'
+                        ? '#34d399'
+                        : phase.status === 'in_progress'
+                        ? '#fbbf24'
+                        : '#94a3b8'
                   }}
                 >
-                  {phase.status === 'in_progress' ? 'Aktif' : 'Planlandı'}
+                  {phase.status === 'completed' ? 'Tamamlandı' : phase.status === 'in_progress' ? 'Aktif' : 'Planlandı'}
                 </span>
               </div>
             ))}
@@ -156,7 +174,7 @@ export function App() {
 
       {/* Footer */}
       <footer className="app-footer">
-        <p>D&D 5e Kampanya Takip • SRD 5.1 Lisansı (CC-BY-4.0) Uyumlu • Faz 0 İskelet</p>
+        <p>D&D 5e Kampanya Takip • SRD 5.1 Lisansı (CC-BY-4.0) Uyumlu • Faz 1 Karakter Çekirdeği</p>
       </footer>
     </div>
   );

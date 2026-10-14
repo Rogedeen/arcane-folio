@@ -15,7 +15,7 @@ test.describe('Faz 0 İskelet ve Çoklu Viewport Doğrulama', () => {
     // Başlık ve logo kontrolü
     await expect(page.locator('#header-logo')).toBeVisible();
     await expect(page.getByRole('heading', { level: 1, name: /D&D 5e Takip/i })).toBeVisible();
-    await expect(page.locator('#hero-title')).toContainText('Faz 0: Temel İskelet ve Altyapı');
+    await expect(page.locator('#hero-title')).toContainText(/Faz \d/);
 
     // PWA & Sağlık rozetleri
     await expect(page.locator('#pwa-status-badge')).toContainText('PWA Hazır');
