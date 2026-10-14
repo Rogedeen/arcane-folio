@@ -6,14 +6,16 @@ import { ResourceTracker } from './components/ResourceTracker';
 import { DiceTray } from './components/DiceTray';
 import { InventoryManager } from './components/InventoryManager';
 import { Spellbook } from './components/Spellbook';
+import { ConditionsTracker } from './components/ConditionsTracker';
+import { LevelUpModal } from './components/LevelUpModal';
 
 const PHASES: PhaseInfo[] = [
   { id: 0, name: 'Faz 0: Temel (İskelet)', description: 'Vite, React, TypeScript, PWA, Vitest, Playwright', status: 'completed' },
   { id: 1, name: 'Faz 1: Karakter Çekirdeği', description: 'Statlar, ırk, sınıf, türetilmiş değerler (SRD 5.1)', status: 'completed' },
   { id: 2, name: 'Faz 2: Kaynak Takibi & Zarlar', description: 'HP, Dinlenme, Büyü slotları, D4-D100 animasyonlu zar', status: 'completed' },
   { id: 3, name: 'Faz 3: Envanter & Büyüler', description: 'Eşyalar, 50 büyü, 50 eşya, taşıma kapasitesi', status: 'completed' },
-  { id: 4, name: 'Faz 4: Sınıf & Durumlar', description: 'Alt sınıflar, koşullar, seviye atlama', status: 'in_progress' },
-  { id: 5, name: 'Faz 5: DM & Senkron', description: 'Realtime veri, kampanya paneli', status: 'planned' },
+  { id: 4, name: 'Faz 4: Sınıf & Durumlar', description: 'Alt sınıflar, koşullar, seviye atlama', status: 'completed' },
+  { id: 5, name: 'Faz 5: DM & Senkron', description: 'Realtime veri, kampanya paneli', status: 'in_progress' },
   { id: 6, name: 'Faz 6: Cila & Çevrimdışı', description: 'Zar atıcı, çevrimdışı önbellek', status: 'planned' }
 ];
 
@@ -111,6 +113,17 @@ export function App() {
 
       {/* Faz 3: Büyü Kitabı & Hazırlanan Büyüler */}
       <Spellbook level={5} castingModifier={4} />
+
+      {/* Faz 4: Durumlar (Conditions) Takibi */}
+      <ConditionsTracker />
+
+      {/* Faz 4: Seviye Atlama & Alt Sınıflar */}
+      <LevelUpModal
+        initialLevel={2}
+        charClass="fighter"
+        initialMaxHp={20}
+        conModifier={2}
+      />
 
       {/* Faz 1: Karakter Çekirdeği Formu */}
       <CharacterCreator />

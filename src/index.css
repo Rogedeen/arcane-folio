@@ -1459,5 +1459,131 @@ h1, h2, h3, .font-cinzel {
   line-height: 1.6;
 }
 
+/* ===================================================
+   DURUMLAR (CONDITIONS TRACKER) (FAZ 4)
+   =================================================== */
+.conditions-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-gold);
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  margin-bottom: 2.5rem;
+  box-shadow: var(--shadow-glow), var(--shadow-card);
+}
+
+.conditions-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.clear-cond-btn {
+  min-height: 44px;
+  padding: 0.5rem 1rem;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid #ef4444;
+  border-radius: var(--radius-sm);
+  color: #fca5a5;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.conditions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(135px, 1fr));
+  gap: 0.6rem;
+  margin-bottom: 1.5rem;
+}
+
+.condition-pill-btn {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0.5rem 0.75rem;
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+  touch-action: manipulation;
+}
+
+.condition-pill-btn:hover {
+  border-color: var(--accent-gold);
+  background: rgba(245, 158, 11, 0.1);
+  color: var(--text-primary);
+}
+
+.condition-pill-btn.active {
+  background: rgba(239, 68, 68, 0.25);
+  border-color: #ef4444;
+  color: #fecaca;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.3);
+  font-weight: 700;
+}
+
+.cond-icon {
+  font-size: 1.1rem;
+}
+
+.cond-title {
+  font-size: 0.85rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.active-dot {
+  color: #ef4444;
+  font-size: 0.8rem;
+  margin-left: auto;
+}
+
+.condition-detail-box {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--border-gold);
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+/* ===================================================
+   SEVİYE ATLAMA (LEVEL UP MODAL) (FAZ 4)
+   =================================================== */
+.levelup-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-gold);
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  margin-bottom: 2.5rem;
+  box-shadow: var(--shadow-glow), var(--shadow-card);
+}
+
+.levelup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.levelup-section-box {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 1rem;
+}
+
+
 
 
