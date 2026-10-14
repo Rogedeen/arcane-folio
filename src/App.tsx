@@ -8,6 +8,7 @@ import { InventoryManager } from './components/InventoryManager';
 import { Spellbook } from './components/Spellbook';
 import { ConditionsTracker } from './components/ConditionsTracker';
 import { LevelUpModal } from './components/LevelUpModal';
+import { CampaignView } from './components/CampaignView';
 
 const PHASES: PhaseInfo[] = [
   { id: 0, name: 'Faz 0: Temel (İskelet)', description: 'Vite, React, TypeScript, PWA, Vitest, Playwright', status: 'completed' },
@@ -15,7 +16,7 @@ const PHASES: PhaseInfo[] = [
   { id: 2, name: 'Faz 2: Kaynak Takibi & Zarlar', description: 'HP, Dinlenme, Büyü slotları, D4-D100 animasyonlu zar', status: 'completed' },
   { id: 3, name: 'Faz 3: Envanter & Büyüler', description: 'Eşyalar, 50 büyü, 50 eşya, taşıma kapasitesi', status: 'completed' },
   { id: 4, name: 'Faz 4: Sınıf & Durumlar', description: 'Alt sınıflar, koşullar, seviye atlama', status: 'completed' },
-  { id: 5, name: 'Faz 5: DM & Senkron', description: 'Realtime veri, kampanya paneli', status: 'in_progress' },
+  { id: 5, name: 'Faz 5: DM & Senkron', description: 'Realtime veri, kampanya paneli', status: 'completed' },
   { id: 6, name: 'Faz 6: Cila & Çevrimdışı', description: 'Zar atıcı, çevrimdışı önbellek', status: 'planned' }
 ];
 
@@ -124,6 +125,9 @@ export function App() {
         initialMaxHp={20}
         conModifier={2}
       />
+
+      {/* Faz 5: Kampanya & Canlı Senkron DM Kokpiti */}
+      <CampaignView />
 
       {/* Faz 1: Karakter Çekirdeği Formu */}
       <CharacterCreator />
