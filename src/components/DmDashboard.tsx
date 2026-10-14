@@ -1,6 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { PartyMember, UserRole } from '../types/campaign';
 import { applyMemberDamageOrHealing } from '../rules/campaignRules';
+import { getAllConditions } from '../rules/conditions';
+import { calculateModifier } from '../rules/abilityScores';
+import { SKILLS } from '../rules/skills';
 import { syncService } from '../data/syncService';
 
 interface DmDashboardProps {
@@ -15,6 +18,21 @@ export const DmDashboard: React.FC<DmDashboardProps> = ({
   onUpdateMembers
 }) => {
   const isDm = userRole === 'dm';
+  const allConditions = getAllConditions();
+
+  // Her üye için görünüm modu: 'stats' (Ana Statlar) veya 'skills' (Beceriler)
+  const [memberViewMode, setMemberViewMode] = useState<Record<string, 'stats' | 'skills'>>({});
+  // Her üye için özel girilen HP miktarı
+  const [customHpAmounts, setCustomHpAmounts] = useState<Record<string, number>>({});
+  // Seçilen debuff
+  const [selectedDebuff, setSelectedDebuff] = useState<Record<string, string>>({});
+
+  const toggleViewMode = (memberId: string) => {
+    setMemberViewMode((prev) => ({
+      ...prev,
+      [memberId]: prev[memberId] === 'skills' ? 'stats' : 'skills'
+    }));
+  };
 
   const handleAdjustHp = (memberId: string, delta: number, isHealing: boolean) => {
     if (!isDm) return;
@@ -28,7 +46,6 @@ export const DmDashboard: React.FC<DmDashboardProps> = ({
 
     onUpdateMembers(nextMembers);
 
-    // Canlı senkronizasyon yayını yap
     syncService.broadcast({
       type: 'HP_UPDATE',
       campaignId: 'camp-default',
@@ -38,16 +55,13 @@ export const DmDashboard: React.FC<DmDashboardProps> = ({
     });
   };
 
-  const handleToggleCondition = (memberId: string, condId: string) => {
-    if (!isDm) return;
+  const handleAddCondition = (memberId: string, condName: string) => {
+    if (!isDm || !condName) return;
 
     const nextMembers = members.map((m) => {
       if (m.id === memberId) {
-        const has = m.activeConditions.includes(condId);
-        const nextConds = has
-          ? m.activeConditions.filter((c) => c !== condId)
-          : [...m.activeConditions, condId];
-        return { ...m, activeConditions: nextConds };
+        // Stacklenebilir durumlar: Aynı durumdan birden fazla veya farklı durumlar eklenebilir
+        return { ...m, activeConditions: [...m.activeConditions, condName] };
       }
       return m;
     });
@@ -58,9 +72,23 @@ export const DmDashboard: React.FC<DmDashboardProps> = ({
       type: 'CONDITION_UPDATE',
       campaignId: 'camp-default',
       senderRole: 'dm',
-      payload: { memberId, condId },
+      payload: { memberId, condId: condName },
       timestamp: new Date().toISOString()
     });
+  };
+
+  const handleRemoveCondition = (memberId: string, indexToRemove: number) => {
+    if (!isDm) return;
+
+    const nextMembers = members.map((m) => {
+      if (m.id === memberId) {
+        const nextConds = m.activeConditions.filter((_, idx) => idx !== indexToRemove);
+        return { ...m, activeConditions: nextConds };
+      }
+      return m;
+    });
+
+    onUpdateMembers(nextMembers);
   };
 
   return (
@@ -68,10 +96,10 @@ export const DmDashboard: React.FC<DmDashboardProps> = ({
       <div className="dm-header-row">
         <div>
           <h3 className="font-cinzel" style={{ color: 'var(--accent-gold)', fontSize: '1.4rem' }}>
-            👑 DM Kokpiti: Parti Sağlık & Algı Radarı (Faz 5)
+            👑 DM Kokpiti: Parti Durum, Stat ve Algı Radarı
           </h3>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-            {isDm ? 'Tam Yetkili DM Modu: Canlı parti üyelerini yönetin ve can/durum güncelleyin' : 'Oyuncu Görünümü: Parti üyeleri salt-okunur (read-only) kilitlidir'}
+            {isDm ? 'Tam Yetkili DM: Statlar, beceriler, pasif inceleme, özel HP ve stacklenebilir debufflar' : 'Oyuncu Görünümü: Parti üyeleri salt-okunur (read-only) kilitlidir'}
           </p>
         </div>
 
@@ -94,6 +122,15 @@ export const DmDashboard: React.FC<DmDashboardProps> = ({
           const hpPercent = Math.max(0, Math.min(100, Math.round((member.currentHp / member.maxHp) * 100)));
           const isBloodied = member.currentHp <= member.maxHp / 2;
           const isDown = member.currentHp === 0;
+          const currentMode = memberViewMode[member.id] || 'stats';
+          const customHp = customHpAmounts[member.id] || 5;
+
+          const strMod = calculateModifier(member.stats?.str || 10);
+          const dexMod = calculateModifier(member.stats?.dex || 10);
+          const conMod = calculateModifier(member.stats?.con || 10);
+          const intMod = calculateModifier(member.stats?.int || 10);
+          const wisMod = calculateModifier(member.stats?.wis || 10);
+          const chaMod = calculateModifier(member.stats?.cha || 10);
 
           return (
             <div
@@ -101,6 +138,7 @@ export const DmDashboard: React.FC<DmDashboardProps> = ({
               id={`party-member-card-${member.id}`}
               className={`party-member-card ${isDown ? 'member-down' : isBloodied ? 'member-bloodied' : ''}`}
             >
+              {/* Kart Başlığı */}
               <div className="member-card-header">
                 <div>
                   <h4 className="font-cinzel member-name">{member.name}</h4>
@@ -133,52 +171,137 @@ export const DmDashboard: React.FC<DmDashboardProps> = ({
                 </div>
               </div>
 
-              {/* Pasif Algı & Durumlar */}
+              {/* Pasif Algı & Pasif İnceleme (Madde 9) */}
               <div className="member-radar-row">
                 <span className="passive-perception-tag">
-                  👁️ Pasif Algı: <strong>{member.passivePerception}</strong>
+                  👁️ Pasif Algı: <strong id={`dm-passive-perception-${member.id}`}>{member.passivePerception}</strong>
                 </span>
+                <span className="passive-perception-tag">
+                  🔍 Pasif İnceleme: <strong id={`dm-passive-investigation-${member.id}`}>{member.passiveInvestigation || 10}</strong>
+                </span>
+              </div>
 
+              {/* Görünüm Değiştirici: Ana Statlar ↔ Beceriler (Madde 9) */}
+              <div className="dm-member-view-toggle">
+                <button
+                  id={`btn-toggle-view-${member.id}`}
+                  className="view-mode-toggle-btn"
+                  onClick={() => toggleViewMode(member.id)}
+                  aria-label="Stat veya Beceri Görünümünü Değiştir"
+                >
+                  {currentMode === 'stats' ? '📊 Becerileri Göster (Insight, Stealth...)' : '🛡️ Ana Statları Göster (STR, DEX...)'}
+                </button>
+              </div>
+
+              {/* Görünüm Alanı */}
+              {currentMode === 'stats' ? (
+                <div className="dm-stats-chips-row" id={`dm-stats-${member.id}`}>
+                  <span className="dm-stat-chip">STR <strong>{member.stats?.str || 10}</strong> ({strMod >= 0 ? `+${strMod}` : strMod})</span>
+                  <span className="dm-stat-chip">DEX <strong>{member.stats?.dex || 10}</strong> ({dexMod >= 0 ? `+${dexMod}` : dexMod})</span>
+                  <span className="dm-stat-chip">CON <strong>{member.stats?.con || 10}</strong> ({conMod >= 0 ? `+${conMod}` : conMod})</span>
+                  <span className="dm-stat-chip">INT <strong>{member.stats?.int || 10}</strong> ({intMod >= 0 ? `+${intMod}` : intMod})</span>
+                  <span className="dm-stat-chip">WIS <strong>{member.stats?.wis || 10}</strong> ({wisMod >= 0 ? `+${wisMod}` : wisMod})</span>
+                  <span className="dm-stat-chip">CHA <strong>{member.stats?.cha || 10}</strong> ({chaMod >= 0 ? `+${chaMod}` : chaMod})</span>
+                </div>
+              ) : (
+                <div className="dm-skills-list-grid" id={`dm-skills-${member.id}`}>
+                  {SKILLS.slice(0, 8).map((sk) => {
+                    const mod = sk.ability === 'str' ? strMod
+                      : sk.ability === 'dex' ? dexMod
+                      : sk.ability === 'con' ? conMod
+                      : sk.ability === 'int' ? intMod
+                      : sk.ability === 'wis' ? wisMod : chaMod;
+                    return (
+                      <span key={sk.id} className="dm-skill-chip">
+                        {sk.nameTr}: <strong>{mod >= 0 ? `+${mod}` : mod}</strong>
+                      </span>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Aktif Durumlar (Stacklenebilir - Madde 9) */}
+              <div className="member-conditions-area">
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Aktif Debuff/Durumlar:</span>
                 <div className="member-conditions-tags">
                   {member.activeConditions.length > 0 ? (
-                    member.activeConditions.map((cond) => (
-                      <span key={cond} className="member-cond-tag">
+                    member.activeConditions.map((cond, idx) => (
+                      <span key={idx} className="member-cond-tag stackable-tag">
                         ⚠️ {cond}
+                        {isDm && (
+                          <button
+                            className="cond-remove-x"
+                            onClick={() => handleRemoveCondition(member.id, idx)}
+                            title="Durumu Kaldır"
+                          >
+                            ✕
+                          </button>
+                        )}
                       </span>
                     ))
                   ) : (
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Normal</span>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>Durum yok</span>
                   )}
                 </div>
               </div>
 
-              {/* DM Hızlı Eylem Butonları */}
+              {/* DM Kontrolleri (Özel HP ve Stacklenebilir Durum Ekleme) */}
               {isDm && (
-                <div className="dm-actions-bar">
-                  <button
-                    id={`btn-dm-damage-${member.id}`}
-                    className="dm-action-btn dm-btn-damage"
-                    onClick={() => handleAdjustHp(member.id, 5, false)}
-                    aria-label={`${member.name} 5 hasar ver`}
-                  >
-                    ⚔️ -5 HP
-                  </button>
-                  <button
-                    id={`btn-dm-heal-${member.id}`}
-                    className="dm-action-btn dm-btn-heal"
-                    onClick={() => handleAdjustHp(member.id, 5, true)}
-                    aria-label={`${member.name} 5 iyileştir`}
-                  >
-                    💚 +5 HP
-                  </button>
-                  <button
-                    id={`btn-dm-cond-${member.id}`}
-                    className="dm-action-btn dm-btn-cond"
-                    onClick={() => handleToggleCondition(member.id, 'Zehirli')}
-                    aria-label={`${member.name} zehir durumu değiştir`}
-                  >
-                    🤢 Zehir
-                  </button>
+                <div className="dm-controls-wrapper">
+                  {/* Özel HP Girişi & Hızlı Butonlar (Madde 9) */}
+                  <div className="custom-hp-row">
+                    <input
+                      id={`input-custom-hp-${member.id}`}
+                      type="number"
+                      min={1}
+                      max={999}
+                      value={customHp}
+                      onChange={(e) => setCustomHpAmounts((prev) => ({ ...prev, [member.id]: Math.max(1, Number(e.target.value)) }))}
+                      className="custom-hp-input"
+                      aria-label="Özel Can Miktarı"
+                    />
+                    <button
+                      id={`btn-dm-damage-${member.id}`}
+                      className="dm-action-btn dm-btn-damage"
+                      onClick={() => handleAdjustHp(member.id, customHp, false)}
+                      aria-label={`${member.name} ${customHp} hasar ver`}
+                    >
+                      ⚔️ -{customHp} HP
+                    </button>
+                    <button
+                      id={`btn-dm-heal-${member.id}`}
+                      className="dm-action-btn dm-btn-heal"
+                      onClick={() => handleAdjustHp(member.id, customHp, true)}
+                      aria-label={`${member.name} ${customHp} iyileştir`}
+                    >
+                      💚 +{customHp} HP
+                    </button>
+                  </div>
+
+                  {/* Debuff Seçici (Madde 9) */}
+                  <div className="debuff-picker-row">
+                    <select
+                      id={`select-debuff-${member.id}`}
+                      className="debuff-select"
+                      value={selectedDebuff[member.id] || 'Zehirli'}
+                      onChange={(e) => setSelectedDebuff((prev) => ({ ...prev, [member.id]: e.target.value }))}
+                      aria-label="Eklenecek Durumu Seç"
+                    >
+                      {allConditions.map((c) => (
+                        <option key={c.id} value={c.nameTr}>
+                          {c.icon} {c.nameTr}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      id={`btn-dm-cond-${member.id}`}
+                      className="dm-action-btn dm-btn-cond"
+                      onClick={() => handleAddCondition(member.id, selectedDebuff[member.id] || 'Zehirli')}
+                      aria-label={`${member.name} durum ekle`}
+                    >
+                      + Durum Ekle
+                    </button>
+                  </div>
                 </div>
               )}
             </div>

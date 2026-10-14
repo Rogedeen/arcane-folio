@@ -32,9 +32,9 @@ describe('Campaign Rules and Permissions Engine', () => {
 
   it('sorts party members by passive perception in descending order', () => {
     const members: PartyMember[] = [
-      { id: '1', name: 'Fighter', charClass: 'fighter', level: 3, currentHp: 28, maxHp: 28, tempHp: 0, ac: 16, passivePerception: 11, activeConditions: [], playerName: 'Ahmet' },
-      { id: '2', name: 'Cleric', charClass: 'cleric', level: 3, currentHp: 24, maxHp: 24, tempHp: 0, ac: 18, passivePerception: 15, activeConditions: [], playerName: 'Mehmet' },
-      { id: '3', name: 'Rogue', charClass: 'rogue', level: 3, currentHp: 21, maxHp: 21, tempHp: 0, ac: 14, passivePerception: 17, activeConditions: [], playerName: 'Can' }
+      { id: '1', name: 'Fighter', charClass: 'fighter', level: 3, currentHp: 28, maxHp: 28, tempHp: 0, ac: 16, passivePerception: 11, passiveInvestigation: 10, stats: { str: 16, dex: 14, con: 14, int: 10, wis: 12, cha: 8 }, activeConditions: [], playerName: 'Ahmet' },
+      { id: '2', name: 'Cleric', charClass: 'cleric', level: 3, currentHp: 24, maxHp: 24, tempHp: 0, ac: 18, passivePerception: 15, passiveInvestigation: 12, stats: { str: 14, dex: 10, con: 14, int: 10, wis: 16, cha: 12 }, activeConditions: [], playerName: 'Mehmet' },
+      { id: '3', name: 'Rogue', charClass: 'rogue', level: 3, currentHp: 21, maxHp: 21, tempHp: 0, ac: 14, passivePerception: 17, passiveInvestigation: 14, stats: { str: 10, dex: 18, con: 12, int: 14, wis: 14, cha: 12 }, activeConditions: [], playerName: 'Can' }
     ];
 
     const sorted = sortMembersByPassivePerception(members);
@@ -54,6 +54,8 @@ describe('Campaign Rules and Permissions Engine', () => {
       tempHp: 5,
       ac: 16,
       passivePerception: 11,
+      passiveInvestigation: 10,
+      stats: { str: 16, dex: 14, con: 14, int: 10, wis: 12, cha: 8 },
       activeConditions: [],
       playerName: 'Ahmet'
     };
@@ -75,6 +77,8 @@ describe('Campaign Rules and Permissions Engine', () => {
       tempHp: 0,
       ac: 16,
       passivePerception: 11,
+      passiveInvestigation: 10,
+      stats: { str: 16, dex: 14, con: 14, int: 10, wis: 12, cha: 8 },
       activeConditions: [],
       playerName: 'Ahmet'
     };

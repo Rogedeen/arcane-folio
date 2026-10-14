@@ -1,8 +1,8 @@
 import { test, expect } from '@playwright/test';
 import * as path from 'path';
 
-test.describe('Faz 5 Kampanya ve Canlı Senkronizasyon E2E Doğrulama', () => {
-  test('Davet kodu, DM kokpiti canlı can/durum yönetimi ve oyuncu salt-okunur modu eksiksiz çalışmalı', async ({ page }, testInfo) => {
+test.describe('Kampanya, DM Kokpiti ve Canlı Senkronizasyon E2E Doğrulama', () => {
+  test('Davet kodu, DM kokpiti stat ve beceri görünümü geçişi, custom HP ve debuff stackleme çalışmalı', async ({ page }, testInfo) => {
     const consoleErrors: string[] = [];
     page.on('console', (msg) => {
       if (msg.type() === 'error') {
@@ -11,6 +11,9 @@ test.describe('Faz 5 Kampanya ve Canlı Senkronizasyon E2E Doğrulama', () => {
     });
 
     await page.goto('/');
+
+    // DM Ekranı Sekmesine Git
+    await page.locator('#nav-btn-dm').click();
 
     // 1. Kampanya Görünümü Kontrolü
     const campaignContainer = page.locator('#campaign-view-container');
@@ -29,48 +32,54 @@ test.describe('Faz 5 Kampanya ve Canlı Senkronizasyon E2E Doğrulama', () => {
     const dmDashboard = page.locator('#dm-dashboard-container');
     await expect(dmDashboard).toBeVisible();
 
-    // Kaelen Karaçekiç canı başlangıçta 28
+    // Karakter 1 (Kaelen Karaçekiç) canı başlangıçta 28
     const char1Hp = page.locator('#member-current-hp-char-1');
     await expect(char1Hp).toHaveText('28');
 
-    // DM -5 Hasar Ver butonuna tıkla
-    const damageBtn = page.locator('#btn-dm-damage-char-1');
-    await expect(damageBtn).toBeVisible();
-    await damageBtn.click();
-    await expect(char1Hp).toHaveText('23');
+    // Tüm 6 Stat Görünürlüğü (Madde 9)
+    await expect(page.locator('#party-member-card-char-1')).toContainText('STR 16');
+    await expect(page.locator('#party-member-card-char-1')).toContainText('DEX 14');
+
+    // Pasif Algı ve Pasif İnceleme (Madde 9)
+    await expect(page.locator('#party-member-card-char-1')).toContainText('Pasif Algı');
+    await expect(page.locator('#party-member-card-char-1')).toContainText('Pasif İnceleme');
+
+    // Görünüm Değiştirme Butonu (Statlar ↔ Beceriler)
+    const toggleViewBtn = page.locator('#btn-toggle-view-char-1');
+    await expect(toggleViewBtn).toBeVisible();
+    await toggleViewBtn.click();
+    await expect(page.locator('#party-member-card-char-1')).toContainText('Atletizm: +3');
+
+    // Tekrar tıkla statlara dön
+    await toggleViewBtn.click();
+    await expect(page.locator('#party-member-card-char-1')).toContainText('STR 16');
+
+    // Custom HP Girişi (Madde 9)
+    const customHpInput = page.locator('#input-custom-hp-char-1');
+    await expect(customHpInput).toBeVisible();
+    await customHpInput.fill('3');
+    await page.locator('#btn-dm-damage-char-1').click();
+    await expect(char1Hp).toHaveText('25');
 
     // DM Zehir durumu ekle
     const condBtn = page.locator('#btn-dm-cond-char-1');
     await condBtn.click();
     await expect(page.locator('#party-member-card-char-1')).toContainText('Zehirli');
 
-    // 3. Oyuncu Moduna Geçiş (Salt-Okunur)
-    const playerSwitchBtn = page.locator('#btn-switch-role-player');
-    await playerSwitchBtn.click();
+    // Çoklu Debuff Stackleme (Madde 9)
+    const debuffSelect = page.locator('#select-debuff-char-1');
+    await debuffSelect.selectOption('Kör');
+    await condBtn.click();
+    await expect(page.locator('#party-member-card-char-1')).toContainText('Kör');
 
-    // Rol rozeti salt-okunur olmalı
-    await expect(page.locator('#user-role-badge')).toContainText(/Oyuncu Modu \(Salt-Okunur\)/);
-    // DM aksiyon butonları gizlenmeli
-    await expect(page.locator('#btn-dm-damage-char-1')).not.toBeVisible();
-
-    // DM Moduna geri dön
-    await page.locator('#btn-switch-role-dm').click();
-    await expect(page.locator('#btn-dm-damage-char-1')).toBeVisible();
-
-    // 4. Farklı Kampanya Koduna Katılma
-    const joinInput = page.locator('#input-join-code');
-    await joinInput.fill('MYCAMP');
-    await page.locator('#btn-join-campaign').click();
-    await expect(inviteCodeEl).toHaveText('MYCAMP');
-
-    // Dokunmatik hedef kontrolleri (>= 44x44px)
-    const damageBox = await damageBtn.boundingBox();
-    expect(damageBox).not.toBeNull();
-    if (damageBox) {
-      expect(damageBox.height).toBeGreaterThanOrEqual(44);
+    // Dokunma Hedefi (Touch Target min 44x44 px) Kontrolü
+    const dmgBtnBox = await condBtn.boundingBox();
+    expect(dmgBtnBox).not.toBeNull();
+    if (dmgBtnBox) {
+      expect(dmgBtnBox.height).toBeGreaterThanOrEqual(44);
     }
 
-    // Yatay kaydırma kontrolü
+    // Yatay Taşma Kontrolü (0 horizontal scroll)
     const isHorizontalScrollPresent = await page.evaluate(() => {
       return document.documentElement.scrollWidth > document.documentElement.clientWidth;
     });
@@ -81,7 +90,7 @@ test.describe('Faz 5 Kampanya ve Canlı Senkronizasyon E2E Doğrulama', () => {
     const screenshotPath = path.join('docs', 'qa', 'screenshots', `campaign_sync_${projectName}.png`);
     await page.screenshot({ path: screenshotPath, fullPage: true });
 
-    // Konsol hatası kontrolü
+    // Konsol hatası olmamalı
     expect(consoleErrors).toHaveLength(0);
   });
 });

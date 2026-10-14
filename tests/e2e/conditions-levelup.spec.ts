@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import * as path from 'path';
 
-test.describe('Faz 4 Durumlar ve Seviye Atlama E2E Doğrulama', () => {
+test.describe('Durumlar ve Seviye Atlama E2E Doğrulama', () => {
   test('Koşul durumları açılıp kapanmalı, hız 0 uyarısı vermeli, seviye atlama modalı alt sınıfı açmalı', async ({ page }, testInfo) => {
     const consoleErrors: string[] = [];
     page.on('console', (msg) => {
@@ -12,7 +12,12 @@ test.describe('Faz 4 Durumlar ve Seviye Atlama E2E Doğrulama', () => {
 
     await page.goto('/');
 
-    // 1. Durumlar (Conditions) Kontrolü
+    // Karakter Kağıdına Git
+    await page.locator('#nav-btn-sheet').click();
+    await expect(page.locator('#modern-character-sheet-container')).toBeVisible();
+
+    // 1. Durumlar (Conditions) Sekmesine Git
+    await page.locator('#tab-btn-conditions').click();
     const condContainer = page.locator('#conditions-tracker-container');
     await expect(condContainer).toBeVisible();
 
@@ -21,12 +26,20 @@ test.describe('Faz 4 Durumlar ve Seviye Atlama E2E Doğrulama', () => {
     await poisonedBadge.click();
     await expect(poisonedBadge).toHaveClass(/active/);
 
+    // Dokunma Hedefi (Touch Target min 44x44 px) Kontrolü
+    const badgeBox = await poisonedBadge.boundingBox();
+    expect(badgeBox).not.toBeNull();
+    if (badgeBox) {
+      expect(badgeBox.height).toBeGreaterThanOrEqual(44);
+    }
+
     // Felç durumu (Hız 0 uyarısı)
     const paralyzedBadge = page.locator('#cond-badge-paralyzed');
     await paralyzedBadge.click();
     await expect(page.locator('#movement-blocked-alert')).toBeVisible();
 
-    // 2. Seviye Atlama (Level Up) Kontrolü
+    // 2. Seviye & Özellikler Sekmesine Git
+    await page.locator('#tab-btn-features').click();
     const levelupContainer = page.locator('#levelup-manager-container');
     await expect(levelupContainer).toBeVisible();
 
@@ -43,21 +56,14 @@ test.describe('Faz 4 Durumlar ve Seviye Atlama E2E Doğrulama', () => {
     await expect(page.locator('#subclass-unlock-box')).toContainText(/Şampiyon/);
 
     // Onayla ve seviye atla
-    await page.locator('#btn-confirm-levelup').click();
-    await expect(levelupModal).not.toBeVisible();
+    const confirmBtn = page.locator('#btn-confirm-levelup');
+    await expect(confirmBtn).toBeVisible();
+    await confirmBtn.click();
 
-    // Seviye 3 olmalı ve Maks Can 28 HP olmalı
-    await expect(levelupContainer).toContainText('3');
-    await expect(levelupContainer).toContainText('28 HP');
+    // Modal kapandıktan sonra güncel seviye 4 olmalı
+    await expect(page.locator('#display-char-level')).toHaveText('4');
 
-    // Dokunmatik hedef boyutu (>= 44x44px)
-    const poisonedBox = await poisonedBadge.boundingBox();
-    expect(poisonedBox).not.toBeNull();
-    if (poisonedBox) {
-      expect(poisonedBox.height).toBeGreaterThanOrEqual(44);
-    }
-
-    // Sıfır yatay kaydırma kontrolü
+    // Yatay Taşma Kontrolü (0 horizontal scroll)
     const isHorizontalScrollPresent = await page.evaluate(() => {
       return document.documentElement.scrollWidth > document.documentElement.clientWidth;
     });
@@ -68,7 +74,7 @@ test.describe('Faz 4 Durumlar ve Seviye Atlama E2E Doğrulama', () => {
     const screenshotPath = path.join('docs', 'qa', 'screenshots', `conditions_levelup_${projectName}.png`);
     await page.screenshot({ path: screenshotPath, fullPage: true });
 
-    // Konsol hatası kontrolü
+    // Konsol hatası olmamalı
     expect(consoleErrors).toHaveLength(0);
   });
 });

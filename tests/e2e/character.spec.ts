@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import * as path from 'path';
 
-test.describe('Faz 1 Karakter Çekirdeği E2E Doğrulama', () => {
+test.describe('Karakter Oluşturucu E2E Doğrulama', () => {
   test('Karakter oluşturucu formu yüklenmeli, seviye artırıldığında ustalık bonusu ve AC güncellenmeli', async ({ page }, testInfo) => {
     const consoleErrors: string[] = [];
     page.on('console', (msg) => {
@@ -12,10 +12,13 @@ test.describe('Faz 1 Karakter Çekirdeği E2E Doğrulama', () => {
 
     await page.goto('/');
 
+    // Karakter Oluşturucu sekmesine tıkla
+    await page.locator('#nav-btn-creator').click();
+
     // Karakter oluşturucu bileşeni görünürlüğü
     const creatorCard = page.locator('#character-creator-container');
     await expect(creatorCard).toBeVisible();
-    await expect(page.getByRole('heading', { name: /Karakter Çekirdeği \(Faz 1\)/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Karakter Olusturucu/i })).toBeVisible();
 
     // Başlangıç değerleri (Seviye 1: Ustalık +2)
     const profPill = page.locator('#val-proficiency');

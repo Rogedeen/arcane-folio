@@ -67,10 +67,10 @@ export const LevelUpModal: React.FC<LevelUpModalProps> = ({
       <div className="levelup-header">
         <div>
           <h3 className="font-cinzel" style={{ color: 'var(--accent-gold)', fontSize: '1.4rem' }}>
-            🏆 Seviye Atlama & Alt Sınıflar (Faz 4)
+            🏆 Seviye Atlama & Alt Siniflar
           </h3>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-            Mevcut Seviye: <strong>{level}</strong> | Maksimum Can: <strong>{maxHp} HP</strong>
+            Mevcut Seviye: <strong id="display-char-level">{level}</strong> | Maksimum Can: <strong>{maxHp} HP</strong>
             {selectedSubclass && <> | Alt Sınıf: <strong>{selectedSubclass}</strong></>}
           </p>
         </div>

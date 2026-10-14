@@ -15,6 +15,8 @@ const INITIAL_MEMBERS: PartyMember[] = [
     tempHp: 0,
     ac: 16,
     passivePerception: 11,
+    passiveInvestigation: 10,
+    stats: { str: 16, dex: 14, con: 14, int: 10, wis: 12, cha: 8 },
     activeConditions: [],
     playerName: 'Ahmet'
   },
@@ -28,6 +30,8 @@ const INITIAL_MEMBERS: PartyMember[] = [
     tempHp: 0,
     ac: 12,
     passivePerception: 14,
+    passiveInvestigation: 15,
+    stats: { str: 8, dex: 14, con: 12, int: 18, wis: 14, cha: 10 },
     activeConditions: [],
     playerName: 'Zeynep'
   },
@@ -41,6 +45,8 @@ const INITIAL_MEMBERS: PartyMember[] = [
     tempHp: 0,
     ac: 15,
     passivePerception: 16,
+    passiveInvestigation: 14,
+    stats: { str: 10, dex: 18, con: 12, int: 14, wis: 14, cha: 12 },
     activeConditions: ['Görünmez'],
     playerName: 'Barış'
   }
@@ -134,7 +140,7 @@ export const CampaignView: React.FC = () => {
             <span className="live-pulse">●</span> Canlı Senkronize (Realtime Aktif)
           </span>
           <h3 className="font-cinzel" style={{ color: 'var(--accent-gold)', fontSize: '1.5rem', marginTop: '0.4rem' }}>
-            🏰 Kampanya: {campaign.title} (Faz 5)
+            🏰 Kampanya: {campaign.title}
           </h3>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
             Yönetici: <strong>{campaign.dmName}</strong> | Davet Kodu ve Parti Takibi

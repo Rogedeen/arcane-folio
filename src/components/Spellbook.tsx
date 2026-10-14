@@ -39,7 +39,7 @@ export const Spellbook: React.FC<SpellbookProps> = ({ level, castingModifier }) 
       <div className="spellbook-header">
         <div>
           <h3 className="font-cinzel" style={{ color: 'var(--accent-gold)', fontSize: '1.4rem' }}>
-            📜 Büyü Kitabı & Hazırlanan Büyüler (Faz 3)
+            📜 Buyu Kitabi & Hazirlanan Buyuler
           </h3>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
             SRD 5.1 büyü kütüphanesi, hazırlık sınırı ve büyü detayları

@@ -1,8 +1,8 @@
 import { test, expect } from '@playwright/test';
 import * as path from 'path';
 
-test.describe('Faz 0 İskelet ve Çoklu Viewport Doğrulama', () => {
-  test('Sayfa başlığı, PWA rozeti ve temel elementler yüklenmeli', async ({ page }, testInfo) => {
+test.describe('V2 Modern Ana Sayfa Hub ve Çoklu Viewport Doğrulama', () => {
+  test('Sayfa başlığı, üst gezinme menüsü, ana sayfa eylem kartları ve dokunma boyutları yüklenmeli', async ({ page }, testInfo) => {
     const consoleErrors: string[] = [];
     page.on('console', (msg) => {
       if (msg.type() === 'error') {
@@ -14,39 +14,42 @@ test.describe('Faz 0 İskelet ve Çoklu Viewport Doğrulama', () => {
 
     // Başlık ve logo kontrolü
     await expect(page.locator('#header-logo')).toBeVisible();
-    await expect(page.getByRole('heading', { level: 1, name: /D&D 5e Takip/i })).toBeVisible();
-    await expect(page.locator('#hero-title')).toContainText(/Faz \d/);
+    await expect(page.getByRole('heading', { level: 1, name: /D&D 5e Asistani/i })).toBeVisible();
 
-    // PWA & Sağlık rozetleri
-    await expect(page.locator('#pwa-status-badge')).toContainText('PWA Hazır');
-    await expect(page.locator('#health-status-badge')).toContainText('Sistem: OK');
+    // Üst gezinme sekmeleri
+    await expect(page.locator('#nav-btn-home')).toBeVisible();
+    await expect(page.locator('#nav-btn-sheet')).toBeVisible();
+    await expect(page.locator('#nav-btn-creator')).toBeVisible();
+    await expect(page.locator('#nav-btn-dm')).toBeVisible();
+    await expect(page.locator('#nav-btn-dice')).toBeVisible();
 
-    // D20 Zar atma interaktivitesi
-    const rollButton = page.locator('#btn-hero-roll-d20');
-    await expect(rollButton).toBeVisible();
-    await rollButton.click();
-    await expect(rollButton).toHaveText(/🎲 D20 Zarı At \(\d+\)/);
+    // Ana Sayfa Hub eylem kartları
+    await expect(page.locator('#home-hub-container')).toBeVisible();
+    await expect(page.locator('#hub-card-sheet')).toBeVisible();
+    await expect(page.locator('#hub-card-creator')).toBeVisible();
+    await expect(page.locator('#hub-card-dm')).toBeVisible();
+    await expect(page.locator('#hub-card-dice')).toBeVisible();
 
-    // Yatay kaydırma kontrolü (Mobil disiplini)
+    // Yatay kaydırma kontrolü (Mobil disiplini - 0 yatay taşma)
     const isHorizontalScrollPresent = await page.evaluate(() => {
       return document.documentElement.scrollWidth > document.documentElement.clientWidth;
     });
     expect(isHorizontalScrollPresent).toBe(false);
 
     // Dokunma hedef boyutu kontrolü (en az 44x44 px)
-    const rollBox = await rollButton.boundingBox();
-    expect(rollBox).not.toBeNull();
-    if (rollBox) {
-      expect(rollBox.height).toBeGreaterThanOrEqual(44);
-      expect(rollBox.width).toBeGreaterThanOrEqual(44);
+    const navBtn = page.locator('#nav-btn-home');
+    const navBox = await navBtn.boundingBox();
+    expect(navBox).not.toBeNull();
+    if (navBox) {
+      expect(navBox.height).toBeGreaterThanOrEqual(44);
     }
 
-    const refreshButton = page.locator('#btn-refresh-health');
-    const refreshBox = await refreshButton.boundingBox();
-    expect(refreshBox).not.toBeNull();
-    if (refreshBox) {
-      expect(refreshBox.height).toBeGreaterThanOrEqual(44);
-      expect(refreshBox.width).toBeGreaterThanOrEqual(44);
+    const hubCard = page.locator('#hub-card-sheet');
+    const cardBox = await hubCard.boundingBox();
+    expect(cardBox).not.toBeNull();
+    if (cardBox) {
+      expect(cardBox.height).toBeGreaterThanOrEqual(44);
+      expect(cardBox.width).toBeGreaterThanOrEqual(44);
     }
 
     // Ekran görüntüsü kaydı (proje adına göre)

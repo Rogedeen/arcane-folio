@@ -45,7 +45,7 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({ strScore }) 
       <div className="inventory-header">
         <div>
           <h3 className="font-cinzel" style={{ color: 'var(--accent-gold)', fontSize: '1.4rem' }}>
-            🎒 Envanter & Taşıma Kapasitesi (Faz 3)
+            🎒 Envanter & Tasima Kapasitesi
           </h3>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
             STR tabanlı ağırlık limiti (STR x 15 lbs) ve kuşanılan teçhizat yönetimi

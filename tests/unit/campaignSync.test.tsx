@@ -54,6 +54,8 @@ describe('DmDashboard Component', () => {
       tempHp: 0,
       ac: 16,
       passivePerception: 11,
+      passiveInvestigation: 10,
+      stats: { str: 16, dex: 14, con: 14, int: 10, wis: 12, cha: 8 },
       activeConditions: [],
       playerName: 'Ahmet'
     }

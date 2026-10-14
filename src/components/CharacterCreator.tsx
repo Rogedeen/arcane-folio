@@ -94,7 +94,7 @@ export const CharacterCreator: React.FC = () => {
       <div className="creator-header">
         <div>
           <h2 className="font-cinzel" style={{ color: 'var(--accent-gold)', fontSize: '1.5rem' }}>
-            Karakter Çekirdeği (Faz 1)
+            Karakter Olusturucu
           </h2>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
             SRD 5.1 kural motoruyla dinamik türetilmiş değerler ve yetenek puanları

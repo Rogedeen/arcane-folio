@@ -3,25 +3,35 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import App from '../../src/App';
 import { createDatabaseClient } from '../../src/data/supabaseClient';
 
-describe('Uygulama Temel İskelet Birim Testleri', () => {
-  it('Başlık ve Faz bileşenini ekrana basar', async () => {
+describe('Uygulama Temel İskelet ve Gezinme Birim Testleri', () => {
+  it('Başlık, üst menü ve ana sayfa kartlarını ekrana basar', async () => {
     render(<App />);
-    expect(screen.getByRole('heading', { level: 1, name: /D&D 5e Takip/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: /D&D 5e Asistani/i })).toBeInTheDocument();
     
-    const heroTitle = document.getElementById('hero-title');
-    expect(heroTitle?.textContent).toContain('Faz 2');
+    expect(document.getElementById('nav-btn-home')).toBeInTheDocument();
+    expect(document.getElementById('nav-btn-sheet')).toBeInTheDocument();
+    expect(document.getElementById('nav-btn-creator')).toBeInTheDocument();
+    expect(document.getElementById('nav-btn-dm')).toBeInTheDocument();
+    expect(document.getElementById('nav-btn-dice')).toBeInTheDocument();
 
-    await waitFor(() => {
-      expect(screen.getByText(/Yerel geliştirme modu/i)).toBeInTheDocument();
-    });
+    expect(document.getElementById('home-hub-container')).toBeInTheDocument();
+    expect(document.getElementById('hub-card-sheet')).toBeInTheDocument();
   });
 
-  it('D20 zarı atıldığında sonuç tepsisinde görüntülenir', async () => {
+  it('Menüden Zar Tepsisine geçilebilir ve zar atılabilir', async () => {
     render(<App />);
-    const rollButton = document.getElementById('btn-roll-d20');
-    expect(rollButton).toBeInTheDocument();
+    const diceNavBtn = document.getElementById('nav-btn-dice');
+    expect(diceNavBtn).toBeInTheDocument();
+    fireEvent.click(diceNavBtn!);
 
-    fireEvent.click(rollButton!);
+    await waitFor(() => {
+      expect(document.getElementById('dice-tray-container')).toBeInTheDocument();
+    });
+
+    const rollBtn = document.getElementById('btn-execute-dice-roll');
+    expect(rollBtn).toBeInTheDocument();
+    fireEvent.click(rollBtn!);
+
     await waitFor(() => {
       const activeStage = document.getElementById('active-dice-stage');
       expect(activeStage).toBeInTheDocument();
@@ -35,10 +45,14 @@ describe('Uygulama Temel İskelet Birim Testleri', () => {
     expect(status.message).toBeDefined();
   });
 
-  it('PWA durum göstergesi ekranda yer alır', async () => {
+  it('Menüden Karakter Kağıdına geçilebilir', async () => {
     render(<App />);
+    const sheetNavBtn = document.getElementById('nav-btn-sheet');
+    expect(sheetNavBtn).toBeInTheDocument();
+    fireEvent.click(sheetNavBtn!);
+
     await waitFor(() => {
-      expect(screen.getByText(/PWA Hazır/i)).toBeInTheDocument();
+      expect(document.getElementById('modern-character-sheet-container')).toBeInTheDocument();
     });
   });
 });

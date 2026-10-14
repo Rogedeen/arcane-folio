@@ -10,6 +10,15 @@ export interface PartyMember {
   tempHp: number;
   ac: number;
   passivePerception: number;
+  passiveInvestigation: number;
+  stats: {
+    str: number;
+    dex: number;
+    con: number;
+    int: number;
+    wis: number;
+    cha: number;
+  };
   activeConditions: string[];
   playerName: string;
 }

@@ -19,7 +19,7 @@ export const ConditionsTracker: React.FC = () => {
       <div className="conditions-header">
         <div>
           <h3 className="font-cinzel" style={{ color: 'var(--accent-gold)', fontSize: '1.4rem' }}>
-            ⚡ Durumlar & Savaş Etkileri (Faz 4)
+            ⚡ Durumlar & Savas Etkileri
           </h3>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
             15 SRD 5.1 koşul durumu, avantaj/dezavantaj ve hareket kısıtlama takibi

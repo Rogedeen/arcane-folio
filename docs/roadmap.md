@@ -1,29 +1,18 @@
-# D&D 5e Kampanya Takip Uygulaması: Yol Haritası
+# D&D 5e Kampanya Takip Uygulaması: Kapsamlı Yol Haritası
 
-## Faz 0: Temel (İskelet)
-- **Kapsam:** Repo kurulumu, Vite/React/TypeScript, PWA altyapısı, Supabase istemci katmanı, Vitest + Playwright test altyapısı, CI iş akışı.
-- **Bitiş Kriteri:** Boş bir sayfa telefonda PWA olarak kurulabiliyor, `npm test` ve `npm run e2e` yeşil.
+## Tamamlanan Fazlar
+- [x] **Faz 0: Temel (İskelet):** Vite + React + TS, PWA, Vitest, Playwright.
+- [x] **Faz 1: Karakter Çekirdeği:** SRD 5.1 Statlar, ırk, sınıf, türetilmiş değerler (AC, HP, Ustalık Bonusu).
+- [x] **Faz 2: Kaynak Takibi & Polhedral Zarlar:** HP kalkanı, dinlenme döngüleri, büyü slotları, ses efektleri.
+- [x] **Faz 3: Envanter ve Büyüler:** 50 büyü, 50 eşya, taşıma kapasitesi (STR x 15), büyü hazırlama.
+- [x] **Faz 4: Sınıf Özellikleri ve Durumlar:** 15 SRD durumu, 12 alt sınıf, seviye atlama modalı.
+- [x] **Faz 5: Kampanya ve Canlı Senkron:** Davet kodu, DM paneli, realtime broadcast senkronizasyonu.
 
-## Faz 1: Karakter Çekirdeği
-- **Kapsam:** Karakter oluşturma (ırk, sınıf, seviye, temel nitelikler, türetilmiş değerler: ustalık bonusu, AC, HP).
-- **Bitiş Kriteri:** 5e Kural Denetçisi, seviye 1–20 için ustalık bonusu ve yetenek modifikatörlerini doğrular (`tests/rules/` yeşil).
+---
 
-## Faz 2: Kaynak Takibi
-- **Kapsam:** HP ve geçici HP, Short Rest / Long Rest döngüsü, sınırlı kullanım yetenekleri, büyü slotları (tam ve yarı büyücü tablosu dahil).
-- **Bitiş Kriteri:** Long rest sonrası tüm kaynaklar doğru sıfırlanır, testle kanıtlı.
-
-## Faz 3: Envanter ve Büyüler
-- **Kapsam:** Eşya slotları (kuşanma, taşıma kapasitesi), büyü listesi, hazırlanan büyüler, açık lisanslı ikonlar.
-- **Bitiş Kriteri:** İçerik Ajanı 50 büyü ve 50 eşya ekler, JSON şema doğrulaması (`npm run content:validate`) geçer.
-
-## Faz 4: Sınıf Özellikleri ve Durumlar
-- **Kapsam:** Alt sınıflar, pasif/aktif yetenekler, koşullu durumlar (zehirli, korkmuş vb.), seviye atlama akışı.
-- **Bitiş Kriteri:** Seviye atlama yeni özellikleri ve slotları otomatik ekler.
-
-## Faz 5: Kampanya ve Canlı Senkron
-- **Kapsam:** Davet kodu, DM paneli (tüm karakterleri görme/düzenleme), oyuncu salt-okunur görünümü, realtime güncelleme, Supabase RLS.
-- **Bitiş Kriteri:** İki farklı tarayıcıda değişiklik anında yansır, RLS testleri geçer.
-
-## Faz 6: Cila
-- **Kapsam:** Mobil düzen optimizasyonu, çevrimdışı önbellek desteği, 3D/hızlı zar atıcı, oturum notları.
-- **Bitiş Kriteri:** PWA çevrimdışı açılır, responsive ve erişilebilir deneyim onaylanır.
+## V2 Modernizasyon ve Kullanıcı Deneyimi Paketi (12 Madde)
+- **Modül 1 (Sayfa Yönetimi & Temizlik):** Header rozetleri, hero ve faz yazılarının temizlenmesi, Ana Sayfa (Landing Hub) eklenmesi.
+- **Modül 2 (Karakter Kağıdı & Death Saves):** D&D Beyond tarzı 3 sütunlu az kaydırmalı düzen, 3/3 Death Saves mekanizması, stat kilitleme.
+- **Modül 3 (Google Tarzı Zar & Büyü/Skill Otomasyonu):** Çoklu zar havuzu (örn. 6d8), tekil döküm + toplam, skill damage zarı + otomatik slot düşümü tercihi, tipografi düzeltmeleri.
+- **Modül 4 (DM Ekranı 2.0):** Tüm statlar, Ana Stat ↔ Beceri görünüm geçişi, Pasif İnceleme, stacklenebilir debufflar, özel HP kontrolü.
+- **Modül 5 (Open5e & Veri Genişletme):** Canlı Open5e API ve çevrimdışı tam SRD içerik motoru.

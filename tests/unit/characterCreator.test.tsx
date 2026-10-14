@@ -6,7 +6,7 @@ describe('Karakter Oluşturucu (CharacterCreator) Bileşen Testleri', () => {
   it('Varsayılan karakter ve türetilmiş istatistikleri görüntüler', () => {
     render(<CharacterCreator />);
     expect(screen.getByDisplayValue(/Kaelen Karaçekiç/i)).toBeInTheDocument();
-    expect(screen.getByText(/Karakter Çekirdeği \(Faz 1\)/i)).toBeInTheDocument();
+    expect(screen.getByText(/Karakter Olusturucu/i)).toBeInTheDocument();
 
     const profPill = document.getElementById('val-proficiency');
     expect(profPill?.textContent).toContain('+2');
