@@ -1,7 +1,13 @@
 // =============================================================================
-// MODERN CHARACTER SHEET V3
-// Artık CharacterContext'ten besleniyor — aktif karakter otomatik yükleniyor.
-// LocalStorage ile kalıcı, HP/condition değişiklikleri anında kaydediliyor.
+// MODERN CHARACTER SHEET V3 (REMASTERED — CRIMSON CITADEL / RED DARK)
+// 21st.dev 'Red Dark' & D&D Beyond 1:1 Bento Dashboard
+//
+// MİMARİ:
+// - Üst Bar: Portre, Karakter kimliği, Kısa/Uzun Dinlenme, Stat Kilidi
+// - Yatay Bant: 6 Yetenek Skoru Rozeti (Modifikatör üstte, stat altta), AC, İnisiyatif, Hız, Can Barı
+// - Sol Sütun (260px): Çift kolon Kurtarma Zarları, Duyular, Ustalıklar
+// - Orta Sütun (300px): A-Z 18 Beceri Listesi (Arama filtreli, tıkla-at)
+// - Sağ Sütun (1fr): D&D Beyond Pill Sekmeler (Actions, Inventory, Spells/Features, Background, Notes)
 // =============================================================================
 
 import React, { useState } from 'react';
@@ -9,7 +15,6 @@ import { calculateModifier } from '../rules/abilityScores';
 import { calculateProficiencyBonus } from '../rules/proficiency';
 import { SKILLS, calculateSkillModifier, calculatePassivePerception, calculatePassiveInvestigation } from '../rules/skills';
 import { calculateArmorClass } from '../rules/armorClass';
-import { ResourceTracker } from './ResourceTracker';
 import { InventoryManager } from './InventoryManager';
 import { Spellbook } from './Spellbook';
 import { ConditionsTracker } from './ConditionsTracker';
@@ -20,10 +25,9 @@ import { useCharacter } from '../context/CharacterContext';
 import { useReference } from '../context/ReferenceContext';
 import { soundEffects } from '../utils/soundEffects';
 import { syncService } from '../data/syncService';
-import type { FullCharacter } from '../types/character';
-import type { CharacterClass } from '../types/character';
+import { isCasterSubclass } from '../rules/subclasses';
+import type { FullCharacter, AbilityName } from '../types/character';
 
-// Default karakter — sadece aktif karakter yoksa gösterilir
 const DEMO_CHARACTER: FullCharacter = {
   id: 'demo-char',
   name: 'Kaelen Karaçekiç',
@@ -53,15 +57,20 @@ const DEMO_CHARACTER: FullCharacter = {
   updatedAt: new Date().toISOString(),
 };
 
+type SheetTab = 'actions' | 'spells' | 'inventory' | 'conditions' | 'features' | 'background' | 'notes';
+type ActionSubPill = 'all' | 'attack' | 'action' | 'bonus' | 'reaction';
+
 export const ModernCharacterSheet: React.FC = () => {
   const { activeCharacter, updateHp, updateConditions, updateDeathSaves, saveCharacter } = useCharacter();
 
-  // Aktif karakter yoksa demo karakteri göster
   const character = activeCharacter ?? DEMO_CHARACTER;
   const isDemo = !activeCharacter;
 
   const [isLocked, setIsLocked] = useState<boolean>(true);
-  const [activeTab, setActiveTab] = useState<'actions' | 'spells' | 'inventory' | 'conditions' | 'features'>('actions');
+  const [activeTab, setActiveTab] = useState<SheetTab>('actions');
+  const [actionSubPill, setActionSubPill] = useState<ActionSubPill>('all');
+  const [skillFilter, setSkillFilter] = useState<string>('');
+  const [customHpInput, setCustomHpInput] = useState<string>('');
 
   const profBonus = calculateProficiencyBonus(character.level);
 
@@ -72,7 +81,6 @@ export const ModernCharacterSheet: React.FC = () => {
   const wisMod = calculateModifier(character.baseAbilities.wis);
   const chaMod = calculateModifier(character.baseAbilities.cha);
 
-  // Irk bonuslarını da hesaba kat (basit yaklaşım — character.rules.character'dan import edilebilir)
   const passivePerception = calculatePassivePerception(
     wisMod,
     character.proficientSkills.includes('perception'),
@@ -85,9 +93,10 @@ export const ModernCharacterSheet: React.FC = () => {
     profBonus
   );
 
-  // Zırh sınıfı (equipped armor'dan)
+  const passiveInsight = 10 + wisMod + (character.proficientSkills.includes('insight') ? profBonus : 0);
+
   const ac = calculateArmorClass({
-    charClass: character.class as CharacterClass,
+    charClass: character.class,
     dexModifier: dexMod,
     conModifier: conMod,
     wisModifier: wisMod,
@@ -98,11 +107,9 @@ export const ModernCharacterSheet: React.FC = () => {
   const { openReference } = useReference();
   const [quickToast, setQuickToast] = useState<{ text: string; isCrit?: boolean; isFumble?: boolean } | null>(null);
 
-  // Büyücü sınıfı mı kontrolü (Fighter/Barbarian/Rogue gibi sınıflara boş büyü sekmesi gösterme)
   const isSpellcaster =
-    ['cleric', 'druid', 'wizard', 'sorcerer', 'warlock', 'bard', 'paladin', 'ranger'].includes(character.class) ||
-    Boolean(character.subclass?.toLowerCase().includes('eldritch')) ||
-    Boolean(character.subclass?.toLowerCase().includes('arcane'));
+    ['cleric', 'druid', 'wizard', 'sorcerer', 'warlock', 'bard', 'paladin', 'ranger'].includes(character.class.toLowerCase()) ||
+    isCasterSubclass(character.subclass);
 
   // Silah bazlı dönüştürmeli hasar zarı animasyonu state'i (2d6 -> 10 -> [10] 2d6)
   const [damageAnimState, setDamageAnimState] = useState<
@@ -126,7 +133,6 @@ export const ModernCharacterSheet: React.FC = () => {
       setQuickToast((curr) => (curr?.text === text ? null : curr));
     }, 4000);
 
-    // Senkronize et
     syncService.broadcastDiceRoll({
       id: `check-${Date.now()}`,
       label: `${character.name} • ${label}`,
@@ -140,20 +146,18 @@ export const ModernCharacterSheet: React.FC = () => {
     });
   };
 
-  // Hasar zarı animasyonlu atışı: 2d6 -> dönüyor -> 10 -> yana kayıp silik [10] durur, buton 2d6 olur
+  // Hasar zarı animasyonlu atışı
   const handleAnimatedDamageRoll = (weapon: import('../types/character').WeaponItem, abilityMod: number) => {
     soundEffects.playDiceRollSound();
     const wId = weapon.id;
     const defaultLabel = `${weapon.damage}+${abilityMod}`;
 
-    // 1. Aşama: Zarlar dönüyor
     setDamageAnimState((prev) => ({
       ...prev,
       [wId]: { isRolling: true, labelText: '🎲...', ghostVal: prev[wId]?.ghostVal ?? null },
     }));
 
     setTimeout(() => {
-      // Zar hesaplama
       const match = weapon.damage.match(/^(\d+)d(\d+)$/);
       let sum = abilityMod;
       const rolls: number[] = [];
@@ -166,87 +170,101 @@ export const ModernCharacterSheet: React.FC = () => {
           sum += r;
         }
       } else {
-        rolls.push(4);
         sum += 4;
+        rolls.push(4);
       }
-      const totalVal = Math.max(1, sum);
 
-      // 2. Aşama: Sayı belirdi (örn: 10!)
       setDamageAnimState((prev) => ({
         ...prev,
-        [wId]: { isRolling: false, labelText: `${totalVal}!`, ghostVal: prev[wId]?.ghostVal ?? null },
+        [wId]: { isRolling: false, labelText: `${sum}!`, ghostVal: prev[wId]?.ghostVal ?? null },
       }));
 
-      // 3. Aşama: 600ms sonra yana kayıp silik [10] olarak dursun, buton formüle dönsün
       setTimeout(() => {
         setDamageAnimState((prev) => ({
           ...prev,
-          [wId]: { isRolling: false, labelText: defaultLabel, ghostVal: `${totalVal} ${weapon.damageType}` },
+          [wId]: { isRolling: false, labelText: defaultLabel, ghostVal: String(sum) },
         }));
-      }, 650);
+      }, 1400);
 
-      const text = `💥 ${weapon.name} Hasar: [${rolls.join('+')}] + ${abilityMod} = ${totalVal} ${weapon.damageType}`;
-      setQuickToast({ text });
-      setTimeout(() => setQuickToast((curr) => (curr?.text === text ? null : curr)), 4000);
+      const formulaStr = `${weapon.damage}${abilityMod >= 0 ? `+${abilityMod}` : abilityMod}`;
+      setQuickToast({
+        text: `${weapon.name} Hasarı: [${rolls.join('+')}]${abilityMod >= 0 ? `+${abilityMod}` : abilityMod} = ${sum} (${weapon.damageType})`,
+      });
+      setTimeout(() => setQuickToast(null), 4000);
 
       syncService.broadcastDiceRoll({
         id: `dmg-${Date.now()}`,
         label: `${character.name} • ${weapon.name} Hasarı`,
-        diceRolls: rolls.map((v) => ({ die: 'd8', value: v })),
+        diceRolls: rolls.map((v) => ({ die: weapon.damage, value: v })),
         modifier: abilityMod,
-        totalSum: totalVal,
+        totalSum: sum,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        formula: `${weapon.damage}+${abilityMod}`,
+        formula: formulaStr,
       });
-    }, 400);
+    }, 600);
   };
 
-  // Envanterden gelen kuşanılmış zırh / kalkan / silahları otomatik tespit et & AC'yi ve eylemleri güncelle
+  // Envanterden kuşanma / çıkarma yapıldığında AC ve Silahları senkronize et
   const handleInventoryChange = (newInventory: import('../types/content').ItemData[]) => {
-    if (isDemo) return;
+    const equippedArmorItem = newInventory.find(
+      (i) => i.equipped && (i.type === 'armor' || i.type === 'shield')
+    );
 
-    // Kuşanılan zırhı bul ve AC hesapla
-    const equippedArmorItem = newInventory.find((i) => i.type === 'armor' && i.equipped);
-    let newArmor: import('../types/character').ArmorItem | undefined = undefined;
-    if (equippedArmorItem) {
+    let newArmor = character.equippedArmor;
+    if (equippedArmorItem && equippedArmorItem.type === 'armor') {
       const lower = equippedArmorItem.name.toLowerCase();
-      if (lower.includes('plate') || lower.includes('levha')) {
-        newArmor = { name: equippedArmorItem.name, type: 'heavy', baseAc: 18, maxDexBonus: 0 };
-      } else if (lower.includes('chain mail') || lower.includes('zincir')) {
-        newArmor = { name: equippedArmorItem.name, type: 'heavy', baseAc: 16, maxDexBonus: 0 };
-      } else if (lower.includes('breastplate') || lower.includes('scale') || lower.includes('göğüslük')) {
-        newArmor = { name: equippedArmorItem.name, type: 'medium', baseAc: 14, maxDexBonus: 2 };
+      let type: 'light' | 'medium' | 'heavy' = 'light';
+      let baseAc = 11;
+      let maxDexBonus: number | undefined = undefined;
+
+      if (lower.includes('plate') || lower.includes('chain mail') || lower.includes('splint') || lower.includes('ring mail')) {
+        type = 'heavy';
+        baseAc = lower.includes('plate') ? 18 : 16;
+        maxDexBonus = 0;
+      } else if (lower.includes('scale') || lower.includes('breastplate') || lower.includes('half plate') || lower.includes('hide')) {
+        type = 'medium';
+        baseAc = lower.includes('half') ? 15 : 14;
+        maxDexBonus = 2;
       } else {
-        newArmor = { name: equippedArmorItem.name, type: 'light', baseAc: 12, maxDexBonus: undefined };
+        type = 'light';
+        baseAc = lower.includes('studded') ? 12 : 11;
       }
+
+      newArmor = { name: equippedArmorItem.name, type, baseAc, maxDexBonus };
     }
 
-    // Kuşanılan kalkanı bul
-    const hasShield = newInventory.some((i) => i.type === 'shield' && i.equipped);
+    const hasShield = newInventory.some(
+      (i) => i.equipped && (i.type === 'shield' || i.name.toLowerCase().includes('shield'))
+    );
 
-    // Kuşanılan silahları bul ve Eylemler sekmesine ekle
-    const equippedWeaponItems = newInventory.filter((i) => i.type === 'weapon' && i.equipped);
-    const updatedWeapons: import('../types/character').WeaponItem[] = equippedWeaponItems.map((w) => {
+    const equippedWeapons = newInventory.filter(
+      (i) => i.equipped && i.type === 'weapon'
+    );
+
+    const updatedWeapons = equippedWeapons.map((w) => {
       const lower = w.name.toLowerCase();
-      const isFinesse = (w.properties || []).some((p) => p.toLowerCase().includes('finesse'));
-      const abilityUsed = isFinesse && dexMod > strMod ? 'dex' : 'str';
-      let damage = '1d8';
+      let damage = '1d6';
       let damageType = 'slashing';
-      if (lower.includes('dagger') || lower.includes('hançer')) {
+      let abilityUsed: AbilityName = 'str';
+
+      if (lower.includes('greatsword') || lower.includes('maul')) {
+        damage = '2d6';
+      } else if (lower.includes('greataxe')) {
+        damage = '1d12';
+      } else if (lower.includes('longsword') || lower.includes('battleaxe')) {
+        damage = '1d8';
+      } else if (lower.includes('dagger')) {
         damage = '1d4';
         damageType = 'piercing';
-      } else if (lower.includes('greatsword') || lower.includes('çift el')) {
-        damage = '2d6';
-        damageType = 'slashing';
-      } else if (lower.includes('bow') || lower.includes('yay')) {
-        damage = '1d6';
+        abilityUsed = 'dex';
+      } else if (lower.includes('bow')) {
+        damage = '1d8';
         damageType = 'piercing';
-      } else if (lower.includes('mace') || lower.includes('gürz')) {
-        damage = '1d6';
-        damageType = 'bludgeoning';
+        abilityUsed = 'dex';
       }
+
       return {
-        id: w.slug,
+        id: `inv-${w.slug}`,
         name: w.name,
         damage,
         damageType,
@@ -265,7 +283,7 @@ export const ModernCharacterSheet: React.FC = () => {
     });
   };
 
-  // Fighter: Second Wind Yeteneği (1d10 + Seviye İyileş)
+  // Second Wind
   const handleSecondWind = () => {
     soundEffects.playDiceRollSound();
     const roll = Math.floor(Math.random() * 10) + 1;
@@ -278,13 +296,26 @@ export const ModernCharacterSheet: React.FC = () => {
     setTimeout(() => setQuickToast((curr) => (curr?.text === text ? null : curr)), 4500);
   };
 
-  // HP güncelleme — context'e yaz (otomatik localStorage)
   const handleHpUpdate = (newHp: number, newTemp?: number) => {
     if (isDemo) return;
     updateHp(newHp, newTemp);
   };
 
-  // Stat değişikliği (kilit açıkken)
+  const handleQuickHpAdjust = (delta: number, isHealing: boolean) => {
+    const nextHp = isHealing
+      ? Math.min(character.maxHp, character.currentHp + Math.abs(delta))
+      : Math.max(0, character.currentHp - Math.abs(delta));
+    handleHpUpdate(nextHp);
+  };
+
+  const handleApplyCustomHp = (isHealing: boolean) => {
+    const val = parseInt(customHpInput, 10);
+    if (!isNaN(val) && val > 0) {
+      handleQuickHpAdjust(val, isHealing);
+      setCustomHpInput('');
+    }
+  };
+
   const handleStatChange = (stat: keyof typeof character.baseAbilities, delta: number) => {
     if (isLocked || isDemo) return;
     const current = character.baseAbilities[stat];
@@ -295,8 +326,32 @@ export const ModernCharacterSheet: React.FC = () => {
     });
   };
 
+  // Dinlenme Aksiyonları
+  const handleShortRest = () => {
+    soundEffects.playDiceRollSound();
+    const hitDieRoll = Math.floor(Math.random() * 10) + 1 + conMod;
+    const nextHp = Math.min(character.maxHp, character.currentHp + Math.max(1, hitDieRoll));
+    handleHpUpdate(nextHp);
+    setQuickToast({ text: `🏕️ Kısa Dinlenme: 1 Can Zarı atıldı (+${hitDieRoll} HP). HP: ${nextHp}/${character.maxHp}` });
+    setTimeout(() => setQuickToast(null), 4000);
+  };
+
+  const handleLongRest = () => {
+    soundEffects.playCritSound();
+    handleHpUpdate(character.maxHp, 0);
+    setQuickToast({ text: `🌅 Uzun Dinlenme: Tüm can puanları ve yetenekler yenilendi! (${character.maxHp}/${character.maxHp} HP)` });
+    setTimeout(() => setQuickToast(null), 4500);
+  };
+
+  // Filtrelenmiş Beceriler
+  const filteredSkills = SKILLS.filter(
+    (sk) =>
+      sk.nameTr.toLowerCase().includes(skillFilter.toLowerCase()) ||
+      sk.name.toLowerCase().includes(skillFilter.toLowerCase())
+  );
+
   return (
-    <div id="modern-character-sheet-container" className="modern-sheet-root">
+    <div id="modern-character-sheet-container" className="dndbeyond-sheet-container">
       {/* Sinematik Ölüm Eşiği (HP = 0) Modu */}
       <CinematicDeathSaves
         currentHp={character.currentHp}
@@ -310,7 +365,7 @@ export const ModernCharacterSheet: React.FC = () => {
         }}
       />
 
-      {/* Demo uyarısı */}
+      {/* Demo Uyarısı */}
       {isDemo && (
         <div className="sheet-demo-banner" role="alert">
           ⚠️ Demo modu — Aktif karakter seçilmedi.{' '}
@@ -318,7 +373,7 @@ export const ModernCharacterSheet: React.FC = () => {
         </div>
       )}
 
-      {/* Hızlı Zar Atış Bildirimi */}
+      {/* Hızlı Zar Bildirim Banner'ı (D&D Beyond Toast Style) */}
       {quickToast && (
         <div
           className={`sheet-quick-toast ${quickToast.isCrit ? 'crit' : ''} ${quickToast.isFumble ? 'fumble' : ''}`}
@@ -331,112 +386,293 @@ export const ModernCharacterSheet: React.FC = () => {
         </div>
       )}
 
-      {/* 1. ÜST BAŞLIK (Character Header Bar) */}
-      <header className="sheet-top-header">
-        <div className="char-identity-block">
-          <div className="char-avatar font-cinzel" style={{
-            background: `linear-gradient(135deg, var(--accent-amber), var(--accent-gold))`,
-          }}>
+      {/* 1. ÜST BAR: PORTRE, KİMLİK & DİNLENME BUTONLARI */}
+      <header className="dndbeyond-top-bar">
+        <div className="dndbeyond-avatar-name">
+          <div className="dndbeyond-avatar-circle font-cinzel">
             {character.name.charAt(0)}
           </div>
           <div>
-            <h2 className="char-sheet-name font-cinzel">{character.name}</h2>
-            <div className="char-sheet-meta">
-              <span>Seviye {character.level} {character.class.toUpperCase()}</span>
-              {character.subclass && <span className="subclass-tag">({character.subclass})</span>}
-              <span>• {character.race}</span>
-              <span>• {character.background}</span>
-              {character.playerName && <span className="player-name-tag">👤 {character.playerName}</span>}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <h2 className="font-cinzel" style={{ color: 'var(--text-primary)', margin: 0, fontSize: '1.4rem' }}>
+                {character.name}
+              </h2>
+              {character.subclass && (
+                <span style={{ fontSize: '0.78rem', background: 'rgba(212, 175, 53, 0.15)', color: 'var(--accent-gold)', border: '1px solid var(--border-gold)', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>
+                  {character.subclass}
+                </span>
+              )}
+            </div>
+            <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
+              {character.race} • {character.class.toUpperCase()} Seviye {character.level} • {character.background}
+              {character.playerName && ` • 👤 ${character.playerName}`}
             </div>
           </div>
         </div>
 
-        {/* Hızlı Savaş İstatistikleri & Kilit Butonu */}
-        <div className="header-stats-group">
-          <div className="stat-pill-box">
-            <span className="pill-title">ZIRH SINIFI</span>
-            <span className="pill-val" id="sheet-ac-val">🛡️ {ac}</span>
-          </div>
-          <div className="stat-pill-box">
-            <span className="pill-title">INISIYATIF</span>
-            <span className="pill-val">{dexMod >= 0 ? `+${dexMod}` : dexMod}</span>
-          </div>
-          <div className="stat-pill-box">
-            <span className="pill-title">HIZ</span>
-            <span className="pill-val">30 ft</span>
-          </div>
-          <div className="stat-pill-box">
-            <span className="pill-title">USTALIK</span>
-            <span className="pill-val">+{profBonus}</span>
-          </div>
-
-          {/* Stat Kilidi */}
+        {/* Sağ Kısım: Kısa / Uzun Dinlenme ve Stat Kilidi */}
+        <div className="dndbeyond-rest-btn-group">
+          <button
+            className="dndbeyond-rest-btn"
+            onClick={handleShortRest}
+            title="Kısa Dinlenme (Can zarı harca)"
+          >
+            ⛺ SHORT REST
+          </button>
+          <button
+            className="dndbeyond-rest-btn"
+            onClick={handleLongRest}
+            title="Uzun Dinlenme (Tüm canı yenile)"
+          >
+            🌙 LONG REST
+          </button>
           <button
             id="btn-toggle-stat-lock"
-            className={`lock-toggle-btn ${isLocked ? 'locked' : 'unlocked'}`}
+            className="dndbeyond-rest-btn"
             onClick={() => setIsLocked(!isLocked)}
-            aria-label="Stat Kilidini Değiştir"
-            title={isLocked ? 'Statlar kilitli (Değiştirilemez)' : 'Stat düzenleme modu açık'}
+            title={isLocked ? 'Statlar kilitli' : 'Stat düzenleme modu açık'}
           >
             {isLocked ? '🔒 Kilitli' : '🔓 Duzenle'}
           </button>
         </div>
       </header>
 
-      {/* 2. ANA SAYFA GÖVDESİ (3 Sütunlu Ergonomik Düzen) */}
-      <div className="sheet-main-layout">
-        {/* SOL SÜTUN: 6 Ana Stat, Kurtarma Zarları, Pasif Algı/İnceleme ve Beceriler */}
-        <aside className="sheet-left-column">
-          {/* 6 Stat Kutusu */}
-          <div className="ability-scores-column" id="ability-scores-column">
-            {[
-              { id: 'str' as const, label: 'STR', name: 'Guc', val: character.baseAbilities.str, mod: strMod },
-              { id: 'dex' as const, label: 'DEX', name: 'Ceviklik', val: character.baseAbilities.dex, mod: dexMod },
-              { id: 'con' as const, label: 'CON', name: 'Dayaniklilik', val: character.baseAbilities.con, mod: conMod },
-              { id: 'int' as const, label: 'INT', name: 'Zeka', val: character.baseAbilities.int, mod: intMod },
-              { id: 'wis' as const, label: 'WIS', name: 'Bilgelik', val: character.baseAbilities.wis, mod: wisMod },
-              { id: 'cha' as const, label: 'CHA', name: 'Karizma', val: character.baseAbilities.cha, mod: chaMod }
-            ].map((st) => (
-              <div
-                key={st.id}
-                className="compact-ability-box"
-                id={`ability-box-${st.id}`}
-                onClick={() => rollCheck(`${st.name} (${st.label}) Kontrolü`, st.mod)}
-                style={{ cursor: 'pointer' }}
-                title="Zar At (1d20+Mod)"
+      {/* 2. YATAY BANT: 6 YETENEK SKORU KARTI & SAVAŞ GÖSTERGELERİ */}
+      <section className="dndbeyond-hud-row">
+        {/* 6'lı Yetenek Skorları Bandı (Modifikatör üstte büyük, skor altta rozette) */}
+        <div className="dndbeyond-abilities-band" id="ability-scores-column">
+          {[
+            { id: 'str' as const, label: 'STRENGTH', name: 'Güç', val: character.baseAbilities.str, mod: strMod },
+            { id: 'dex' as const, label: 'DEXTERITY', name: 'Çeviklik', val: character.baseAbilities.dex, mod: dexMod },
+            { id: 'con' as const, label: 'CONSTITUTION', name: 'Dayanıklılık', val: character.baseAbilities.con, mod: conMod },
+            { id: 'int' as const, label: 'INTELLIGENCE', name: 'Zeka', val: character.baseAbilities.int, mod: intMod },
+            { id: 'wis' as const, label: 'WISDOM', name: 'Bilgelik', val: character.baseAbilities.wis, mod: wisMod },
+            { id: 'cha' as const, label: 'CHARISMA', name: 'Karizma', val: character.baseAbilities.cha, mod: chaMod }
+          ].map((st) => (
+            <div
+              key={st.id}
+              className="dndbeyond-stat-badge"
+              id={`ability-box-${st.id}`}
+              onClick={() => rollCheck(`${st.name} (${st.label}) Kontrolü`, st.mod)}
+              title={`${st.name} Zarı At (1d20+${st.mod})`}
+            >
+              <span className="dndbeyond-stat-label">{st.label.slice(0, 3)}</span>
+              <span className="dndbeyond-stat-mod">
+                {st.mod >= 0 ? `+${st.mod}` : st.mod}
+              </span>
+              <span className="dndbeyond-stat-score-pill">{st.val}</span>
+              {!isLocked && (
+                <div className="unlocked-stat-stepper" onClick={(e) => e.stopPropagation()}>
+                  <button onClick={() => handleStatChange(st.id, -1)}>-</button>
+                  <button onClick={() => handleStatChange(st.id, +1)}>+</button>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Savaş Göstergeleri: Ustalık, Hız, İnisiyatif, AC, Can Barı */}
+        <div className="dndbeyond-combat-hud-group">
+          {/* Ustalık Bonusu */}
+          <div className="dndbeyond-hud-box">
+            <span className="dndbeyond-stat-label">PROFICIENCY</span>
+            <span style={{ fontSize: '1.25rem', fontWeight: 900, color: 'var(--text-primary)' }}>
+              +{profBonus}
+            </span>
+            <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>BONUS</span>
+          </div>
+
+          {/* Yürüme Hızı */}
+          <div className="dndbeyond-hud-box">
+            <span className="dndbeyond-stat-label">SPEED</span>
+            <span style={{ fontSize: '1.25rem', fontWeight: 900, color: 'var(--text-primary)' }}>
+              30 <span style={{ fontSize: '0.8rem' }}>ft</span>
+            </span>
+            <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>WALKING</span>
+          </div>
+
+          {/* İnisiyatif (Elmas Şekli) */}
+          <div
+            className="dndbeyond-hud-box"
+            onClick={() => rollCheck('İnisiyatif', dexMod)}
+            style={{ cursor: 'pointer', border: '1px solid rgba(212, 175, 53, 0.4)' }}
+            title="İnisiyatif Zarı At (1d20+DEX)"
+          >
+            <span className="dndbeyond-stat-label">INITIATIVE</span>
+            <span style={{ fontSize: '1.35rem', fontWeight: 900, color: 'var(--accent-gold)' }}>
+              {dexMod >= 0 ? `+${dexMod}` : dexMod}
+            </span>
+          </div>
+
+          {/* Zırh Sınıfı (Kalkan Şekli) */}
+          <div className="dndbeyond-hud-box" style={{ border: '1px solid rgba(200, 30, 30, 0.4)' }}>
+            <span className="dndbeyond-stat-label">ARMOR CLASS</span>
+            <span style={{ fontSize: '1.35rem', fontWeight: 900, color: '#fff' }} id="sheet-ac-val">
+              🛡️ {ac}
+            </span>
+          </div>
+
+          {/* Can Puanı Modülü (HEAL / DAMAGE Butonları & Can) */}
+          <div className="dndbeyond-hp-module">
+            <div className="dndbeyond-hp-btn-col">
+              <button
+                className="dndbeyond-hp-mini-btn heal"
+                onClick={() => handleApplyCustomHp(true)}
+                title="Can Ver"
               >
-                <span className="ability-name">{st.label}</span>
-                <span className="ability-modifier-large">
-                  {st.mod >= 0 ? `+${st.mod}` : st.mod}
-                </span>
-                <span className="ability-raw-score">{st.val}</span>
-                {!isLocked && (
-                  <div className="unlocked-stat-stepper" onClick={(e) => e.stopPropagation()}>
-                    <button onClick={() => handleStatChange(st.id, -1)}>-</button>
-                    <button onClick={() => handleStatChange(st.id, +1)}>+</button>
-                  </div>
+                HEAL
+              </button>
+              <input
+                type="number"
+                placeholder="±"
+                value={customHpInput}
+                onChange={(e) => setCustomHpInput(e.target.value)}
+                style={{ width: '42px', padding: '0.1rem', fontSize: '0.75rem', background: '#090d16', border: '1px solid #334155', color: '#fff', borderRadius: '3px', textAlign: 'center' }}
+              />
+              <button
+                className="dndbeyond-hp-mini-btn damage"
+                onClick={() => handleApplyCustomHp(false)}
+                title="Hasar Ver"
+              >
+                DMG
+              </button>
+            </div>
+
+            <div>
+              <span className="dndbeyond-stat-label" style={{ display: 'block', marginBottom: '0.15rem' }}>HIT POINTS</span>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.3rem' }}>
+                <strong style={{ fontSize: '1.35rem', color: character.currentHp <= 5 ? '#ef4444' : '#22c55e' }}>
+                  {character.currentHp}
+                </strong>
+                <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>/ {character.maxHp}</span>
+                {character.tempHp > 0 && (
+                  <span style={{ fontSize: '0.75rem', color: '#38bdf8' }}>(+{character.tempHp})</span>
                 )}
               </div>
-            ))}
-          </div>
-
-          {/* Pasif Algı & Pasif İnceleme */}
-          <div className="passive-senses-box" id="passive-senses-box">
-            <div className="passive-sense-row">
-              <span className="sense-label">👁️ Pasif Algi (Perception):</span>
-              <strong className="sense-val" id="val-passive-perception">{passivePerception}</strong>
-            </div>
-            <div className="passive-sense-row">
-              <span className="sense-label">🔍 Pasif Inceleme (Investigation):</span>
-              <strong className="sense-val" id="val-passive-investigation">{passiveInvestigation}</strong>
             </div>
           </div>
+        </div>
+      </section>
 
-          {/* 18 Beceri Listesi (Skills) */}
-          <div className="skills-scroll-box" id="skills-list-container">
-            <div className="skills-box-title">BECERILER (Skills) — Tıkla Zar At</div>
-            <div className="skills-table">
-              {SKILLS.map((sk) => {
+      {/* 3. BENTO 3-COLUMN ANA GÖVDE (Nielsen #8 & D&D Beyond Layout) */}
+      <div className="dndbeyond-bento-grid">
+        
+        {/* =========================================================================
+            SOL SÜTUN: KURTARMA ZARLARI, DUYULAR & USTALIKLAR
+            ========================================================================= */}
+        <aside className="dndbeyond-left-col" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          
+          {/* Kurtarma Zarları (Saving Throws) — 2 Sütunlu Grid */}
+          <div className="dndbeyond-card">
+            <div className="dndbeyond-card-header">SAVING THROWS (Kurtarma Zarları)</div>
+            <div className="saving-throws-grid-2col">
+              {[
+                { id: 'str', label: 'STR', name: 'Güç', mod: strMod },
+                { id: 'int', label: 'INT', name: 'Zeka', mod: intMod },
+                { id: 'dex', label: 'DEX', name: 'Çeviklik', mod: dexMod },
+                { id: 'wis', label: 'WIS', name: 'Bilgelik', mod: wisMod },
+                { id: 'con', label: 'CON', name: 'Dayanıklılık', mod: conMod },
+                { id: 'cha', label: 'CHA', name: 'Karizma', mod: chaMod },
+              ].map((st) => {
+                const isProf = character.proficientSavingThrows.includes(st.id);
+                const totalSaveMod = isProf ? st.mod + profBonus : st.mod;
+
+                return (
+                  <div
+                    key={st.id}
+                    className={`saving-throw-item ${isProf ? 'proficient' : ''}`}
+                    onClick={() => rollCheck(`${st.name} (${st.label}) Kurtarma Zarı`, totalSaveMod)}
+                    title={`${st.name} Kurtarma Zarı At`}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                      <span className="st-dot">{isProf ? '●' : '○'}</span>
+                      <span style={{ fontWeight: isProf ? 800 : 500 }}>{st.label}</span>
+                    </div>
+                    <strong style={{ color: isProf ? 'var(--accent-red)' : 'var(--text-secondary)' }}>
+                      {totalSaveMod >= 0 ? `+${totalSaveMod}` : totalSaveMod}
+                    </strong>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Duyular (Senses) */}
+          <div className="dndbeyond-card" id="passive-senses-box">
+            <div className="dndbeyond-card-header">SENSES (Duyular & Algı)</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', fontSize: '0.82rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', background: 'rgba(0,0,0,0.25)', padding: '0.3rem 0.5rem', borderRadius: '4px' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>Passive Perception:</span>
+                <strong style={{ color: 'var(--accent-gold)' }} id="val-passive-perception">{passivePerception}</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', background: 'rgba(0,0,0,0.25)', padding: '0.3rem 0.5rem', borderRadius: '4px' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>Passive Investigation:</span>
+                <strong style={{ color: 'var(--accent-gold)' }} id="val-passive-investigation">{passiveInvestigation}</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', background: 'rgba(0,0,0,0.25)', padding: '0.3rem 0.5rem', borderRadius: '4px' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>Passive Insight:</span>
+                <strong style={{ color: 'var(--accent-gold)' }}>{passiveInsight}</strong>
+              </div>
+              <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
+                🌙 Darkvision: 60 ft.
+              </div>
+            </div>
+          </div>
+
+          {/* Ustalıklar (Proficiencies) */}
+          <div className="dndbeyond-card">
+            <div className="dndbeyond-card-header">PROFICIENCIES (Eğitimler)</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', fontSize: '0.78rem' }}>
+              <div>
+                <strong style={{ color: 'var(--text-primary)' }}>Armor:</strong>{' '}
+                <span style={{ color: 'var(--text-secondary)' }}>Light, Medium, Shields</span>
+              </div>
+              <div>
+                <strong style={{ color: 'var(--text-primary)' }}>Weapons:</strong>{' '}
+                <span style={{ color: 'var(--text-secondary)' }}>Simple Weapons, Martial Weapons</span>
+              </div>
+              <div>
+                <strong style={{ color: 'var(--text-primary)' }}>Languages:</strong>{' '}
+                <span style={{ color: 'var(--text-secondary)' }}>Common, Elvish / Dwarvish</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Ölüm Kurtarma Zarları Widget'ı */}
+          <div className="dndbeyond-card">
+            <div className="dndbeyond-card-header">DEATH SAVES</div>
+            <DeathSaves
+              currentHp={character.currentHp}
+              initialSuccesses={character.deathSaves?.successes ?? 0}
+              initialFailures={character.deathSaves?.failures ?? 0}
+              onSavesChange={(s, f) => {
+                if (!isDemo) updateDeathSaves(s, f);
+              }}
+            />
+          </div>
+
+        </aside>
+
+        {/* =========================================================================
+            ORTA SÜTUN: ALFABETİK 18 BECERİ MATRİSİ (A-Z SKILLS TABLE)
+            ========================================================================= */}
+        <section className="dndbeyond-middle-col">
+          <div className="dndbeyond-card" id="skills-list-container">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div className="dndbeyond-card-header" style={{ border: 'none', padding: 0, margin: 0 }}>
+                SKILLS (Beceriler)
+              </div>
+              <input
+                type="text"
+                placeholder="Ara..."
+                value={skillFilter}
+                onChange={(e) => setSkillFilter(e.target.value)}
+                style={{ width: '80px', padding: '0.15rem 0.4rem', fontSize: '0.72rem', background: '#0a0d16', border: '1px solid var(--border-subtle)', borderRadius: '4px', color: '#fff' }}
+              />
+            </div>
+
+            <div className="skills-bento-table" style={{ marginTop: '0.4rem' }}>
+              {filteredSkills.map((sk) => {
                 const isProf = character.proficientSkills.includes(sk.id);
                 const modVal = sk.ability === 'str' ? strMod
                   : sk.ability === 'dex' ? dexMod
@@ -449,345 +685,390 @@ export const ModernCharacterSheet: React.FC = () => {
                 return (
                   <div
                     key={sk.id}
-                    className={`skill-row ${isProf ? 'proficient' : ''}`}
+                    className={`skill-bento-row ${isProf ? 'proficient' : ''}`}
                     onClick={() => rollCheck(`${sk.nameTr} (${sk.name}) Kontrolü`, totalMod)}
-                    style={{ cursor: 'pointer' }}
                     title={`${sk.nameTr} Zarı At (1d20 ${totalMod >= 0 ? `+${totalMod}` : totalMod})`}
                   >
-                    <span className="skill-prof-dot">{isProf ? '●' : '○'}</span>
-                    <span className="skill-mod-badge">{totalMod >= 0 ? `+${totalMod}` : totalMod}</span>
-                    <span className="skill-title">{sk.nameTr}</span>
-                    <span className="skill-attr-tag">{sk.ability.toUpperCase()}</span>
+                    <span className="skill-bento-dot">{isProf ? '●' : '○'}</span>
+                    <span className="skill-bento-mod-tag">{sk.ability.toUpperCase()}</span>
+                    <span className="skill-bento-name">{sk.nameTr}</span>
+                    <span className="skill-bento-bonus">
+                      {totalMod >= 0 ? `+${totalMod}` : totalMod}
+                    </span>
                   </div>
                 );
               })}
             </div>
           </div>
-        </aside>
+        </section>
 
-        {/* ORTA & SAĞ ALAN: Can, Ölüm Zarları ve Sekmeli Modüller */}
-        <main className="sheet-center-column">
-          {/* Can Takibi & Ölüm Kurtarma Zarları */}
-          <div className="sheet-combat-bar">
-            <ResourceTracker
-              charClass={character.class as CharacterClass}
-              level={character.level}
-              maxHp={character.maxHp}
-              conModifier={conMod}
-              currentHp={character.currentHp}
-              tempHp={character.tempHp}
-              onHpChange={handleHpUpdate}
-            />
-
-            {/* Ölüm Kurtarma Zarları */}
-            <DeathSaves
-              currentHp={character.currentHp}
-              initialSuccesses={character.deathSaves?.successes ?? 0}
-              initialFailures={character.deathSaves?.failures ?? 0}
-              onSavesChange={(s, f) => {
-                if (!isDemo) updateDeathSaves(s, f);
-              }}
-            />
-          </div>
-
-          {/* Sekme Gezinme Çubuğu */}
-          <nav className="sheet-tabs-nav" role="tablist">
+        {/* =========================================================================
+            SAĞ SÜTUN: D&D BEYOND SEAN0205 PILL TABS & İÇERİK ALANI
+            ========================================================================= */}
+        <main className="dndbeyond-right-col" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          
+          {/* 21st.dev / sean0205 Tabs Pill Navigasyon Çubuğu */}
+          <nav className="dndbeyond-pill-tabs-nav" role="tablist">
             <button
               id="tab-btn-actions"
-              className={`sheet-tab-btn ${activeTab === 'actions' ? 'active' : ''}`}
+              className={`dndbeyond-pill-tab ${activeTab === 'actions' ? 'active' : ''}`}
               onClick={() => setActiveTab('actions')}
             >
-              ⚔️ Eylemler
+              ⚔️ ACTIONS
+            </button>
+            <button
+              id="tab-btn-inventory"
+              className={`dndbeyond-pill-tab ${activeTab === 'inventory' ? 'active' : ''}`}
+              onClick={() => setActiveTab('inventory')}
+            >
+              🎒 INVENTORY ({character.inventory?.length ?? 0})
             </button>
             {isSpellcaster ? (
               <button
                 id="tab-btn-spells"
-                className={`sheet-tab-btn ${activeTab === 'spells' ? 'active' : ''}`}
+                className={`dndbeyond-pill-tab ${activeTab === 'spells' ? 'active' : ''}`}
                 onClick={() => setActiveTab('spells')}
               >
-                📜 Büyüler
+                📜 SPELLS
               </button>
             ) : (
               <button
                 id="tab-btn-spells"
-                className={`sheet-tab-btn ${activeTab === 'spells' ? 'active' : ''}`}
+                className={`dndbeyond-pill-tab ${activeTab === 'spells' ? 'active' : ''}`}
                 onClick={() => setActiveTab('spells')}
               >
-                ⚡ Sınıf Yetenekleri
+                ⚡ FEATURES
               </button>
             )}
             <button
-              id="tab-btn-inventory"
-              className={`sheet-tab-btn ${activeTab === 'inventory' ? 'active' : ''}`}
-              onClick={() => setActiveTab('inventory')}
+              id="tab-btn-features"
+              className={`dndbeyond-pill-tab ${activeTab === 'features' ? 'active' : ''}`}
+              onClick={() => setActiveTab('features')}
             >
-              🎒 Envanter ({character.inventory?.length ?? 0})
+              🏆 LEVEL UP
+            </button>
+            <button
+              id="tab-btn-background"
+              className={`dndbeyond-pill-tab ${activeTab === 'background' ? 'active' : ''}`}
+              onClick={() => setActiveTab('background')}
+            >
+              📜 BACKGROUND
+            </button>
+            <button
+              id="tab-btn-notes"
+              className={`dndbeyond-pill-tab ${activeTab === 'notes' ? 'active' : ''}`}
+              onClick={() => setActiveTab('notes')}
+            >
+              📝 NOTES
             </button>
             <button
               id="tab-btn-conditions"
-              className={`sheet-tab-btn ${activeTab === 'conditions' ? 'active' : ''}`}
+              className={`dndbeyond-pill-tab ${activeTab === 'conditions' ? 'active' : ''}`}
               onClick={() => setActiveTab('conditions')}
             >
-              ⚡ Durumlar
-            </button>
-            <button
-              id="tab-btn-features"
-              className={`sheet-tab-btn ${activeTab === 'features' ? 'active' : ''}`}
-              onClick={() => setActiveTab('features')}
-            >
-              🏆 Seviye Atlama
+              ⚡ DURUMLAR
             </button>
           </nav>
 
-          {/* Sekme İçerikleri */}
-          <div className="sheet-tab-content-area">
-            {activeTab === 'actions' && (
-              <div className="actions-tab-view" id="tab-content-actions">
-                <div className="weapon-cards-list">
-                  {character.weapons.length === 0 ? (
-                    <div className="empty-tab-hint">
-                      <p>⚔️ Kuşanılmış silah bulunmuyor.</p>
-                      <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                        <strong>Envanter</strong> sekmesinden bir silahı "Kuşan" butonuna basarak buraya ekleyebilirsin.
-                      </p>
-                    </div>
-                  ) : (
-                    character.weapons.map((weapon) => {
-                      const abilityMod = weapon.abilityUsed === 'str' ? strMod : dexMod;
+          {/* 1. ACTIONS SEKMESİ (D&D Beyond 1:1 Attacks Table & Combat Actions) */}
+          {activeTab === 'actions' && (
+            <div id="tab-content-actions" className="dndbeyond-card">
+              {/* Alt Filtre Hapları */}
+              <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
+                {(['all', 'attack', 'action', 'bonus', 'reaction'] as ActionSubPill[]).map((pill) => (
+                  <button
+                    key={pill}
+                    onClick={() => setActionSubPill(pill)}
+                    style={{
+                      background: actionSubPill === pill ? 'var(--accent-red)' : 'rgba(255,255,255,0.05)',
+                      color: actionSubPill === pill ? '#fff' : 'var(--text-muted)',
+                      border: 'none',
+                      borderRadius: '4px',
+                      padding: '0.2rem 0.55rem',
+                      fontSize: '0.72rem',
+                      fontWeight: 800,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {pill.toUpperCase()}
+                  </button>
+                ))}
+              </div>
+
+              {/* Attacks Tablosu */}
+              <div style={{ overflowX: 'auto' }}>
+                <table className="attacks-bento-table">
+                  <thead>
+                    <tr>
+                      <th>ATTACK</th>
+                      <th>RANGE</th>
+                      <th>HIT / DC</th>
+                      <th>DAMAGE</th>
+                      <th>NOTES</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {character.weapons.map((w) => {
+                      const abilityMod = w.abilityUsed === 'str' ? strMod : dexMod;
                       const toHitMod = abilityMod + profBonus;
-                      const anim = damageAnimState[weapon.id];
+                      const anim = damageAnimState[w.id];
 
                       return (
-                        <div key={weapon.id} className="weapon-card">
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <h4
-                              className="font-cinzel"
-                              style={{ color: 'var(--text-primary)', margin: 0, cursor: 'pointer' }}
-                              onClick={() =>
-                                openReference({
-                                  type: 'item',
-                                  data: {
-                                    slug: weapon.id,
-                                    name: weapon.name,
-                                    type: 'weapon',
-                                    cost: '—',
-                                    weight: 3,
-                                    description: `Hasar: ${weapon.damage} ${weapon.damageType}, Menzil: ${weapon.range || '5 ft'}, Nitelikler: ${weapon.properties.join(', ')}`,
-                                    properties: weapon.properties,
-                                    quantity: 1,
-                                    source: 'Envanter',
-                                    source_ref: 'Kuşanılmış Silah',
-                                    license: 'SRD 5.1',
-                                  },
-                                })
-                              }
-                              title="Silah Detaylarını İncele"
+                        <tr key={w.id}>
+                          <td>
+                            <strong
+                              style={{ color: 'var(--text-primary)', display: 'block', cursor: 'pointer' }}
+                              onClick={() => openReference({
+                                type: 'item',
+                                data: {
+                                  slug: w.id,
+                                  name: w.name,
+                                  type: 'weapon',
+                                  cost: '15 gp',
+                                  weight: 3,
+                                  description: `${w.damage} ${w.damageType}. Özellikler: ${w.properties?.join(', ') || 'Standard'}. Menzil: ${w.range ?? '5 ft'}.`,
+                                  quantity: 1,
+                                  source: 'PHB',
+                                  source_ref: 'PHB',
+                                  license: 'OGL'
+                                }
+                              })}
+                              title="Detayları İncele (Reference Drawer)"
                             >
-                              ⚔️ {weapon.name}
-                            </h4>
-                            <span className="weapon-dmg-badge">
-                              {weapon.damage} + {abilityMod} {weapon.damageType}
-                            </span>
-                          </div>
-                          <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.3rem' }}>
-                            Saldırı Bonusu: <strong>+{toHitMod}</strong>
-                            {' • '}Menzil: {weapon.range ?? '5 ft'}
-                            {weapon.properties.length > 0 && ` • ${weapon.properties.join(', ')}`}
-                          </div>
-                          <div style={{ display: 'flex', gap: '0.6rem', marginTop: '0.75rem', alignItems: 'center' }}>
+                              {w.name}
+                            </strong>
+                            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Melee Weapon • Mastery</span>
+                          </td>
+                          <td style={{ color: 'var(--text-secondary)' }}>{w.range ?? '5 ft'}</td>
+                          <td>
                             <button
-                              id={`btn-attack-${weapon.id}`}
-                              className="action-button"
-                              style={{ flex: 1, minHeight: '40px', padding: '0.4rem 0.6rem', fontSize: '0.85rem' }}
-                              onClick={() => rollCheck(`${weapon.name} Saldırısı`, toHitMod)}
+                              id={`btn-attack-${w.id}`}
+                              className="dndbeyond-attack-box-btn"
+                              onClick={() => rollCheck(`${w.name} Saldırısı`, toHitMod)}
+                              title="1d20+Bonus ile Saldırı Yap"
                             >
-                              🎯 Saldırı (1d20+{toHitMod})
+                              {toHitMod >= 0 ? `+${toHitMod}` : toHitMod}
                             </button>
-
-                            {/* Dönüşümlü Hasar Butonu: 2d6 -> dönüyor -> 10 -> yana kayıp silik [10] */}
-                            <div className="damage-btn-anim-wrapper" style={{ flex: 1 }}>
+                          </td>
+                          <td>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                               <button
-                                id={`btn-damage-${weapon.id}`}
-                                className={`action-button damage-active-btn ${anim?.isRolling ? 'rolling' : ''}`}
-                                style={{
-                                  width: '100%',
-                                  minHeight: '40px',
-                                  padding: '0.4rem 0.6rem',
-                                  fontSize: '0.85rem',
-                                  background: 'rgba(239, 68, 68, 0.2)',
-                                  borderColor: '#ef4444',
-                                }}
-                                onClick={() => handleAnimatedDamageRoll(weapon, abilityMod)}
+                                id={`btn-damage-${w.id}`}
+                                className={`dndbeyond-attack-box-btn damage-active-btn ${anim?.isRolling ? 'rolling' : ''}`}
+                                style={{ background: 'rgba(200, 30, 30, 0.25)', borderColor: 'var(--accent-red)' }}
+                                onClick={() => handleAnimatedDamageRoll(w, abilityMod)}
                                 disabled={anim?.isRolling}
+                                title="Hasar Zarı At"
                               >
-                                💥 {anim?.labelText || `${weapon.damage}+${abilityMod}`}
+                                💥 {anim?.labelText || `${w.damage}+${abilityMod}`}
                               </button>
                               {anim?.ghostVal && (
-                                <span className="damage-prev-result-ghost" title="Son Atılan Hasar">
+                                <span className="damage-prev-result-ghost">
                                   [{anim.ghostVal}]
                                 </span>
                               )}
                             </div>
-                          </div>
-                        </div>
+                          </td>
+                          <td style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                            {w.properties?.join(', ') || 'Standard'} • {w.damageType}
+                          </td>
+                        </tr>
                       );
-                    })
-                  )}
-                </div>
+                    })}
+                  </tbody>
+                </table>
               </div>
-            )}
 
-            {/* Büyücüler için Büyü Kitabı, Savaşçılar için Sınıf Özellikleri */}
-            {activeTab === 'spells' && (
-              <div id="tab-content-spells">
-                {isSpellcaster ? (
-                  <Spellbook level={character.level} castingModifier={intMod} />
-                ) : (
-                  <div className="class-features-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                    <div style={{ background: 'rgba(18, 26, 45, 0.7)', border: '1px solid var(--border-gold)', borderRadius: '16px', padding: '1.2rem' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                        <h3 className="font-cinzel" style={{ color: 'var(--accent-gold)', margin: 0, fontSize: '1.25rem' }}>
-                          💨 İkinci Nefes (Second Wind)
-                        </h3>
-                        <button
-                          id="btn-second-wind-action"
-                          className="action-button"
-                          style={{ background: 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)', borderColor: '#4ade80', padding: '0.4rem 0.9rem', fontSize: '0.85rem' }}
-                          onClick={handleSecondWind}
-                        >
-                          ❤️ 1d10 + {character.level} İyileş
-                        </button>
-                      </div>
-                      <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
-                        Dövüşte kendi sınırlarını zorlayarak dayanıklılık kazanırsın. Bonus aksiyon olarak 1d10 + Savaşçı seviyen kadar can puanını geri kazanırsın. Kısa veya uzun dinlenmede yenilenir.
-                      </p>
+              {/* Dövüş İçi Standart Eylemler (Actions in Combat) */}
+              <div style={{ marginTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '0.75rem' }}>
+                <span style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--accent-gold)' }}>ACTIONS IN COMBAT</span>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '0.3rem 0' }}>
+                  Attack, Dash, Disengage, Dodge, Grapple, Help, Hide, Improvise, Influence, Ready, Search, Shove, Study, Utilize.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* 2. SPELLS / CLASS FEATURES SEKMESİ */}
+          {activeTab === 'spells' && (
+            <div id="tab-content-spells">
+              {isSpellcaster ? (
+                <Spellbook level={character.level} castingModifier={intMod} />
+              ) : (
+                <div className="dndbeyond-card">
+                  <div className="dndbeyond-card-header">SAVAŞÇI YETENEKLERİ (CLASS FEATURES)</div>
+                  
+                  {/* Second Wind */}
+                  <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-gold)', borderRadius: '8px', padding: '0.85rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <strong style={{ color: 'var(--accent-gold)' }}>💨 İkinci Nefes (Second Wind)</strong>
+                      <button
+                        id="btn-second-wind-action"
+                        className="dndbeyond-attack-box-btn"
+                        style={{ background: '#16a34a', borderColor: '#22c55e', color: '#fff' }}
+                        onClick={handleSecondWind}
+                      >
+                        ❤️ 1d10 + {character.level} İyileş
+                      </button>
                     </div>
-
-                    <div style={{ background: 'rgba(18, 26, 45, 0.7)', border: '1px solid var(--border-subtle)', borderRadius: '16px', padding: '1.2rem' }}>
-                      <h3 className="font-cinzel" style={{ color: '#fff', margin: '0 0 0.5rem', fontSize: '1.25rem' }}>
-                        ⚡ Eylem Akışı (Action Surge)
-                      </h3>
-                      <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
-                        Normal eylemine ek olarak bu turda 1 ilave eylem (Action) yapabilirsin. Kısa veya uzun dinlenmede yenilenir.
-                      </p>
-                    </div>
-
-                    {character.subclass && (
-                      <div style={{ background: 'rgba(18, 26, 45, 0.7)', border: '1px solid var(--border-subtle)', borderRadius: '16px', padding: '1.2rem' }}>
-                        <h3 className="font-cinzel" style={{ color: 'var(--accent-amber)', margin: '0 0 0.5rem', fontSize: '1.25rem' }}>
-                          🛡️ Alt Sınıf: {character.subclass}
-                        </h3>
-                        <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
-                          Gelişmiş Kritik (Improved Critical): Silah saldırıların 19 veya 20 geldiğinde kritik vuruş sayılır!
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Akıllı Envanter: Çantam vs Eşya Ekle (Kuşanılan Zırh AC'yi Günceller) */}
-            {activeTab === 'inventory' && (
-              <div id="tab-content-inventory">
-                <InventoryManager
-                  strScore={character.baseAbilities.str}
-                  inventory={character.inventory}
-                  onInventoryChange={handleInventoryChange}
-                />
-              </div>
-            )}
-
-            {activeTab === 'conditions' && (
-              <div id="tab-content-conditions">
-                <ConditionsTracker
-                  activeConditions={character.activeConditions}
-                  onConditionsChange={(conds) => {
-                    if (!isDemo) updateConditions(conds);
-                  }}
-                />
-              </div>
-            )}
-
-            {activeTab === 'features' && (
-              <div id="tab-content-features">
-                <LevelUpModal
-                  initialLevel={character.level}
-                  charClass={character.class}
-                  initialMaxHp={character.maxHp}
-                  conModifier={conMod}
-                  currentAbilities={character.baseAbilities}
-                  currentSubclass={character.subclass}
-                  currentFeats={character.feats}
-                  currentBackstory={character.backstory}
-                  onDetailedLevelUpApplied={(payload) => {
-                    if (!isDemo) {
-                      saveCharacter({
-                        ...character,
-                        level: payload.level,
-                        maxHp: payload.maxHp,
-                        currentHp: Math.min(character.currentHp, payload.maxHp),
-                        subclass: payload.subclass || character.subclass,
-                        baseAbilities: payload.abilities,
-                        feats: payload.feats,
-                        backstory: payload.backstory,
-                      });
-                    }
-                  }}
-                  onLevelUpApplied={(newLvl, newHp, subc) => {
-                    if (!isDemo) {
-                      saveCharacter({
-                        ...character,
-                        level: newLvl,
-                        maxHp: newHp,
-                        currentHp: Math.min(character.currentHp, newHp),
-                        subclass: subc || character.subclass,
-                      });
-                    }
-                  }}
-                />
-
-                {/* Karakter Hünerleri (Feats) & Arka Planı Listesi */}
-                {(character.feats && character.feats.length > 0) && (
-                  <div style={{ marginTop: '1.2rem', background: 'rgba(18, 26, 45, 0.7)', border: '1px solid var(--border-gold)', borderRadius: '16px', padding: '1.2rem' }}>
-                    <h3 className="font-cinzel" style={{ color: 'var(--accent-gold)', margin: '0 0 0.8rem', fontSize: '1.15rem' }}>
-                      ⚡ Kazanılan Hünerler (Feats)
-                    </h3>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                      {character.feats.map((featId) => (
-                        <span
-                          key={featId}
-                          style={{
-                            background: 'rgba(217, 119, 6, 0.2)',
-                            border: '1px solid var(--accent-gold)',
-                            color: '#fef08a',
-                            padding: '0.35rem 0.75rem',
-                            borderRadius: '999px',
-                            fontSize: '0.82rem',
-                            fontWeight: 600
-                          }}
-                        >
-                          ✦ {featId.replace(/-/g, ' ').toUpperCase()}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {character.backstory && (
-                  <div style={{ marginTop: '1rem', background: 'rgba(18, 26, 45, 0.7)', border: '1px solid var(--border-subtle)', borderRadius: '16px', padding: '1.2rem' }}>
-                    <h3 className="font-cinzel" style={{ color: '#fff', margin: '0 0 0.5rem', fontSize: '1.15rem' }}>
-                      📜 Karakter Geçmişi & Hikayesi (Backstory)
-                    </h3>
-                    <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
-                      {character.backstory}
+                    <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '0.4rem 0 0' }}>
+                      Bonus eylem olarak 1d10 + Savaşçı seviyen kadar can yenilersin. Kısa veya uzun dinlenmede dolar.
                     </p>
                   </div>
-                )}
+
+                  {/* Action Surge */}
+                  <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-subtle)', borderRadius: '8px', padding: '0.85rem' }}>
+                    <strong style={{ color: '#fff' }}>⚡ Eylem Akışı (Action Surge)</strong>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '0.4rem 0 0' }}>
+                      Kendi turunda fazladan 1 Eylem (Action) hakkı kazanırsın. Kısa veya uzun dinlenmede yenilenir.
+                    </p>
+                  </div>
+
+                  {/* Rage (Barbar ise) */}
+                  {character.class.toLowerCase() === 'barbarian' && (
+                    <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-red)', borderRadius: '8px', padding: '0.85rem' }}>
+                      <strong style={{ color: 'var(--accent-red)' }}>🔥 Öfke (Rage)</strong>
+                      <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', marginTop: '0.3rem' }}>
+                        <span>Kullanım:</span>
+                        <input type="checkbox" />
+                        <input type="checkbox" />
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>/ Long Rest</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* 3. INVENTORY SEKMESİ */}
+          {activeTab === 'inventory' && (
+            <div id="tab-content-inventory">
+              <InventoryManager
+                strScore={character.baseAbilities.str}
+                inventory={character.inventory}
+                onInventoryChange={handleInventoryChange}
+              />
+            </div>
+          )}
+
+          {/* 4. LEVEL UP & FEATURES SEKMESİ */}
+          {activeTab === 'features' && (
+            <div id="tab-content-features" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <LevelUpModal
+                initialLevel={character.level}
+                charClass={character.class}
+                initialMaxHp={character.maxHp}
+                conModifier={conMod}
+                currentAbilities={character.baseAbilities}
+                currentSubclass={character.subclass}
+                currentFeats={character.feats}
+                currentBackstory={character.backstory}
+                onDetailedLevelUpApplied={(payload) => {
+                  if (!isDemo) {
+                    saveCharacter({
+                      ...character,
+                      level: payload.level,
+                      maxHp: payload.maxHp,
+                      currentHp: Math.min(character.currentHp, payload.maxHp),
+                      subclass: payload.subclass || character.subclass,
+                      baseAbilities: payload.abilities,
+                      feats: payload.feats,
+                      backstory: payload.backstory,
+                    });
+                  }
+                }}
+                onLevelUpApplied={(newLvl, newHp, subc) => {
+                  if (!isDemo) {
+                    saveCharacter({
+                      ...character,
+                      level: newLvl,
+                      maxHp: newHp,
+                      currentHp: Math.min(character.currentHp, newHp),
+                      subclass: subc || character.subclass,
+                    });
+                  }
+                }}
+              />
+
+              {/* Feats & Özellik Rozetleri */}
+              {character.feats && character.feats.length > 0 && (
+                <div className="dndbeyond-card">
+                  <div className="dndbeyond-card-header">KAZANILAN HÜNERLER (FEATS)</div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+                    {character.feats.map((f) => (
+                      <span key={f} style={{ background: 'rgba(212, 175, 53, 0.2)', border: '1px solid var(--border-gold)', color: '#fef08a', padding: '0.2rem 0.6rem', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 700 }}>
+                        ✦ {f.replace(/-/g, ' ').toUpperCase()}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* 5. BACKGROUND SEKMESİ */}
+          {activeTab === 'background' && (
+            <div className="dndbeyond-card">
+              <div className="dndbeyond-card-header">BACKGROUND & CHARACTERISTICS</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.6rem', fontSize: '0.8rem', background: 'rgba(0,0,0,0.3)', padding: '0.75rem', borderRadius: '8px' }}>
+                <div><strong>Geçmiş:</strong> {character.background}</div>
+                <div><strong>Irk / Tür:</strong> {character.race}</div>
+                <div><strong>Boyut:</strong> Medium</div>
+                <div><strong>Hizalanma:</strong> Neutral Good</div>
+                <div><strong>Gözler:</strong> Kahverengi</div>
+                <div><strong>Saç:</strong> Kızıl / Sakallı</div>
               </div>
-            )}
-          </div>
+
+              {character.backstory ? (
+                <div style={{ marginTop: '0.6rem' }}>
+                  <strong>Karakter Hikayesi:</strong>
+                  <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginTop: '0.3rem' }}>
+                    {character.backstory}
+                  </p>
+                </div>
+              ) : (
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                  Karakter geçmişi henüz yazılmadı. Seviye atlama ekranından ekleyebilirsiniz.
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* 6. NOTES SEKMESİ */}
+          {activeTab === 'notes' && (
+            <div className="dndbeyond-card">
+              <div className="dndbeyond-card-header">CAMPAIGN & ADVENTURE NOTES</div>
+              <textarea
+                placeholder="Önemli NPC'ler, harita konumları, görevler ve ganimet notları..."
+                rows={8}
+                style={{
+                  width: '100%',
+                  background: 'rgba(10, 13, 22, 0.8)',
+                  border: '1px solid var(--border-subtle)',
+                  borderRadius: '6px',
+                  color: '#fff',
+                  padding: '0.6rem',
+                  fontSize: '0.85rem'
+                }}
+              />
+            </div>
+          )}
+
+          {/* 7. CONDITIONS SEKMESİ */}
+          {activeTab === 'conditions' && (
+            <div id="tab-content-conditions">
+              <ConditionsTracker
+                activeConditions={character.activeConditions}
+                onConditionsChange={(conds) => {
+                  if (!isDemo) updateConditions(conds);
+                }}
+              />
+            </div>
+          )}
+
         </main>
+
       </div>
     </div>
   );
