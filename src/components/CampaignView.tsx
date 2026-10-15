@@ -3,6 +3,7 @@ import { Campaign, PartyMember, UserRole, SyncEvent } from '../types/campaign';
 import { isValidInviteCode, generateInviteCode } from '../rules/campaignRules';
 import { syncService } from '../data/syncService';
 import { DmDashboard } from './DmDashboard';
+import { EncounterTracker } from './EncounterTracker';
 
 const INITIAL_MEMBERS: PartyMember[] = [
   {
@@ -63,6 +64,7 @@ export const CampaignView: React.FC = () => {
   });
 
   const [userRole, setUserRole] = useState<UserRole>('dm');
+  const [dmSubTab, setDmSubTab] = useState<'party' | 'encounter'>('party');
   const [joinCodeInput, setJoinCodeInput] = useState<string>('');
   const [copyFeedback, setCopyFeedback] = useState<string>('');
   const [joinError, setJoinError] = useState<string>('');
@@ -225,12 +227,36 @@ export const CampaignView: React.FC = () => {
         </div>
       </div>
 
-      {/* DM Konsolu & Parti Üyeleri */}
-      <DmDashboard
-        members={campaign.members}
-        userRole={userRole}
-        onUpdateMembers={(next) => setCampaign((prev) => ({ ...prev, members: next }))}
-      />
+      {/* DM Konsolu & Karşılaşma Seçici */}
+      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.2rem', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.5rem' }}>
+        <button
+          id="btn-dm-tab-party"
+          className={`sheet-tab-btn ${dmSubTab === 'party' ? 'active' : ''}`}
+          onClick={() => setDmSubTab('party')}
+          style={{ fontSize: '0.95rem', padding: '0.5rem 1rem' }}
+        >
+          👥 Parti Genel Bakış ({campaign.members.length})
+        </button>
+        <button
+          id="btn-dm-tab-encounter"
+          className={`sheet-tab-btn ${dmSubTab === 'encounter' ? 'active' : ''}`}
+          onClick={() => setDmSubTab('encounter')}
+          style={{ fontSize: '0.95rem', padding: '0.5rem 1rem' }}
+        >
+          ⚔️ Karşılaşma & İnisiyatif Takipçisi
+        </button>
+      </div>
+
+      {dmSubTab === 'party' ? (
+        <DmDashboard
+          members={campaign.members}
+          userRole={userRole}
+          onUpdateMembers={(next) => setCampaign((prev) => ({ ...prev, members: next }))}
+        />
+      ) : (
+        <EncounterTracker partyMembers={campaign.members} />
+      )}
     </div>
   );
 };
+

@@ -37,7 +37,8 @@ export type SyncEventType =
   | 'CONDITION_UPDATE'
   | 'MEMBER_JOIN'
   | 'PING'
-  | 'DICE_ROLLED';
+  | 'DICE_ROLLED'
+  | 'ENCOUNTER_UPDATE';
 
 export interface SyncEvent {
   type: SyncEventType;

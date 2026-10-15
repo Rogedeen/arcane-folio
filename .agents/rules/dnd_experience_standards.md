@@ -48,9 +48,24 @@ Bu doküman, projede geliştirilen tüm bileşenlerin uymak ZORUNDA olduğu teme
 
 ---
 
-## 6. 🏆 Seviye Atlama Sihirbazı (Level-Up Wizard)
-- Seviye atlandığında sadece sayı artmaz; adım adım bir sihirbaz açılır:
-  1. HP Artışı (Can zarı at veya sınıf ortalamasını al + CON mod).
-  2. Yeni kazanılan sınıf özellikleri özeti.
-  3. Büyücü ise yeni büyü seçimi / slot artışı.
-  4. Yetenek puanı artışı (ASI) veya Feat seçimi (4, 8, 12, 16, 19. seviyeler).
+## 6. 🏆 Seviye Atlama Sihirbazı (Level-Up Wizard & Progression)
+- Seviye atlandığında adım adım sihirbaz açılır:
+  1. **HP Artışı:** Can zarı at (Hit Die) veya kural ortalamasını al + CON bonusu.
+  2. **Alt Sınıf (Subclass) Seçimi:** Seviye 3'te (veya Cleric/Warlock/Sorcerer için 1-2'de) alt sınıf seçilir. Alt sınıf modülerdir; örneğin Fighter -> Eldritch Knight veya Rogue -> Arcane Trickster seçildiğinde karaktere büyü yuvaları (Spell Slots), büyü sekmesi ve Int büyücülüğü otomatik açılır!
+  3. **Stat Artışı (ASI) veya Hüner (Feat) Seçimi:** (4, 8, 12, 16, 19. seviyelerde) +2 tek stat veya +1 iki stat seçimi ya da listelenen Feat'lerden (Great Weapon Master, War Caster, Alert, Sharpshooter vb.) biri seçilir.
+  4. **Geçmiş Hikayesi & Kişilik (Backstory):** Karakter geçmişi, idealleri, kusurları seviye atlama veya düzenleme esnasında güncellenebilir.
+
+---
+
+## 7. ⚔️ DM Karşılaşma & İnisiyatif Takipçisi (Encounter & Initiative Tracker)
+- DM ekranında Open5e API'den anında canavar/yaratık arama ve masaya ekleme (`/v2/creatures/`).
+- Partideki oyuncuların canı (HP), AC'si ve Pasif Algısı (Passive Perception) canavarlarla aynı inisiyatif listesinde sıralanır.
+- Otomatik veya manuel inisiyatif zarı atma; en yüksekten en düşüğe tur sırası (Turn Order).
+- "Sonraki Tur (Next Turn)" ve "Tur Sayacı (Round Counter)" ile aktif oyuncu/canavar vurgulanır.
+- Canavarlara tek tıkla hasar verme, iyileştirme, durum (Condition) uygulama.
+
+---
+
+## 8. 📜 Kural Seti Önceliği: 2014 PHB
+- 2024 kuralları (Weapon Mastery vb.) henüz devreye sokulmaz; öncelikle 2014 5e kuralları eksiksiz ve pürüzsüz uygulanır.
+

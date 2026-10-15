@@ -83,6 +83,14 @@ export interface FullCharacter {
   activeConditions: string[];
   deathSaves?: { successes: number; failures: number };
 
+  // Gelişim & Hikaye (Progression & Roleplay)
+  feats?: string[];
+  backstory?: string;
+  personalityTraits?: string;
+  ideals?: string;
+  bonds?: string;
+  flaws?: string;
+
   // Meta
   ruleset: Ruleset;
   notes?: string;

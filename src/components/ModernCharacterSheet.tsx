@@ -716,6 +716,24 @@ export const ModernCharacterSheet: React.FC = () => {
                   charClass={character.class}
                   initialMaxHp={character.maxHp}
                   conModifier={conMod}
+                  currentAbilities={character.baseAbilities}
+                  currentSubclass={character.subclass}
+                  currentFeats={character.feats}
+                  currentBackstory={character.backstory}
+                  onDetailedLevelUpApplied={(payload) => {
+                    if (!isDemo) {
+                      saveCharacter({
+                        ...character,
+                        level: payload.level,
+                        maxHp: payload.maxHp,
+                        currentHp: Math.min(character.currentHp, payload.maxHp),
+                        subclass: payload.subclass || character.subclass,
+                        baseAbilities: payload.abilities,
+                        feats: payload.feats,
+                        backstory: payload.backstory,
+                      });
+                    }
+                  }}
                   onLevelUpApplied={(newLvl, newHp, subc) => {
                     if (!isDemo) {
                       saveCharacter({
@@ -728,6 +746,44 @@ export const ModernCharacterSheet: React.FC = () => {
                     }
                   }}
                 />
+
+                {/* Karakter Hünerleri (Feats) & Arka Planı Listesi */}
+                {(character.feats && character.feats.length > 0) && (
+                  <div style={{ marginTop: '1.2rem', background: 'rgba(18, 26, 45, 0.7)', border: '1px solid var(--border-gold)', borderRadius: '16px', padding: '1.2rem' }}>
+                    <h3 className="font-cinzel" style={{ color: 'var(--accent-gold)', margin: '0 0 0.8rem', fontSize: '1.15rem' }}>
+                      ⚡ Kazanılan Hünerler (Feats)
+                    </h3>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                      {character.feats.map((featId) => (
+                        <span
+                          key={featId}
+                          style={{
+                            background: 'rgba(217, 119, 6, 0.2)',
+                            border: '1px solid var(--accent-gold)',
+                            color: '#fef08a',
+                            padding: '0.35rem 0.75rem',
+                            borderRadius: '999px',
+                            fontSize: '0.82rem',
+                            fontWeight: 600
+                          }}
+                        >
+                          ✦ {featId.replace(/-/g, ' ').toUpperCase()}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {character.backstory && (
+                  <div style={{ marginTop: '1rem', background: 'rgba(18, 26, 45, 0.7)', border: '1px solid var(--border-subtle)', borderRadius: '16px', padding: '1.2rem' }}>
+                    <h3 className="font-cinzel" style={{ color: '#fff', margin: '0 0 0.5rem', fontSize: '1.15rem' }}>
+                      📜 Karakter Geçmişi & Hikayesi (Backstory)
+                    </h3>
+                    <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
+                      {character.backstory}
+                    </p>
+                  </div>
+                )}
               </div>
             )}
           </div>

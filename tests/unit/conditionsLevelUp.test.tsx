@@ -40,6 +40,8 @@ describe('LevelUpModal Component', () => {
 
     fireEvent.click(openBtn);
     expect(screen.getByText(/Seviye 3 Atlama/i)).toBeInTheDocument();
+    // 2. Alt Sınıf sekmesine tıkla
+    fireEvent.click(screen.getByRole('button', { name: /Alt Sınıf/i }));
     expect(screen.getByText(/Şampiyon/i)).toBeInTheDocument(); // Fighter Level 3 subclass unlock!
   });
 
