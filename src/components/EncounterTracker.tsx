@@ -250,35 +250,90 @@ export const EncounterTracker: React.FC<EncounterTrackerProps> = ({ partyMembers
     setCurrentTurnIndex(0);
     setIsCombatActive(true);
 
+    const firstActive = updated[0];
     syncService.broadcast({
       type: 'ENCOUNTER_UPDATE',
       campaignId: 'camp-default',
       senderRole: 'dm',
-      payload: { note: 'İnisiyatif zarları atıldı ve dövüş başladı!' },
+      payload: {
+        combatActive: true,
+        round: 1,
+        turnIndex: 0,
+        currentTurnName: firstActive?.name ?? '',
+        activeCombatantId: firstActive?.id ?? '',
+        note: 'İnisiyatif zarları atıldı ve dövüş başladı!',
+      },
       timestamp: new Date().toISOString(),
     });
   };
 
-  // Sonraki Tur / Sıra
+  // Sonraki Tur / Sıra (Tüm oyuncu ekranlarında senkronize ilerler)
   const handleNextTurn = () => {
     if (combatants.length === 0) return;
-    if (currentTurnIndex >= combatants.length - 1) {
-      setCurrentTurnIndex(0);
-      setRound((prev) => prev + 1);
-    } else {
-      setCurrentTurnIndex((prev) => prev + 1);
-    }
+    const nextIndex = currentTurnIndex >= combatants.length - 1 ? 0 : currentTurnIndex + 1;
+    const nextRound = currentTurnIndex >= combatants.length - 1 ? round + 1 : round;
+
+    setCurrentTurnIndex(nextIndex);
+    setRound(nextRound);
+
+    const activeCombatant = combatants[nextIndex];
+    syncService.broadcast({
+      type: 'ENCOUNTER_UPDATE',
+      campaignId: 'camp-default',
+      senderRole: 'dm',
+      payload: {
+        combatActive: true,
+        round: nextRound,
+        turnIndex: nextIndex,
+        currentTurnName: activeCombatant?.name ?? '',
+        activeCombatantId: activeCombatant?.id ?? '',
+      },
+      timestamp: new Date().toISOString(),
+    });
   };
 
   // Önceki Sıra
   const handlePrevTurn = () => {
     if (combatants.length === 0) return;
+    let prevIndex = currentTurnIndex;
+    let prevRound = round;
+
     if (currentTurnIndex > 0) {
-      setCurrentTurnIndex((prev) => prev - 1);
+      prevIndex = currentTurnIndex - 1;
     } else if (round > 1) {
-      setCurrentTurnIndex(combatants.length - 1);
-      setRound((prev) => prev - 1);
+      prevIndex = combatants.length - 1;
+      prevRound = round - 1;
     }
+
+    setCurrentTurnIndex(prevIndex);
+    setRound(prevRound);
+
+    const activeCombatant = combatants[prevIndex];
+    syncService.broadcast({
+      type: 'ENCOUNTER_UPDATE',
+      campaignId: 'camp-default',
+      senderRole: 'dm',
+      payload: {
+        combatActive: true,
+        round: prevRound,
+        turnIndex: prevIndex,
+        currentTurnName: activeCombatant?.name ?? '',
+        activeCombatantId: activeCombatant?.id ?? '',
+      },
+      timestamp: new Date().toISOString(),
+    });
+  };
+
+  // DM'in Oyuncuya İlham Vermesi (Stacklenebilir Heroic Inspiration)
+  const handleAwardInspiration = (playerName: string) => {
+    soundEffects.playCritSound();
+    syncService.broadcast({
+      type: 'INSPIRATION_AWARDED',
+      campaignId: 'camp-default',
+      senderRole: 'dm',
+      payload: { playerName },
+      timestamp: new Date().toISOString(),
+    });
   };
 
   // Hasar / İyileşme Uygula
@@ -563,6 +618,17 @@ export const EncounterTracker: React.FC<EncounterTrackerProps> = ({ partyMembers
                       >
                         Vur
                       </button>
+
+                      {c.type === 'player' && (
+                        <button
+                          className="action-button"
+                          onClick={() => handleAwardInspiration(c.name)}
+                          style={{ padding: '0.2rem 0.5rem', fontSize: '0.75rem', background: '#d97706', borderColor: '#f59e0b', color: '#fff' }}
+                          title="Bu karaktere +1 İlham (Heroic Inspiration) ver"
+                        >
+                          ✨ İlham Ver
+                        </button>
+                      )}
 
                       {/* Durum Rozetleri */}
                       <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.2rem' }}>

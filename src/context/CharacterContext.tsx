@@ -23,6 +23,7 @@ import {
   exportCharacterAsJSON,
   importCharacterFromJSON,
 } from '../data/persistenceService';
+import { syncService } from '../data/syncService';
 import type { AppPreferences } from '../types/app';
 
 // --- State Tipi ---
@@ -45,6 +46,7 @@ type CharacterAction =
   | { type: 'UPDATE_ACTIVE_SPELL_SLOT'; payload: { level: number; expended: number } }
   | { type: 'UPDATE_ACTIVE_CONDITIONS'; payload: string[] }
   | { type: 'UPDATE_ACTIVE_DEATH_SAVES'; payload: { successes: number; failures: number } }
+  | { type: 'UPDATE_ACTIVE_INSPIRATION'; payload: number }
   | { type: 'UPDATE_PREFERENCES'; payload: Partial<AppPreferences> };
 
 // --- Reducer ---
@@ -142,6 +144,18 @@ function characterReducer(
       };
     }
 
+    case 'UPDATE_ACTIVE_INSPIRATION': {
+      if (!state.activeCharacterId) return state;
+      return {
+        ...state,
+        characters: state.characters.map((c) =>
+          c.id === state.activeCharacterId
+            ? { ...c, inspiration: Math.max(0, action.payload), updatedAt: new Date().toISOString() }
+            : c
+        ),
+      };
+    }
+
     case 'UPDATE_PREFERENCES':
       return {
         ...state,
@@ -169,6 +183,7 @@ interface CharacterContextValue {
   updateSpellSlot: (level: number, expended: number) => void;
   updateConditions: (conditions: string[]) => void;
   updateDeathSaves: (successes: number, failures: number) => void;
+  updateInspiration: (inspiration: number) => void;
 
   // Tercihler
   updatePreferences: (prefs: Partial<AppPreferences>) => void;
@@ -223,6 +238,22 @@ export function CharacterProvider({ children }: { children: ReactNode }) {
   const activeCharacter =
     state.characters.find((c) => c.id === state.activeCharacterId) ?? null;
 
+  // DM'den gelen ilham ödüllerini dinle ve stackle
+  useEffect(() => {
+    const unsub = syncService.subscribe((event) => {
+      if (event.type === 'INSPIRATION_AWARDED' && event.payload?.playerName) {
+        const targetName = String(event.payload.playerName).toLowerCase();
+        if (activeCharacter && activeCharacter.name.toLowerCase() === targetName) {
+          dispatch({
+            type: 'UPDATE_ACTIVE_INSPIRATION',
+            payload: (activeCharacter.inspiration ?? 0) + 1,
+          });
+        }
+      }
+    });
+    return unsub;
+  }, [activeCharacter]);
+
   // --- Action Wrappers ---
 
   const saveCharacter = useCallback((character: FullCharacter) => {
@@ -252,6 +283,10 @@ export function CharacterProvider({ children }: { children: ReactNode }) {
 
   const updateDeathSaves = useCallback((successes: number, failures: number) => {
     dispatch({ type: 'UPDATE_ACTIVE_DEATH_SAVES', payload: { successes, failures } });
+  }, []);
+
+  const updateInspiration = useCallback((inspiration: number) => {
+    dispatch({ type: 'UPDATE_ACTIVE_INSPIRATION', payload: inspiration });
   }, []);
 
   const updatePreferences = useCallback((prefs: Partial<AppPreferences>) => {
@@ -284,6 +319,7 @@ export function CharacterProvider({ children }: { children: ReactNode }) {
     updateSpellSlot,
     updateConditions,
     updateDeathSaves,
+    updateInspiration,
     updatePreferences,
     exportCharacter,
     importCharacter,
@@ -317,6 +353,7 @@ const DEFAULT_CHARACTER_CONTEXT: CharacterContextValue = {
   updateSpellSlot: () => {},
   updateConditions: () => {},
   updateDeathSaves: () => {},
+  updateInspiration: () => {},
   updatePreferences: () => {},
   exportCharacter: () => {},
   importCharacter: async () => false,

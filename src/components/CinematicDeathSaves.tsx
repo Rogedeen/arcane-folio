@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { soundEffects } from '../utils/soundEffects';
 
 interface CinematicDeathSavesProps {
@@ -7,6 +7,8 @@ interface CinematicDeathSavesProps {
   initialFailures?: number;
   onSavesChange?: (successes: number, failures: number) => void;
   onRegainHp?: (hp: number) => void;
+  isDismissed?: boolean;
+  onDismiss?: () => void;
 }
 
 export const CinematicDeathSaves: React.FC<CinematicDeathSavesProps> = ({
@@ -15,6 +17,8 @@ export const CinematicDeathSaves: React.FC<CinematicDeathSavesProps> = ({
   initialFailures = 0,
   onSavesChange,
   onRegainHp,
+  isDismissed,
+  onDismiss,
 }) => {
   const [successes, setSuccesses] = useState(initialSuccesses);
   const [failures, setFailures] = useState(initialFailures);
@@ -25,8 +29,18 @@ export const CinematicDeathSaves: React.FC<CinematicDeathSavesProps> = ({
   const [dead, setDead] = useState(false);
   const [dismissed, setDismissed] = useState(false);
 
+  useEffect(() => {
+    setSuccesses(initialSuccesses);
+  }, [initialSuccesses]);
+
+  useEffect(() => {
+    setFailures(initialFailures);
+  }, [initialFailures]);
+
+  const activeDismissed = isDismissed !== undefined ? isDismissed : dismissed;
+
   // Sadece HP <= 0 ise ve kullanıcı geçici olarak gizlemediyse göster
-  if (currentHp > 0 || dismissed) {
+  if (currentHp > 0 || activeDismissed) {
     return null;
   }
 
@@ -182,7 +196,10 @@ export const CinematicDeathSaves: React.FC<CinematicDeathSavesProps> = ({
             </button>
             <button
               className="death-minimize-btn"
-              onClick={() => setDismissed(true)}
+              onClick={() => {
+                setDismissed(true);
+                onDismiss?.();
+              }}
               title="Karakter kağıdına geçici bakış"
             >
               👁️ Kağıdı Gör

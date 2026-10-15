@@ -10,7 +10,7 @@
 // - Sağ Sütun (1fr): D&D Beyond Pill Sekmeler (Actions, Inventory, Spells/Features, Background, Notes)
 // =============================================================================
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { calculateModifier } from '../rules/abilityScores';
 import { calculateProficiencyBonus } from '../rules/proficiency';
 import { SKILLS, calculateSkillModifier, calculatePassivePerception, calculatePassiveInvestigation } from '../rules/skills';
@@ -26,7 +26,7 @@ import { useReference } from '../context/ReferenceContext';
 import { soundEffects } from '../utils/soundEffects';
 import { syncService } from '../data/syncService';
 import { isCasterSubclass } from '../rules/subclasses';
-import type { FullCharacter, AbilityName } from '../types/character';
+import type { FullCharacter, AbilityName, ArmorItem } from '../types/character';
 
 const DEMO_CHARACTER: FullCharacter = {
   id: 'demo-char',
@@ -52,6 +52,7 @@ const DEMO_CHARACTER: FullCharacter = {
   spellSlots: {},
   activeConditions: [],
   deathSaves: { successes: 0, failures: 0 },
+  inspiration: 1,
   ruleset: '2014',
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
@@ -61,7 +62,14 @@ type SheetTab = 'actions' | 'spells' | 'inventory' | 'conditions' | 'features' |
 type ActionSubPill = 'all' | 'attack' | 'action' | 'bonus' | 'reaction';
 
 export const ModernCharacterSheet: React.FC = () => {
-  const { activeCharacter, updateHp, updateConditions, updateDeathSaves, saveCharacter } = useCharacter();
+  const {
+    activeCharacter,
+    updateHp,
+    updateConditions,
+    updateDeathSaves,
+    updateInspiration,
+    saveCharacter,
+  } = useCharacter();
 
   const character = activeCharacter ?? DEMO_CHARACTER;
   const isDemo = !activeCharacter;
@@ -71,6 +79,50 @@ export const ModernCharacterSheet: React.FC = () => {
   const [actionSubPill, setActionSubPill] = useState<ActionSubPill>('all');
   const [skillFilter, setSkillFilter] = useState<string>('');
   const [customHpInput, setCustomHpInput] = useState<string>('');
+
+  // Sinematik Ölüm Ekranı Kapatılıp Kağıda Dönüldü mü?
+  const [isDeathDismissed, setIsDeathDismissed] = useState<boolean>(false);
+
+  // Savaş Modu (Combat Mode) & Eylem Sayacı
+  const [combatMode, setCombatMode] = useState<boolean>(false);
+  const [actionUsed, setActionUsed] = useState<boolean>(false);
+  const [bonusActionUsed, setBonusActionUsed] = useState<boolean>(false);
+  const [reactionUsed, setReactionUsed] = useState<boolean>(false);
+  const baseSpeed = 30; // ft
+  const [remainingSpeed, setRemainingSpeed] = useState<number>(baseSpeed);
+
+  // HP 0'dan yukarı çıkarsa ölüm penceresi kapatma durumunu sıfırla
+  useEffect(() => {
+    if (character.currentHp > 0) {
+      setIsDeathDismissed(false);
+    }
+  }, [character.currentHp]);
+
+  // DM Encounter senkronizasyonu dinleyicisi (Sıranın kimde olduğunu ve tur eylemlerini dinler)
+  useEffect(() => {
+    const unsub = syncService.subscribe((event) => {
+      if (event.type === 'ENCOUNTER_UPDATE' && event.payload) {
+        if (event.payload.combatActive !== undefined) {
+          setCombatMode(Boolean(event.payload.combatActive));
+        }
+        if (
+          event.payload.currentTurnName &&
+          event.payload.currentTurnName.toLowerCase() === character.name.toLowerCase()
+        ) {
+          setActionUsed(false);
+          setBonusActionUsed(false);
+          setReactionUsed(false);
+          setRemainingSpeed(baseSpeed);
+          soundEffects.playCritSound();
+          setQuickToast({
+            text: `⚔️ Sıra Sende (${character.name})! Eylemlerini ve hareketini kullanabilirsin.`,
+          });
+          setTimeout(() => setQuickToast(null), 8000);
+        }
+      }
+    });
+    return unsub;
+  }, [character.name]);
 
   const profBonus = calculateProficiencyBonus(character.level);
 
@@ -105,7 +157,17 @@ export const ModernCharacterSheet: React.FC = () => {
   });
 
   const { openReference } = useReference();
-  const [quickToast, setQuickToast] = useState<{ text: string; isCrit?: boolean; isFumble?: boolean } | null>(null);
+
+  // Yüksek Okunabilirlikli Zar Bildirim Toast'ı
+  const [quickToast, setQuickToast] = useState<{
+    text: string;
+    label?: string;
+    d20?: number;
+    mod?: number;
+    total?: number;
+    isCrit?: boolean;
+    isFumble?: boolean;
+  } | null>(null);
 
   const isSpellcaster =
     ['cleric', 'druid', 'wizard', 'sorcerer', 'warlock', 'bard', 'paladin', 'ranger'].includes(character.class.toLowerCase()) ||
@@ -116,7 +178,7 @@ export const ModernCharacterSheet: React.FC = () => {
     Record<string, { isRolling: boolean; labelText: string; ghostVal: string | null }>
   >({});
 
-  // Doğrudan Kağıt Üzerinden Zar Atma (D&D Beyond tarzı tıkla-at)
+  // Doğrudan Kağıt Üzerinden Zar Atma (D&D Beyond tarzı tıkla-at, 8 saniye ekranda kalır, net d20 ve modifikasyon)
   const rollCheck = (label: string, mod: number) => {
     soundEffects.playDiceRollSound();
     const d20 = Math.floor(Math.random() * 20) + 1;
@@ -126,12 +188,12 @@ export const ModernCharacterSheet: React.FC = () => {
 
     if (isCrit) soundEffects.playCritSound();
 
-    const text = `${label}: d20 (${d20}) ${mod >= 0 ? `+ ${mod}` : `- ${Math.abs(mod)}`} = ${total}`;
-    setQuickToast({ text, isCrit, isFumble });
+    const text = `${label}: d20 [${d20}] ${mod >= 0 ? `+ ${mod}` : `- ${Math.abs(mod)}`} = ${total}`;
+    setQuickToast({ text, label, d20, mod, total, isCrit, isFumble });
 
     setTimeout(() => {
       setQuickToast((curr) => (curr?.text === text ? null : curr));
-    }, 4000);
+    }, 8000);
 
     syncService.broadcastDiceRoll({
       id: `check-${Date.now()}`,
@@ -205,13 +267,14 @@ export const ModernCharacterSheet: React.FC = () => {
   };
 
   // Envanterden kuşanma / çıkarma yapıldığında AC ve Silahları senkronize et
+  // KURAL: Aynı anda sadece 1 adet zırh takılabilir, zırh çıkarılınca AC unarmored seviyesine döner
   const handleInventoryChange = (newInventory: import('../types/content').ItemData[]) => {
     const equippedArmorItem = newInventory.find(
-      (i) => i.equipped && (i.type === 'armor' || i.type === 'shield')
+      (i) => i.equipped && i.type === 'armor'
     );
 
-    let newArmor = character.equippedArmor;
-    if (equippedArmorItem && equippedArmorItem.type === 'armor') {
+    let newArmor: ArmorItem | undefined = undefined;
+    if (equippedArmorItem) {
       const lower = equippedArmorItem.name.toLowerCase();
       let type: 'light' | 'medium' | 'heavy' = 'light';
       let baseAc = 11;
@@ -280,6 +343,38 @@ export const ModernCharacterSheet: React.FC = () => {
       equippedArmor: newArmor,
       hasShield,
       weapons: updatedWeapons.length > 0 ? updatedWeapons : character.weapons,
+    });
+  };
+
+  // İksir Kullanımı (Potion Usage) & Can Yenileme
+  const handleUsePotion = (
+    item: import('../types/content').ItemData,
+    healAmount: number,
+    formula: string,
+    rolls: number[]
+  ) => {
+    const newHp = Math.min(character.maxHp, character.currentHp + healAmount);
+    if (!isDemo) {
+      updateHp(newHp);
+    }
+
+    const toastMsg = `🧪 ${item.name} içildi! [${rolls.join(' + ')}] = +${healAmount} Can Yenilendi (${newHp}/${character.maxHp} HP)`;
+    setQuickToast({
+      text: toastMsg,
+      total: healAmount,
+    });
+    setTimeout(() => {
+      setQuickToast((curr) => (curr?.text === toastMsg ? null : curr));
+    }, 8000);
+
+    syncService.broadcastDiceRoll({
+      id: `potion-${Date.now()}`,
+      label: `${character.name} • ${item.name} Şifası`,
+      diceRolls: rolls.map((v) => ({ die: 'd4', value: v })),
+      modifier: 0,
+      totalSum: healAmount,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      formula,
     });
   };
 
@@ -357,13 +452,38 @@ export const ModernCharacterSheet: React.FC = () => {
         currentHp={character.currentHp}
         initialSuccesses={character.deathSaves?.successes ?? 0}
         initialFailures={character.deathSaves?.failures ?? 0}
+        isDismissed={isDeathDismissed}
+        onDismiss={() => setIsDeathDismissed(true)}
         onSavesChange={(s, f) => {
           if (!isDemo) updateDeathSaves(s, f);
         }}
         onRegainHp={(hp) => {
           if (!isDemo) updateHp(hp);
+          setIsDeathDismissed(false);
         }}
       />
+
+      {/* 0 HP Acil Durum / Ölüm Ekranına Dönüş Banner'ı */}
+      {character.currentHp <= 0 && isDeathDismissed && (
+        <div className="sheet-death-emergency-banner" role="alert" id="death-emergency-banner">
+          <div className="emergency-info">
+            <span className="emergency-icon">💀</span>
+            <div className="emergency-text">
+              <strong>ÖLÜM EŞİĞİNDESİN (HP: 0)!</strong> Bilincin kapalı, her tur ölüm kurtarma zarı atmalısın.
+              <span className="emergency-stats">
+                (Başarı: {character.deathSaves?.successes ?? 0}/3 • Başarısızlık: {character.deathSaves?.failures ?? 0}/3)
+              </span>
+            </div>
+          </div>
+          <button
+            id="btn-reopen-death-modal"
+            className="emergency-reopen-btn"
+            onClick={() => setIsDeathDismissed(false)}
+          >
+            💀 Ölüm Zarları Ekranına Dön
+          </button>
+        </div>
+      )}
 
       {/* Demo Uyarısı */}
       {isDemo && (
@@ -373,16 +493,35 @@ export const ModernCharacterSheet: React.FC = () => {
         </div>
       )}
 
-      {/* Hızlı Zar Bildirim Banner'ı (D&D Beyond Toast Style) */}
+      {/* Hızlı Zar Bildirim Banner'ı (D&D Beyond Toast Style - 8s kalır, okunabilir net d20 ve modifikasyon) */}
       {quickToast && (
         <div
           className={`sheet-quick-toast ${quickToast.isCrit ? 'crit' : ''} ${quickToast.isFumble ? 'fumble' : ''}`}
           role="status"
           aria-live="polite"
         >
-          <span className="toast-icon">{quickToast.isCrit ? '🌟' : quickToast.isFumble ? '💀' : '🎲'}</span>
-          <span className="toast-text">{quickToast.text}</span>
-          <button className="toast-dismiss" onClick={() => setQuickToast(null)}>✕</button>
+          <div className="toast-inner-row">
+            <span className="toast-icon">{quickToast.isCrit ? '🌟 KRİTİK BAŞARI!' : quickToast.isFumble ? '💀 DOĞAL 1!' : '🎲 ZAR SONUCU'}</span>
+            {quickToast.label && <span className="toast-label-chip">{quickToast.label}</span>}
+            <div className="toast-breakdown">
+              {quickToast.d20 !== undefined && (
+                <span className="toast-die-roll">d20: <strong>{quickToast.d20}</strong></span>
+              )}
+              {quickToast.mod !== undefined && (
+                <span className="toast-mod-span">{quickToast.mod >= 0 ? `+ ${quickToast.mod}` : `- ${Math.abs(quickToast.mod)}`}</span>
+              )}
+              {quickToast.total !== undefined && (
+                <>
+                  <span className="toast-equals">=</span>
+                  <span className="toast-total-badge">{quickToast.total}</span>
+                </>
+              )}
+              {quickToast.d20 === undefined && quickToast.total === undefined && (
+                <span className="toast-simple-text">{quickToast.text}</span>
+              )}
+            </div>
+            <button className="toast-dismiss" onClick={() => setQuickToast(null)}>✕</button>
+          </div>
         </div>
       )}
 
@@ -410,8 +549,16 @@ export const ModernCharacterSheet: React.FC = () => {
           </div>
         </div>
 
-        {/* Sağ Kısım: Kısa / Uzun Dinlenme ve Stat Kilidi */}
+        {/* Sağ Kısım: Savaş Modu, Kısa / Uzun Dinlenme ve Stat Kilidi */}
         <div className="dndbeyond-rest-btn-group">
+          <button
+            id="btn-toggle-combat-mode"
+            className={`dndbeyond-rest-btn ${combatMode ? 'combat-mode-active' : ''}`}
+            onClick={() => setCombatMode(!combatMode)}
+            title="Savaş Modu (Action / Bonus / Movement Takibi)"
+          >
+            ⚔️ {combatMode ? 'SAVAŞ MODU (AÇIK)' : 'SAVAŞ MODU'}
+          </button>
           <button
             className="dndbeyond-rest-btn"
             onClick={handleShortRest}
@@ -512,6 +659,38 @@ export const ModernCharacterSheet: React.FC = () => {
             </span>
           </div>
 
+          {/* Heroic Inspiration (Stacklenebilir İlham) */}
+          <div
+            className="dndbeyond-hud-box dndbeyond-inspiration-box"
+            title="Heroic Inspiration (Stacklenebilir İlham)"
+          >
+            <span className="dndbeyond-stat-label">INSPIRATION</span>
+            <div className="inspiration-content-row">
+              <span className="inspiration-icon">✨</span>
+              <span className="inspiration-count-val" id="sheet-inspiration-val">
+                {character.inspiration ?? 0}
+              </span>
+            </div>
+            <div className="unlocked-stat-stepper" style={{ marginTop: '0.15rem' }}>
+              <button
+                type="button"
+                id="btn-inspiration-dec"
+                onClick={() => updateInspiration(Math.max(0, (character.inspiration ?? 0) - 1))}
+                title="İlham Harca"
+              >
+                -
+              </button>
+              <button
+                type="button"
+                id="btn-inspiration-inc"
+                onClick={() => updateInspiration((character.inspiration ?? 0) + 1)}
+                title="İlham Ekle"
+              >
+                +
+              </button>
+            </div>
+          </div>
+
           {/* Can Puanı Modülü (HEAL / DAMAGE Butonları & Can) */}
           <div className="dndbeyond-hp-module">
             <div className="dndbeyond-hp-btn-col">
@@ -553,6 +732,119 @@ export const ModernCharacterSheet: React.FC = () => {
           </div>
         </div>
       </section>
+
+      {/* SAVAŞ MODU PANELİ (Eylemler, Bonus Action, Tepki ve Hareket Takibi) */}
+      {combatMode && (
+        <section className="combat-mode-turn-panel" id="combat-mode-panel">
+          <div className="combat-panel-top">
+            <div className="combat-turn-indicator">
+              <span className="combat-live-indicator"></span>
+              <span className="font-cinzel combat-heading">SAVAŞ MODU • SENİN TURUN</span>
+            </div>
+            <button
+              id="btn-combat-end-turn"
+              className="combat-end-turn-btn"
+              onClick={() => {
+                soundEffects.playDiceRollSound();
+                setActionUsed(false);
+                setBonusActionUsed(false);
+                setReactionUsed(false);
+                setRemainingSpeed(baseSpeed);
+                setQuickToast({
+                  text: `🔄 Tur tamamlandı! Eylemler ve hareket (${baseSpeed} ft) tazelendi.`,
+                });
+                setTimeout(() => setQuickToast(null), 5000);
+              }}
+            >
+              🔄 Sırayı / Turu Bitir (Eylemleri Tazele)
+            </button>
+          </div>
+
+          <div className="combat-slots-grid">
+            {/* Action */}
+            <div
+              className={`combat-slot-card ${actionUsed ? 'used' : 'ready'}`}
+              onClick={() => setActionUsed(!actionUsed)}
+              role="button"
+              tabIndex={0}
+              title="Tıklayarak harca veya geri al"
+            >
+              <div className="slot-type">ANA EYLEM (ACTION)</div>
+              <div className="slot-state">{actionUsed ? '✓ Harcandı' : '⚡ 1/1 Hazır'}</div>
+              <div className="slot-desc">Saldırı, Büyü Yapma, Dash, Dodge vb.</div>
+            </div>
+
+            {/* Bonus Action */}
+            <div
+              className={`combat-slot-card ${bonusActionUsed ? 'used' : 'ready'}`}
+              onClick={() => setBonusActionUsed(!bonusActionUsed)}
+              role="button"
+              tabIndex={0}
+              title="Tıklayarak harca veya geri al"
+            >
+              <div className="slot-type">BONUS ACTION</div>
+              <div className="slot-state">{bonusActionUsed ? '✓ Harcandı' : '✨ 1/1 Hazır'}</div>
+              <div className="slot-desc">Hızlı büyüler, İkinci Nefes vb.</div>
+            </div>
+
+            {/* Reaction */}
+            <div
+              className={`combat-slot-card ${reactionUsed ? 'used' : 'ready'}`}
+              onClick={() => setReactionUsed(!reactionUsed)}
+              role="button"
+              tabIndex={0}
+              title="Tıklayarak harca veya geri al"
+            >
+              <div className="slot-type">TEPKİ (REACTION)</div>
+              <div className="slot-state">{reactionUsed ? '✓ Harcandı' : '🛡️ 1/1 Hazır'}</div>
+              <div className="slot-desc">Fırsat saldırısı, Kalkan büyüsü vb.</div>
+            </div>
+
+            {/* Movement Speed */}
+            <div className="combat-slot-card movement-tracker">
+              <div className="slot-type">HAREKET (SPEED)</div>
+              <div className="movement-display">
+                <span className="movement-current" id="val-remaining-speed">{remainingSpeed}</span>
+                <span className="movement-max">/ {baseSpeed} ft</span>
+              </div>
+              <div className="movement-actions">
+                <button
+                  type="button"
+                  disabled={remainingSpeed <= 0}
+                  onClick={() => setRemainingSpeed((s) => Math.max(0, s - 5))}
+                  title="5 ft yürü"
+                >
+                  -5 ft
+                </button>
+                <button
+                  type="button"
+                  disabled={remainingSpeed <= 0}
+                  onClick={() => setRemainingSpeed((s) => Math.max(0, s - 10))}
+                  title="10 ft yürü"
+                >
+                  -10 ft
+                </button>
+                <button
+                  type="button"
+                  disabled={remainingSpeed >= baseSpeed}
+                  onClick={() => setRemainingSpeed((s) => Math.min(baseSpeed, s + 5))}
+                  title="5 ft geri al"
+                >
+                  +5 ft
+                </button>
+                <button
+                  type="button"
+                  className="reset-speed-btn"
+                  onClick={() => setRemainingSpeed(baseSpeed)}
+                  title="Hareketi sıfırla (tazele)"
+                >
+                  ↺
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* 3. BENTO 3-COLUMN ANA GÖVDE (Nielsen #8 & D&D Beyond Layout) */}
       <div className="dndbeyond-bento-grid">
@@ -948,6 +1240,7 @@ export const ModernCharacterSheet: React.FC = () => {
                 strScore={character.baseAbilities.str}
                 inventory={character.inventory}
                 onInventoryChange={handleInventoryChange}
+                onUsePotion={handleUsePotion}
               />
             </div>
           )}

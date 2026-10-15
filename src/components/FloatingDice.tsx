@@ -30,10 +30,11 @@ interface FloatingDiceProps {
   onOpenFullTray?: () => void;
 }
 
-export const FloatingDice: React.FC<FloatingDiceProps> = ({ onOpenFullTray }) => {
+export const FloatingDice: React.FC<FloatingDiceProps> = () => {
   const { activeCharacter } = useCharacter();
   const [isOpen, setIsOpen] = useState(false);
   const [selectedDie, setSelectedDie] = useState<DieType>('d20');
+  const [diceCount, setDiceCount] = useState<number>(1);
   const [mode, setMode] = useState<'normal' | 'advantage' | 'disadvantage'>('normal');
   const [modifier, setModifier] = useState<number>(0);
   const [isRolling, setIsRolling] = useState(false);
@@ -56,14 +57,16 @@ export const FloatingDice: React.FC<FloatingDiceProps> = ({ onOpenFullTray }) =>
         rolls = [r1, r2];
         chosen = mode === 'advantage' ? Math.max(r1, r2) : Math.min(r1, r2);
       } else {
-        const r = rollDie(sides);
-        rolls = [r];
-        chosen = r;
+        const count = Math.max(1, diceCount);
+        for (let i = 0; i < count; i++) {
+          rolls.push(rollDie(sides));
+        }
+        chosen = rolls.reduce((sum, r) => sum + r, 0);
       }
 
       const total = chosen + modifier;
-      const isCrit = selectedDie === 'd20' && chosen === 20;
-      const isFumble = selectedDie === 'd20' && chosen === 1;
+      const isCrit = selectedDie === 'd20' && chosen === 20 && diceCount === 1;
+      const isFumble = selectedDie === 'd20' && chosen === 1 && diceCount === 1;
 
       if (isCrit) {
         soundEffects.playCritSound();
@@ -84,20 +87,25 @@ export const FloatingDice: React.FC<FloatingDiceProps> = ({ onOpenFullTray }) =>
       setLastResult(result);
       setIsRolling(false);
 
+      const rollFormula =
+        selectedDie === 'd20' && mode !== 'normal'
+          ? `${selectedDie}${modifier >= 0 ? `+${modifier}` : modifier}`
+          : `${diceCount > 1 ? diceCount : ''}${selectedDie}${modifier >= 0 ? `+${modifier}` : modifier}`;
+
       // Kampanya aktifse diğer oyunculara yayınla
       syncService.broadcastDiceRoll({
         id: `quick-${Date.now()}`,
-        label: `${activeCharacter?.name ?? 'Oyuncu'} • ${selectedDie.toUpperCase()}${mode !== 'normal' ? ` (${mode === 'advantage' ? 'Avantaj' : 'Dezavantaj'})` : ''}`,
+        label: `${activeCharacter?.name ?? 'Oyuncu'} • ${diceCount > 1 ? `${diceCount}x ` : ''}${selectedDie.toUpperCase()}${mode !== 'normal' ? ` (${mode === 'advantage' ? 'Avantaj' : 'Dezavantaj'})` : ''}`,
         diceRolls: rolls.map((v) => ({
           die: selectedDie,
           value: v,
-          isCrit: selectedDie === 'd20' && v === 20,
-          isFumble: selectedDie === 'd20' && v === 1,
+          isCrit: selectedDie === 'd20' && v === 20 && diceCount === 1,
+          isFumble: selectedDie === 'd20' && v === 1 && diceCount === 1,
         })),
         modifier,
         totalSum: total,
         timestamp: result.timestamp,
-        formula: `${selectedDie}${modifier >= 0 ? `+${modifier}` : modifier}`,
+        formula: rollFormula,
         hasCrit20: isCrit,
         hasFumble1: isFumble,
       });
@@ -119,6 +127,53 @@ export const FloatingDice: React.FC<FloatingDiceProps> = ({ onOpenFullTray }) =>
             >
               ✕
             </button>
+          </div>
+
+          {/* Zar Adedi Seçici (Switch / Stepper) */}
+          <div className="floating-count-row">
+            <div className="floating-count-label-group">
+              <span className="floating-mod-label">Zar Sayısı:</span>
+              <span className="floating-count-badge">
+                {diceCount} {selectedDie.toUpperCase()}
+              </span>
+            </div>
+            <div className="floating-count-controls">
+              <div className="floating-quick-counts">
+                {[1, 2, 3, 4, 6, 8].map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    className={`quick-count-btn ${diceCount === n ? 'active' : ''}`}
+                    onClick={() => setDiceCount(n)}
+                  >
+                    {n}x
+                  </button>
+                ))}
+              </div>
+              <div className="floating-stepper">
+                <button
+                  type="button"
+                  id="btn-quick-count-dec"
+                  className="floating-stepper-btn"
+                  onClick={() => setDiceCount((c) => Math.max(1, c - 1))}
+                  disabled={diceCount <= 1}
+                >
+                  -
+                </button>
+                <span id="display-quick-count" className="floating-mod-val">
+                  {diceCount}
+                </span>
+                <button
+                  type="button"
+                  id="btn-quick-count-inc"
+                  className="floating-stepper-btn"
+                  onClick={() => setDiceCount((c) => Math.min(20, c + 1))}
+                  disabled={diceCount >= 20}
+                >
+                  +
+                </button>
+              </div>
+            </div>
           </div>
 
           {/* Zar Seçim Çubuğu */}
@@ -188,7 +243,9 @@ export const FloatingDice: React.FC<FloatingDiceProps> = ({ onOpenFullTray }) =>
             onClick={handleRoll}
             disabled={isRolling}
           >
-            {isRolling ? '🎲 Zarlar Atılıyor...' : `🎲 ${selectedDie.toUpperCase()} At`}
+            {isRolling
+              ? '🎲 Zarlar Atılıyor...'
+              : `🎲 ${diceCount > 1 ? `${diceCount}` : ''}${selectedDie.toUpperCase()} At`}
           </button>
 
           {/* Sonuç Alanı */}
@@ -205,7 +262,7 @@ export const FloatingDice: React.FC<FloatingDiceProps> = ({ onOpenFullTray }) =>
               <div className="result-details">
                 {lastResult.rolls.length > 1 ? (
                   <span>
-                    Atılan: [{lastResult.rolls.join(', ')}] ➔ Seçilen: {lastResult.chosen}{' '}
+                    Atılan: [{lastResult.rolls.join(' + ')}] = {lastResult.chosen}{' '}
                     {lastResult.modifier !== 0 && `(${lastResult.modifier >= 0 ? `+${lastResult.modifier}` : lastResult.modifier})`}
                   </span>
                 ) : (
@@ -215,22 +272,6 @@ export const FloatingDice: React.FC<FloatingDiceProps> = ({ onOpenFullTray }) =>
                   </span>
                 )}
               </div>
-            </div>
-          )}
-
-          {/* Tam tepsiye geçiş linki */}
-          {onOpenFullTray && (
-            <div className="floating-popup-footer">
-              <button
-                id="btn-open-full-dice-tray"
-                className="full-tray-link"
-                onClick={() => {
-                  setIsOpen(false);
-                  onOpenFullTray();
-                }}
-              >
-                Gelişmiş Zar Masasını Aç ➔
-              </button>
             </div>
           )}
         </div>

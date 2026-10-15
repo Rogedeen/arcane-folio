@@ -82,6 +82,7 @@ export interface FullCharacter {
   spellSlots?: Record<number, { total: number; expended: number }>;
   activeConditions: string[];
   deathSaves?: { successes: number; failures: number };
+  inspiration?: number; // Kahramanlık İlhamı (Heroic Inspiration - stacklenebilir)
 
   // Gelişim & Hikaye (Progression & Roleplay)
   feats?: string[];

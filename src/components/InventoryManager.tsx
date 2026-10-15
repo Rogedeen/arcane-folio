@@ -3,17 +3,21 @@ import { ItemData } from '../types/content';
 import { contentService } from '../data/contentService';
 import { calculateCarryingCapacity, calculateTotalWeight, isEncumbered } from '../rules/inventory';
 import { useReference } from '../context/ReferenceContext';
+import { calculatePotionHealing, isPotionItem } from '../rules/potions';
+import { soundEffects } from '../utils/soundEffects';
 
 interface InventoryManagerProps {
   strScore: number;
   inventory?: ItemData[];
   onInventoryChange?: (items: ItemData[]) => void;
+  onUsePotion?: (item: ItemData, healAmount: number, formula: string, rolls: number[]) => void;
 }
 
 export const InventoryManager: React.FC<InventoryManagerProps> = ({
   strScore,
   inventory: externalInventory,
   onInventoryChange,
+  onUsePotion,
 }) => {
   const { openReference } = useReference();
   const [internalItems, setInternalItems] = useState<ItemData[]>(() => externalInventory ?? contentService.getInitialItems());
@@ -35,10 +39,44 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
   const encumbered = isEncumbered(strScore, totalWeight);
   const weightPercent = Math.min(100, Math.round((totalWeight / carryingCapacity) * 100));
 
-  // Kuşan / Çıkar
+  // Kuşan / Çıkar (Tek Zırh Kuralı: Aynı anda sadece 1 adet zırh kuşanılabilir)
   const toggleEquip = (slug: string) => {
-    const next = items.map((it) => (it.slug === slug ? { ...it, equipped: !it.equipped } : it));
+    const targetItem = items.find((it) => it.slug === slug);
+    if (!targetItem) return;
+
+    const willEquip = !targetItem.equipped;
+
+    const next = items.map((it) => {
+      if (it.slug === slug) {
+        return { ...it, equipped: willEquip };
+      }
+      // KURAL: Yeni zırh kuşanıldığında diğer zırhlar otomatik çıkarılır!
+      if (willEquip && targetItem.type === 'armor' && it.type === 'armor') {
+        return { ...it, equipped: false };
+      }
+      // KURAL: Yeni kalkan kuşanıldığında diğer kalkanlar otomatik çıkarılır!
+      if (
+        willEquip &&
+        (targetItem.type === 'shield' || targetItem.name.toLowerCase().includes('shield')) &&
+        (it.type === 'shield' || it.name.toLowerCase().includes('shield'))
+      ) {
+        return { ...it, equipped: false };
+      }
+      return it;
+    });
+
     updateItems(next);
+  };
+
+  // İksir İçme (Potion Usage)
+  const handleDrinkPotion = (potionItem: ItemData) => {
+    const result = calculatePotionHealing(potionItem.name);
+    soundEffects.playDiceRollSound();
+
+    // Miktarını 1 azalt (veya 1 ise çantadan düşür)
+    changeQuantity(potionItem.slug, -1);
+
+    onUsePotion?.(potionItem, result.healAmount, result.formula, result.rolls);
   };
 
   // Çantadan At (Drop)
@@ -201,6 +239,25 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
                         aria-label={`${item.name} kuşan/çıkar`}
                       >
                         {item.equipped ? 'Çıkar' : 'Kuşan'}
+                      </button>
+                    )}
+
+                    {/* İksir İçme (Potion Usage) Butonu */}
+                    {isPotionItem(item.name || item.type) && (
+                      <button
+                        id={`btn-drink-${item.slug}`}
+                        className="equip-toggle-btn drink-potion-btn"
+                        style={{
+                          background: 'rgba(46, 125, 50, 0.2)',
+                          borderColor: '#2e7d32',
+                          color: '#81c784',
+                          fontWeight: 700,
+                        }}
+                        onClick={() => handleDrinkPotion(item)}
+                        aria-label={`${item.name} iç / kullan`}
+                        title="İksiri iç ve iyileşme zarı at"
+                      >
+                        🧪 İç
                       </button>
                     )}
 

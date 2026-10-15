@@ -39,6 +39,7 @@ export const DeathSaves: React.FC<DeathSavesProps> = ({
 
   const handleReset = () => {
     setState(INITIAL_DEATH_SAVES);
+    if (onSavesChange) onSavesChange(0, 0);
   };
 
   return (
@@ -47,35 +48,34 @@ export const DeathSaves: React.FC<DeathSavesProps> = ({
       className={`death-saves-box ${isDying ? 'active-dying' : ''} ${state.isDead ? 'character-dead' : ''}`}
     >
       <div className="death-saves-header">
-        <div>
-          <span className="font-cinzel death-title">
-            💀 OLUM KURTARMA ZARLARI (Death Saves)
-          </span>
-          {isDying && !state.isDead && !state.isStable && (
-            <span className="dying-pulse-alert">⚠️ CAN 0: OLUM TEHLIKESI!</span>
-          )}
-          {state.isDead && (
-            <span className="dead-alert">💀 KARAKTER OLDU</span>
-          )}
-          {state.isStable && (
-            <span className="stable-alert">🛡️ DURUM DENGLENDI (STABILIZE)</span>
-          )}
-        </div>
-
+        <span className="font-cinzel death-widget-title">
+          💀 ÖLÜM KURTARMA (Death Saves)
+        </span>
         <button
           id="btn-reset-death-saves"
           className="reset-saves-btn"
           onClick={handleReset}
           aria-label="Ölüm Zarlarını Sıfırla"
+          title="Sıfırla"
         >
           Sıfırla
         </button>
       </div>
 
-      <div className="death-tracks-row">
+      {isDying && !state.isDead && !state.isStable && (
+        <div className="dying-pulse-alert">⚠️ CAN 0: ÖLÜM TEHLİKESİ!</div>
+      )}
+      {state.isDead && (
+        <div className="dead-alert">💀 KARAKTER ÖLDÜ</div>
+      )}
+      {state.isStable && (
+        <div className="stable-alert">🛡️ DURUM DENGLENDİ (STABLE)</div>
+      )}
+
+      <div className="death-tracks-vertical">
         {/* Başarılar (Successes) */}
-        <div className="track-col">
-          <span className="track-label success-label">BAŞARILAR</span>
+        <div className="track-row">
+          <span className="track-label success-label">BAŞARI</span>
           <div className="pips-group" id="death-success-pips">
             {[1, 2, 3].map((idx) => (
               <span
@@ -89,22 +89,9 @@ export const DeathSaves: React.FC<DeathSavesProps> = ({
           </div>
         </div>
 
-        {/* Zar Butonu */}
-        <div className="roll-col">
-          <button
-            id="btn-roll-death-save"
-            className="action-button roll-death-btn"
-            onClick={handleRollDeathSave}
-            disabled={state.isDead || state.isStable}
-            aria-label="Ölüm Kurtarma Zarı At"
-          >
-            🎲 Death Save At (d20)
-          </button>
-        </div>
-
         {/* Başarısızlıklar (Failures) */}
-        <div className="track-col">
-          <span className="track-label failure-label">BAŞARISIZLIKLAR</span>
+        <div className="track-row">
+          <span className="track-label failure-label">BAŞARISIZ</span>
           <div className="pips-group" id="death-failure-pips">
             {[1, 2, 3].map((idx) => (
               <span
@@ -119,6 +106,19 @@ export const DeathSaves: React.FC<DeathSavesProps> = ({
         </div>
       </div>
 
+      {/* Zar Butonu */}
+      <div className="roll-action-wrap">
+        <button
+          id="btn-roll-death-save"
+          className="action-button roll-death-btn"
+          onClick={handleRollDeathSave}
+          disabled={state.isDead || state.isStable}
+          aria-label="Ölüm Kurtarma Zarı At"
+        >
+          🎲 Zar At (d20)
+        </button>
+      </div>
+
       {state.message && (
         <div className="death-message-alert" id="death-save-message">
           {state.message}
@@ -127,3 +127,4 @@ export const DeathSaves: React.FC<DeathSavesProps> = ({
     </div>
   );
 };
+
