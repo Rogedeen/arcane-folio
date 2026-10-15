@@ -187,3 +187,16 @@ Tüm sistem mimarisi, gereksiz kaydırmaları bitirip "tek bakışta hakimiyet" 
 10. **Yardım ve Dokümantasyon (Help and Documentation):**
     - Yan çekmecede her an açılabilen kural rehberi (ReferenceDrawer), büyü ve durum sözlüğü sunulmalıdır.
 
+---
+
+## 7. 📖 "Modern Arcane Folio" Anti-AI Slop Tasarım Şartnamesi
+Bu şartname, projenin jenerik AI şablonlarına ("AI Slop") düşmesini engelleyen kesin tasarım manifestosudur:
+
+| Öğe | Kural & Standart | Yasaklar |
+| --- | --- | --- |
+| **Renkler** | Deep Leather Dark (`#14100E`), Slate Armor (`#1F1A17`), Inset Bronze (`#C89B3C`), Crimson Dragon Red (`#8C2D19`), Bone White (`#E6E1DA`). Aydınlık Modda: Warm Parchment (`#F5F0EB`), Ink Black (`#1C1817`). | Mor/mavi neon gradyanlar, elektrik mavisi parlaklıklar, jenerik düz siyah temalar. |
+| **Tipografi** | Başlıklar: `Cinzel` / `MedievalSharp`. Veriler, Tablolar & Girdiler: `Plus Jakarta Sans` / `Spectral`. | Tüm sayfayı tek tip `Inter` veya sistem fontuna boğmak. |
+| **Kenarlıklar** | 1px net pirinç/bronz şeritler (`#C89B3C`), hafif metalik iç pah (`inset 0 1px 0 rgba(200, 155, 60, 0.2)`), maksimum köşe kavis: `4px - 6px`. | Her karta `border-radius: 12px` veya `16px` verip devasa simetrik hap kartlar üretmek. |
+| **Bileşenler** | Pirinç plaka tarzı oyma stat kutuları, dokunsal basma hissiyatı (`active: translateY(1px)`), parşömen dokulu tabaklar. | Modern SaaS kartları, anlamsız dekoratif boşluklar, kayan neon ışıklar. |
+
+

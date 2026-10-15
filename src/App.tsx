@@ -34,6 +34,17 @@ function AppInner() {
   };
 
   const [currentView, setCurrentView] = useState<AppView>(parseHash);
+  const [theme, setTheme] = useState<'dark' | 'parchment'>(() => {
+    if (typeof window !== 'undefined') {
+      return (localStorage.getItem('dnd_theme') as 'dark' | 'parchment') || 'dark';
+    }
+    return 'dark';
+  });
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('dnd_theme', theme);
+  }, [theme]);
 
   useEffect(() => {
     const onHashChange = () => {
@@ -116,6 +127,15 @@ function AppInner() {
             aria-label="Zar Tepsisi"
           >
             🎲 Zarlar
+          </button>
+          <button
+            id="theme-toggle-btn"
+            className="theme-toggle-btn"
+            onClick={() => setTheme((t) => (t === 'dark' ? 'parchment' : 'dark'))}
+            title={theme === 'dark' ? 'Parşömen Moduna Geç (Aydınlık)' : 'Zindan Moduna Geç (Koyu)'}
+            aria-label="Tema Değiştir"
+          >
+            {theme === 'dark' ? '📜 Parşömen' : '🌘 Zindan'}
           </button>
         </nav>
       </header>

@@ -40,11 +40,27 @@ Bu doküman, projede geliştirilen tüm bileşenlerin uymak ZORUNDA olduğu teme
 
 ---
 
-## 5. 👁️ Okunabilirlik, Tipografi ve Gerçekçi Fantezi Paleti
-- Zifiri siyah (#000000) ve aşırı yüksek kontrastlı neon renklerden kaçınılır.
-- Derin barut grisi / koyu lacivert zemin (`#0f172a`, `#1e293b`), antik parşömen beji tonları, okunaklı krem/beyaz tipografi (`#f1f5f9`, `#e2e8f0`).
-- Başlıklar zarif `Cinzel`, gövde ve istatistikler net ve ferah `Inter`.
-- Bütün tıklanabilir kartlar ve butonlar belirgin hover/active durumlarına sahip olmalıdır.
+## 5. 🛡️ Anti-AI Slop Manifestosu ve "Modern Arcane Folio" Tasarım Sistemi
+- **Kesin Yasaklar:**
+  * ❌ Mor-mavi / indigo gradientler, neon parıltılar, düz jenerik koyu SaaS temaları KESİNLİKLE YASAKTIR.
+  * ❌ Her elemana tek tip `border-radius: 12px` verip yan yana simetrik kutular dizmek YASAKTIR.
+  * ❌ Jenerik pazarlama klişeleri ("Geleceği inşa edin", "Tapestry", "Delve into" vb.) KESİNLİKLE KULLANILMAZ.
+- **Modern Arcane Folio (Büyülü Kitaplık) Konsepti:**
+  * **Renk Paleti (Dungeon Dark):**
+    * Ana Zemin: Derin Sıcak Deri Koyu Mod (`#14100E`).
+    * Kart / Panel Zemini: Mat Barut & Zırh Demiri (`#1F1A17` / `#26201C`).
+    * Birincil Aksan: Ejderha Kırmızısı / Crimson Dragon Red (`#8C2D19`).
+    * İkincil Aksan & Kenarlıklar: Antik Bronz / Eskitilmiş Altın (`#C89B3C`).
+    * Ana Metin: Kemik Beyazı (`#E6E1DA`), Sessiz Metin: Yıpranmış Kömür (`#8C827A`).
+  * **Aydınlık Mod (Parchment Light):**
+    * Sıcak Mat Parşömen (`#F5F0EB`), Antik Parşömen Kart (`#EAE3D9`), Mürekkep Siyahı Metin (`#1C1817`).
+  * **Çift Tipografi Sistemi:**
+    * Başlıklar, Karakter İsimleri ve Önemli Etiketler: `Cinzel` veya `MedievalSharp` (Fantasy Display Serif).
+    * İstatistikler, Tablolar, Veriler ve Girdiler: `Plus Jakarta Sans` veya `Spectral` (Yüksek okunabilirlikli fonksiyonel font).
+  * **Dokunsal Mikro Detaylar:**
+    * 1px net bronz metalik çizgiler (`border: 1px solid #C89B3C40`), köşeler maksimum `4px - 6px`.
+    * Stat kartları jenerik SaaS kutusu yerine pirinç döküm / oyma plaka görünümünde.
+    * Tıklanabilir butonlarda dokunsal basılma efekti (`active: translateY(1px)`).
 
 ---
 
