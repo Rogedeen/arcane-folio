@@ -1,5 +1,4 @@
 import { SpellData, ItemData } from '../types/content';
-import { INITIAL_SPELLS, INITIAL_ITEMS } from './sampleContent';
 
 export interface Open5eSearchResult {
   count: number;
@@ -15,51 +14,87 @@ export interface Open5eSearchResult {
 }
 
 class Open5eClient {
-  private baseUrl = 'https://api.open5e.com/v1';
+  private baseUrl = 'https://api.open5e.com/v2';
+
+  private withTimeout(ms: number = 2500): AbortController {
+    const controller = new AbortController();
+    setTimeout(() => controller.abort(), ms);
+    return controller;
+  }
+
+  private toSpellData(r: any): SpellData {
+    return {
+      slug: r.slug || r.key || r.name?.toLowerCase().replace(/\s+/g, '-'),
+      name: r.name || 'Unknown Spell',
+      level: r.level_int !== undefined ? r.level_int : (parseInt(r.level, 10) || 0),
+      school: r.school || 'Evocation',
+      castingTime: r.casting_time || r.castingTime || '1 action',
+      range: r.range || '60 feet',
+      components: r.components || 'V, S',
+      duration: r.duration || 'Instantaneous',
+      description: r.desc || '',
+      classes: Array.isArray(r.classes) ? r.classes : [],
+      prepared: false,
+      source: 'Open5e',
+      source_ref: r.document?.name || r.document__name || 'Open5e API',
+      license: 'Open Gaming / Open5e'
+    };
+  }
+
+  private toItemData(r: any): ItemData {
+    const normalizedType = String(r.type || '').toLowerCase();
+    const mappedType: ItemData['type'] = normalizedType.includes('armor')
+      ? 'armor'
+      : normalizedType.includes('shield')
+        ? 'shield'
+        : normalizedType.includes('weapon')
+          ? 'weapon'
+          : normalizedType.includes('scroll')
+            ? 'scroll'
+            : normalizedType.includes('potion')
+              ? 'potion'
+              : 'gear';
+
+    return {
+      slug: r.slug || r.key || r.name?.toLowerCase().replace(/\s+/g, '-'),
+      name: r.name || 'Unknown Item',
+      type: mappedType,
+      weight: typeof r.weight === 'number' ? r.weight : 1,
+      cost: r.cost || r.rarity || 'Unknown',
+      description: r.desc || r.description || '',
+      properties: Array.isArray(r.properties) ? r.properties : [],
+      quantity: 1,
+      equipped: false,
+      source: 'Open5e',
+      source_ref: r.document?.name || r.document__name || 'Open5e API',
+      license: 'Open Gaming / Open5e'
+    };
+  }
+
+  private async fetchResults(path: string): Promise<any[]> {
+    const controller = this.withTimeout(2500);
+    const res = await fetch(`${this.baseUrl}${path}`, { signal: controller.signal });
+    if (!res.ok) {
+      return [];
+    }
+    const data = await res.json();
+    return Array.isArray(data.results) ? data.results : [];
+  }
 
   /**
    * Büyüleri Open5e API'sinden arar veya yerel SRD'den filtreler
    */
   async searchSpells(query: string = ''): Promise<SpellData[]> {
     if (!query) {
-      return INITIAL_SPELLS;
+      return [];
     }
 
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 2500); // 2.5s timeout
-
-      const res = await fetch(`${this.baseUrl}/spells/?search=${encodeURIComponent(query)}&limit=25`, {
-        signal: controller.signal
-      });
-      clearTimeout(timeoutId);
-
-      if (res.ok) {
-        const data = await res.json();
-        if (data.results && data.results.length > 0) {
-          return data.results.map((r: any) => ({
-            slug: r.slug,
-            name: r.name,
-            level: r.level_int !== undefined ? r.level_int : (parseInt(r.level, 10) || 0),
-            school: r.school || 'Evocation',
-            castingTime: r.casting_time || '1 action',
-            range: r.range || '60 feet',
-            components: r.components || 'V, S',
-            duration: r.duration || 'Instantaneous',
-            description: r.desc || '',
-            prepared: false
-          }));
-        }
-      }
+      const results = await this.fetchResults(`/spells/?search=${encodeURIComponent(query)}&limit=25`);
+      return results.map((r) => this.toSpellData(r));
     } catch {
-      // Network hatası veya timeout durumunda yerel zengin veri seti kullanılır
+      return [];
     }
-
-    // Yerel filtreleme fallback
-    const q = query.toLowerCase();
-    return INITIAL_SPELLS.filter(
-      (s) => s.name.toLowerCase().includes(q) || s.description.toLowerCase().includes(q)
-    );
   }
 
   /**
@@ -67,40 +102,20 @@ class Open5eClient {
    */
   async searchItems(query: string = ''): Promise<ItemData[]> {
     if (!query) {
-      return INITIAL_ITEMS;
+      return [];
     }
 
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 2500);
-
-      const res = await fetch(`${this.baseUrl}/magicitems/?search=${encodeURIComponent(query)}&limit=25`, {
-        signal: controller.signal
-      });
-      clearTimeout(timeoutId);
-
-      if (res.ok) {
-        const data = await res.json();
-        if (data.results && data.results.length > 0) {
-          return data.results.map((r: any) => ({
-            slug: r.slug,
-            name: r.name,
-            type: r.type?.toLowerCase().includes('armor') ? 'armor' : r.type?.toLowerCase().includes('weapon') ? 'weapon' : 'gear',
-            weight: 1,
-            cost: r.rarity || 'Common',
-            quantity: 1,
-            equipped: false
-          }));
-        }
+      const primary = await this.fetchResults(`/equipment/?search=${encodeURIComponent(query)}&limit=25`);
+      if (primary.length > 0) {
+        return primary.map((r) => this.toItemData(r));
       }
-    } catch {
-      // Yerel fallback
-    }
 
-    const q = query.toLowerCase();
-    return INITIAL_ITEMS.filter(
-      (i) => i.name.toLowerCase().includes(q) || i.type.toLowerCase().includes(q)
-    );
+      const fallback = await this.fetchResults(`/magicitems/?search=${encodeURIComponent(query)}&limit=25`);
+      return fallback.map((r) => this.toItemData(r));
+    } catch {
+      return [];
+    }
   }
 }
 

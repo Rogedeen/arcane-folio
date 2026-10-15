@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { SpellData } from '../types/content';
-import { INITIAL_SPELLS } from '../data/sampleContent';
+import { contentService } from '../data/contentService';
 import { calculateMaxPreparedSpells } from '../rules/spellPreparation';
 
 interface SpellbookProps {
@@ -9,10 +9,55 @@ interface SpellbookProps {
 }
 
 export const Spellbook: React.FC<SpellbookProps> = ({ level, castingModifier }) => {
-  const [spells, setSpells] = useState<SpellData[]>(INITIAL_SPELLS);
+  const [spells, setSpells] = useState<SpellData[]>(contentService.getInitialSpells());
   const [levelFilter, setLevelFilter] = useState<number | 'all'>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [selectedSpell, setSelectedSpell] = useState<SpellData | null>(null);
+  const [isSearching, setIsSearching] = useState<boolean>(false);
+
+  useEffect(() => {
+    let active = true;
+
+    const load = async () => {
+      const preparedBySlug = new Map(spells.map((spell) => [spell.slug, spell.prepared]));
+
+      if (!searchTerm.trim()) {
+        setIsSearching(false);
+        const base = contentService.getInitialSpells().map((spell) => ({
+          ...spell,
+          prepared: preparedBySlug.get(spell.slug) ?? spell.prepared
+        }));
+        if (active) {
+          setSpells(base);
+        }
+        return;
+      }
+
+      setIsSearching(true);
+      const fetched = await contentService.getSpells(searchTerm);
+      if (!active) {
+        return;
+      }
+
+      setSpells(
+        fetched.map((spell) => ({
+          ...spell,
+          prepared: preparedBySlug.get(spell.slug) ?? spell.prepared
+        }))
+      );
+      setIsSearching(false);
+    };
+
+    load().catch(() => {
+      if (active) {
+        setIsSearching(false);
+      }
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [searchTerm]);
 
   const maxPrepared = calculateMaxPreparedSpells(level, castingModifier);
   const currentPreparedCount = spells.filter((s) => s.level > 0 && s.prepared).length;
@@ -85,6 +130,7 @@ export const Spellbook: React.FC<SpellbookProps> = ({ level, castingModifier }) 
 
       {/* Büyü Listesi */}
       <div className="spells-list-grid" id="spells-list-grid">
+        {isSearching && <p style={{ color: 'var(--text-secondary)' }}>Aranıyor...</p>}
         {filteredSpells.map((spell) => (
           <div
             key={spell.slug}

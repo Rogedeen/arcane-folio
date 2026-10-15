@@ -205,7 +205,7 @@ export const DmDashboard: React.FC<DmDashboardProps> = ({
                 </div>
               ) : (
                 <div className="dm-skills-list-grid" id={`dm-skills-${member.id}`}>
-                  {SKILLS.slice(0, 8).map((sk) => {
+                  {SKILLS.map((sk) => {
                     const mod = sk.ability === 'str' ? strMod
                       : sk.ability === 'dex' ? dexMod
                       : sk.ability === 'con' ? conMod
