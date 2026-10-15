@@ -69,3 +69,11 @@ Bu doküman, projede geliştirilen tüm bileşenlerin uymak ZORUNDA olduğu teme
 ## 8. 📜 Kural Seti Önceliği: 2014 PHB
 - 2024 kuralları (Weapon Mastery vb.) henüz devreye sokulmaz; öncelikle 2014 5e kuralları eksiksiz ve pürüzsüz uygulanır.
 
+---
+
+## 9. 🚀 Otomatik Git Commit & Push Kuralı
+- Her geliştirme turunun veya özelliğin tamamlanmasının ardından:
+  1. `npx tsc --noEmit` ile TypeScript kontrolü yapılır (0 hata zorunlu).
+  2. `npx vitest run` ile tüm birim ve entegrasyon testleri çalıştırılır (tümü başarılı olmalıdır).
+  3. Yapılan tüm değişiklikler anlamlı bir commit mesajıyla commit'lenir ve GitHub uzak sunucusuna (`git push origin main`) push edilir.
+
