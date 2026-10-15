@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ItemData } from '../types/content';
-import { INITIAL_ITEMS } from '../data/sampleContent';
+import { contentService } from '../data/contentService';
 import { calculateCarryingCapacity, calculateTotalWeight, isEncumbered } from '../rules/inventory';
 
 interface InventoryManagerProps {
@@ -8,8 +8,47 @@ interface InventoryManagerProps {
 }
 
 export const InventoryManager: React.FC<InventoryManagerProps> = ({ strScore }) => {
-  const [items, setItems] = useState<ItemData[]>(INITIAL_ITEMS);
+  const [items, setItems] = useState<ItemData[]>(contentService.getInitialItems());
   const [filterType, setFilterType] = useState<string>('all');
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [isSearching, setIsSearching] = useState<boolean>(false);
+
+  useEffect(() => {
+    let active = true;
+
+    const load = async () => {
+      if (!searchTerm.trim()) {
+        setIsSearching(false);
+        if (active) {
+          setItems(contentService.getInitialItems());
+        }
+        return;
+      }
+
+      setIsSearching(true);
+      const fetched = await contentService.getItems(searchTerm);
+      if (!active) {
+        return;
+      }
+      setItems(
+        fetched.map((item) => ({
+          ...item,
+          quantity: item.quantity ?? 1
+        }))
+      );
+      setIsSearching(false);
+    };
+
+    load().catch(() => {
+      if (active) {
+        setIsSearching(false);
+      }
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [searchTerm]);
 
   const carryingCapacity = calculateCarryingCapacity(strScore);
   const totalWeight = Math.round(calculateTotalWeight(items) * 10) / 10;
@@ -79,6 +118,17 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({ strScore }) 
       </div>
 
       {/* Filtre Butonları */}
+      <div className="spellbook-toolbar">
+        <input
+          id="input-item-search"
+          type="text"
+          placeholder="Eşya ara (örn: shield)..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="spell-search-input"
+        />
+      </div>
+
       <div className="inventory-filter-bar">
         {['all', 'weapon', 'armor', 'shield', 'potion', 'gear'].map((type) => (
           <button
@@ -94,6 +144,7 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({ strScore }) 
 
       {/* Eşya Listesi */}
       <div className="items-table" id="items-table">
+        {isSearching && <p style={{ color: 'var(--text-secondary)' }}>Aranıyor...</p>}
         {filteredItems.map((item) => (
           <div key={item.slug} className={`item-row ${item.equipped ? 'equipped-row' : ''}`} id={`item-row-${item.slug}`}>
             <div className="item-main-col">
