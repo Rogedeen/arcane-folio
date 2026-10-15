@@ -1,7 +1,7 @@
 # 🐉 D&D 5E PROJECT INSTRUCTIONS & AGENT GUIDELINES
 
 You are developing **DnD Beyond Killer**, a next-generation D&D 5e campaign & character sheet app.
-The project adheres strictly to the rules and standards defined in `.agents/rules/dnd_experience_standards.md`.
+The project adheres strictly to the rules and standards defined in `.agents/rules/dnd_experience_standards.md` and the visual layout blueprint in `docs/references/dndbeyond_ui_spec.md`.
 
 ## Core Standards You Must Always Follow:
 1. **HP = 0 Death Saves Cinematic Mode:** When HP drops to 0, trigger the dramatic dying mode with animated 3D physical d20 rolling and restricted actions.
