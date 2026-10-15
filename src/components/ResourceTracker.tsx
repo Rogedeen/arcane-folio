@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { CharacterClass } from '../types/character';
 import { ResourceState } from '../types/resources';
 import { applyDamage, applyHealing, applyTempHp } from '../rules/damageHealing';
@@ -11,22 +11,30 @@ interface ResourceTrackerProps {
   level: number;
   maxHp: number;
   conModifier: number;
+  currentHp?: number;    // Dışarıdan kontrol (context'ten)
+  tempHp?: number;       // Dışarıdan kontrol (context'ten)
+  onHpChange?: (currentHp: number, tempHp?: number) => void;
 }
 
 export const ResourceTracker: React.FC<ResourceTrackerProps> = ({
   charClass,
   level,
   maxHp,
-  conModifier
+  conModifier,
+  currentHp: externalHp,
+  tempHp: externalTempHp,
+  onHpChange,
 }) => {
   const [amountInput, setAmountInput] = useState<number>(5);
 
   const [resources, setResources] = useState<ResourceState>(() => {
     const slots = getSpellSlotsForLevel(charClass, level);
+    const initHp = externalHp ?? maxHp;
+    const initTemp = externalTempHp ?? 0;
     return {
-      currentHp: maxHp,
+      currentHp: initHp,
       maxHp,
-      tempHp: 0,
+      tempHp: initTemp,
       hitDiceAvailable: level,
       totalHitDice: level,
       hitDieType: charClass === 'barbarian' ? 'd12' : ['fighter', 'paladin', 'ranger'].includes(charClass) ? 'd10' : ['wizard', 'sorcerer'].includes(charClass) ? 'd6' : 'd8',
@@ -34,6 +42,38 @@ export const ResourceTracker: React.FC<ResourceTrackerProps> = ({
       pactMagic: charClass === 'warlock' ? { slotLevel: Math.min(5, Math.ceil(level / 2)), total: level >= 11 ? 3 : 2, expended: 0 } : undefined
     };
   });
+
+  const lastReported = useRef<{ hp: number; temp: number }>({
+    hp: externalHp ?? maxHp,
+    temp: externalTempHp ?? 0,
+  });
+
+  // Harici HP değişince yerel state'i de güncelle
+  useEffect(() => {
+    if (externalHp !== undefined) {
+      setResources((prev) => ({ ...prev, currentHp: externalHp }));
+      lastReported.current.hp = externalHp;
+    }
+  }, [externalHp]);
+
+  useEffect(() => {
+    if (externalTempHp !== undefined) {
+      setResources((prev) => ({ ...prev, tempHp: externalTempHp }));
+      lastReported.current.temp = externalTempHp;
+    }
+  }, [externalTempHp]);
+
+  // Yerel HP değiştiğinde dışarı bildir
+  useEffect(() => {
+    if (
+      onHpChange &&
+      (lastReported.current.hp !== resources.currentHp ||
+        lastReported.current.temp !== resources.tempHp)
+    ) {
+      lastReported.current = { hp: resources.currentHp, temp: resources.tempHp };
+      onHpChange(resources.currentHp, resources.tempHp);
+    }
+  }, [resources.currentHp, resources.tempHp, onHpChange]);
 
   // Karakter sınıfı, seviyesi veya max HP değiştiğinde kaynakları güncelle
   useEffect(() => {

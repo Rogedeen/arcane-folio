@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { SpellData } from '../types/content';
 import { contentService } from '../data/contentService';
 import { calculateMaxPreparedSpells } from '../rules/spellPreparation';
+import { useReference } from '../context/ReferenceContext';
 
 interface SpellbookProps {
   level: number;
@@ -9,10 +10,10 @@ interface SpellbookProps {
 }
 
 export const Spellbook: React.FC<SpellbookProps> = ({ level, castingModifier }) => {
+  const { openReference } = useReference();
   const [spells, setSpells] = useState<SpellData[]>(contentService.getInitialSpells());
   const [levelFilter, setLevelFilter] = useState<number | 'all'>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
-  const [selectedSpell, setSelectedSpell] = useState<SpellData | null>(null);
   const [isSearching, setIsSearching] = useState<boolean>(false);
 
   useEffect(() => {
@@ -136,7 +137,8 @@ export const Spellbook: React.FC<SpellbookProps> = ({ level, castingModifier }) 
             key={spell.slug}
             id={`spell-card-${spell.slug}`}
             className={`spell-item-card ${spell.prepared ? 'prepared' : ''}`}
-            onClick={() => setSelectedSpell(spell)}
+            onClick={() => openReference({ type: 'spell', data: spell })}
+            style={{ cursor: 'pointer' }}
           >
             <div className="spell-card-top">
               <span className="spell-name font-cinzel">{spell.name}</span>
@@ -168,29 +170,6 @@ export const Spellbook: React.FC<SpellbookProps> = ({ level, castingModifier }) 
           </div>
         ))}
       </div>
-
-      {/* Büyü Detay Modalı */}
-      {selectedSpell && (
-        <div className="modal-backdrop" onClick={() => setSelectedSpell(null)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3 className="font-cinzel" style={{ color: 'var(--accent-gold)' }}>
-                {selectedSpell.name}
-              </h3>
-              <button className="modal-close-btn" onClick={() => setSelectedSpell(null)}>✕</button>
-            </div>
-            <div className="modal-body">
-              <p><strong>Seviye & Okul:</strong> {selectedSpell.level === 0 ? 'Cantrip' : `${selectedSpell.level}. Seviye`} {selectedSpell.school}</p>
-              <p><strong>Kullanım Süresi:</strong> {selectedSpell.castingTime}</p>
-              <p><strong>Menzil:</strong> {selectedSpell.range}</p>
-              <p><strong>Bileşenler:</strong> {selectedSpell.components}</p>
-              <p><strong>Süre:</strong> {selectedSpell.duration}</p>
-              <hr style={{ margin: '1rem 0', borderColor: 'var(--border-subtle)' }} />
-              <p>{selectedSpell.description}</p>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

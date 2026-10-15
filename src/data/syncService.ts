@@ -37,6 +37,16 @@ class SyncService {
     }
   }
 
+  public broadcastDiceRoll(roll: unknown): void {
+    this.broadcast({
+      type: 'DICE_ROLLED',
+      campaignId: 'global',
+      senderRole: 'player',
+      payload: roll,
+      timestamp: new Date().toISOString(),
+    });
+  }
+
   private notifyListeners(event: SyncEvent): void {
     this.listeners.forEach((listener) => {
       try {

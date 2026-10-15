@@ -6,7 +6,7 @@ import { Spellbook } from '../../src/components/Spellbook';
 describe('InventoryManager Component', () => {
   it('renders carrying capacity correctly for STR 14 (210 lbs)', () => {
     render(<InventoryManager strScore={14} />);
-    expect(screen.getByText('210')).toBeInTheDocument();
+    expect(screen.getByText(/210 lbs/i)).toBeInTheDocument();
   });
 
   it('allows toggling equip state of weapon or armor', () => {

@@ -29,8 +29,8 @@ describe('open5eClient', () => {
     vi.stubGlobal('fetch', fetchMock);
 
     const results = await open5eClient.searchSpells('lightning');
-    expect(results[0]?.name).toBe('Lightning Lance');
-    expect(results[0]?.level).toBe(3);
+    expect(results.data[0]?.name).toBe('Lightning Lance');
+    expect(results.data[0]?.level).toBe(3);
     expect(fetchMock.mock.calls[0][0]).toContain('/v2/spells/');
   });
 
@@ -49,14 +49,14 @@ describe('open5eClient', () => {
     vi.stubGlobal('fetch', fetchMock);
 
     const results = await open5eClient.searchItems('ring');
-    expect(results[0]?.name).toBe('Ring of Warding');
-    expect(fetchMock.mock.calls[0][0]).toContain('/v2/equipment/');
-    expect(fetchMock.mock.calls[1][0]).toContain('/v2/magicitems/');
+    expect(results.data[0]?.name).toBe('Ring of Warding');
+    expect(fetchMock.mock.calls[0][0]).toContain('/v2/items/');
+    expect(fetchMock.mock.calls[1][0]).toContain('/v2/magic-items/');
   });
 
   it('returns empty list on network failure', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network')));
     const results = await open5eClient.searchSpells('anything');
-    expect(results).toEqual([]);
+    expect(results.data).toEqual([]);
   });
 });

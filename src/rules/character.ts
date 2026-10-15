@@ -16,6 +16,18 @@ export const RACE_ABILITY_BONUSES: Record<CharacterRace, Partial<AbilityScores>>
   tiefling: { cha: 2, int: 1 }
 };
 
+export const RACE_SPEED: Record<CharacterRace, number> = {
+  human: 30,
+  elf: 30,
+  dwarf: 25,
+  halfling: 25,
+  dragonborn: 30,
+  gnome: 25,
+  'half-elf': 30,
+  'half-orc': 30,
+  tiefling: 30,
+};
+
 /**
  * Karakter modelinden türetilmiş değerleri (DerivedStats) hesaplayan saf fonksiyon
  */
@@ -54,8 +66,10 @@ export function calculateDerivedStats(character: Character): DerivedStats {
   });
 
   const hitDice = `${character.level}${CLASS_HIT_DICE[character.class].dieString}`;
-  // Pasif Algı: 10 + WIS mod (+ proficiency if trained, base is 10 + WIS mod)
   const passivePerception = 10 + modifiers.wis;
+  const passiveInvestigation = 10 + modifiers.int;
+  const initiative = modifiers.dex;
+  const speed = RACE_SPEED[character.race] ?? 30;
 
   return {
     abilityScores: finalAbilities,
@@ -65,6 +79,9 @@ export function calculateDerivedStats(character: Character): DerivedStats {
     currentHp: maxHp,
     armorClass,
     hitDice,
-    passivePerception
+    passivePerception,
+    passiveInvestigation,
+    initiative,
+    speed,
   };
 }

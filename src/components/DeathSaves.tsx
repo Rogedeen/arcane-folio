@@ -5,10 +5,23 @@ import { soundEffects } from '../utils/soundEffects';
 interface DeathSavesProps {
   currentHp: number;
   onRegainHp?: (hp: number) => void;
+  initialSuccesses?: number;
+  initialFailures?: number;
+  onSavesChange?: (successes: number, failures: number) => void;
 }
 
-export const DeathSaves: React.FC<DeathSavesProps> = ({ currentHp, onRegainHp }) => {
-  const [state, setState] = useState<DeathSavesState>(INITIAL_DEATH_SAVES);
+export const DeathSaves: React.FC<DeathSavesProps> = ({
+  currentHp,
+  onRegainHp,
+  initialSuccesses = 0,
+  initialFailures = 0,
+  onSavesChange,
+}) => {
+  const [state, setState] = useState<DeathSavesState>(
+    initialSuccesses > 0 || initialFailures > 0
+      ? { ...INITIAL_DEATH_SAVES, successes: initialSuccesses, failures: initialFailures }
+      : INITIAL_DEATH_SAVES
+  );
   const isDying = currentHp <= 0;
 
   const handleRollDeathSave = () => {
@@ -16,6 +29,7 @@ export const DeathSaves: React.FC<DeathSavesProps> = ({ currentHp, onRegainHp })
     const roll = Math.floor(Math.random() * 20) + 1;
     const next = processDeathSaveRoll(roll, state);
     setState(next);
+    if (onSavesChange) onSavesChange(next.successes, next.failures);
 
     if (roll === 20) {
       soundEffects.playCritSound();

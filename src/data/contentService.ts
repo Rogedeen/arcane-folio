@@ -70,8 +70,8 @@ class ContentService {
     }
 
     const apiResults = await open5eClient.searchSpells(trimmed);
-    if (apiResults.length > 0) {
-      return apiResults;
+    if (apiResults.data && apiResults.data.length > 0) {
+      return apiResults.data;
     }
     return localResults;
   }
@@ -88,8 +88,8 @@ class ContentService {
     }
 
     const apiResults = await open5eClient.searchItems(trimmed);
-    if (apiResults.length > 0) {
-      return apiResults;
+    if (apiResults.data && apiResults.data.length > 0) {
+      return apiResults.data;
     }
     return localResults;
   }

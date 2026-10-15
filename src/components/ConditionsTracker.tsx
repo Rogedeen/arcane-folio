@@ -1,17 +1,37 @@
 import React, { useState } from 'react';
 import { getAllConditions, isMovementBlocked } from '../rules/conditions';
+import { useReference } from '../context/ReferenceContext';
 
-export const ConditionsTracker: React.FC = () => {
-  const [activeConditions, setActiveConditions] = useState<string[]>([]);
+interface ConditionsTrackerProps {
+  activeConditions?: string[];
+  onConditionsChange?: (conditions: string[]) => void;
+}
+
+export const ConditionsTracker: React.FC<ConditionsTrackerProps> = ({
+  activeConditions: externalConditions,
+  onConditionsChange,
+}) => {
+  const { openReference } = useReference();
+  // Eğer dışarıdan kontrol ediliyorsa (controlled), state yerel olmaz
+  const isControlled = externalConditions !== undefined;
+  const [localConditions, setLocalConditions] = useState<string[]>([]);
+
+  const activeConditions = isControlled ? externalConditions! : localConditions;
   const [expandedCondition, setExpandedCondition] = useState<string | null>(null);
 
   const conditions = getAllConditions();
   const movementBlocked = isMovementBlocked(activeConditions);
 
   const toggleCondition = (id: string) => {
-    setActiveConditions((prev) =>
-      prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]
-    );
+    const next = activeConditions.includes(id)
+      ? activeConditions.filter((c) => c !== id)
+      : [...activeConditions, id];
+
+    if (isControlled) {
+      onConditionsChange?.(next);
+    } else {
+      setLocalConditions(next);
+    }
   };
 
   return (
@@ -26,11 +46,14 @@ export const ConditionsTracker: React.FC = () => {
           </p>
         </div>
 
-        {activeConditions.length > 0 && (
+        {(isControlled ? activeConditions.length > 0 : localConditions.length > 0) && (
           <button
             id="btn-clear-conditions"
             className="clear-cond-btn"
-            onClick={() => setActiveConditions([])}
+            onClick={() => {
+              if (isControlled) onConditionsChange?.([]);
+              else setLocalConditions([]);
+            }}
             aria-label="Tüm Durumları Temizle"
           >
             Tümünü Temizle ({activeConditions.length})
@@ -80,14 +103,25 @@ export const ConditionsTracker: React.FC = () => {
                   <h4 className="font-cinzel" style={{ color: 'var(--accent-gold)', margin: 0 }}>
                     {current.icon} {current.nameTr} ({current.name})
                   </h4>
-                  <button
-                    className="modal-close-btn"
-                    style={{ fontSize: '1rem', padding: '0.2rem' }}
-                    onClick={() => setExpandedCondition(null)}
-                    aria-label="Kapat"
-                  >
-                    ✕
-                  </button>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <button
+                      id={`btn-open-ref-${current.id}`}
+                      className="full-tray-link"
+                      onClick={() => openReference({ type: 'condition', data: current })}
+                      style={{ padding: '2px 8px', fontSize: '0.8rem', background: 'rgba(251, 191, 36, 0.15)', border: '1px solid var(--border-gold)', borderRadius: '6px' }}
+                      title="Detaylı Referans Çekmecesinde Aç"
+                    >
+                      📖 Panelde Aç
+                    </button>
+                    <button
+                      className="modal-close-btn"
+                      style={{ fontSize: '1rem', padding: '0.2rem' }}
+                      onClick={() => setExpandedCondition(null)}
+                      aria-label="Kapat"
+                    >
+                      ✕
+                    </button>
+                  </div>
                 </div>
                 <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
                   {current.description}

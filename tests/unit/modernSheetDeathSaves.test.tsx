@@ -39,7 +39,7 @@ describe('Modern Karakter Kağıdı ve Ölüm Kurtarma Zarları (Death Saves) Te
     expect(lockBtn?.textContent).toContain('Duzenle');
   });
 
-  it('Sekmeler arası geçiş (Büyüler, Eşyalar, Durumlar) çalışır', async () => {
+  it('Sekmeler arası geçiş (Sınıf Özellikleri, Eşyalar, Durumlar) çalışır', async () => {
     render(<ModernCharacterSheet />);
     
     const tabSpells = document.getElementById('tab-btn-spells');
@@ -47,7 +47,9 @@ describe('Modern Karakter Kağıdı ve Ölüm Kurtarma Zarları (Death Saves) Te
     fireEvent.click(tabSpells!);
 
     await waitFor(() => {
-      expect(document.getElementById('spellbook-container')).toBeInTheDocument();
+      // Savaşçı (Fighter) karakter olduğu için Büyü Kitabı yerine Sınıf Yetenekleri (Second Wind vb.) açılır
+      expect(document.getElementById('tab-content-spells')).toBeInTheDocument();
+      expect(document.getElementById('btn-second-wind-action')).toBeInTheDocument();
     });
 
     const tabInventory = document.getElementById('tab-btn-inventory');
