@@ -357,3 +357,19 @@
   animation: rollShake 0.35s infinite;
   background: #ea580c !important;
 }
+
+/* Currency input helper to guarantee native spinners never show */
+.currency-number-input,
+input.currency-number-input {
+  -moz-appearance: textfield !important;
+  appearance: textfield !important;
+}
+
+.currency-number-input::-webkit-outer-spin-button,
+.currency-number-input::-webkit-inner-spin-button,
+input.currency-number-input::-webkit-outer-spin-button,
+input.currency-number-input::-webkit-inner-spin-button {
+  -webkit-appearance: none !important;
+  margin: 0 !important;
+  display: none !important;
+}

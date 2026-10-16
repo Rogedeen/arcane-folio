@@ -42,3 +42,16 @@ h1, h2, h3, .font-cinzel {
 .font-spectral {
   font-family: var(--font-text);
 }
+
+/* Sayı girişlerindeki tarayıcı varsayılan yukarı/aşağı oklarını kaldır */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none !important;
+  margin: 0 !important;
+  display: none !important;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield !important;
+  appearance: textfield !important;
+}

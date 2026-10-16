@@ -12,5 +12,5 @@ The project adheres strictly to the rules and standards defined in `.agents/rule
 6. **Level-Up Wizard & Progression:** Support Hit Die roll vs average, Subclass selection with modular caster unlock, ASI (+2 or +1/+1) or Feats, and Backstory notes.
 7. **DM Encounter & Initiative Tracker:** Live Open5e monster search (`/v2/creatures/`), party stats sync (HP, AC, Passive Perception), initiative rolling, turn/round tracking, and live monster HP/conditions.
 8. **2014 Rules First:** Prioritize 100% complete 2014 PHB rules over 2024 revisions until finalized.
-9. **Automatic Git Commit & Push:** At the end of every feature development / turn, always verify tests (`npx vitest run`), ensure zero TypeScript errors (`npx tsc --noEmit`), and commit & push all changes to GitHub (`git add . ; git commit -m '...' ; git push origin main`).
+9. **Strict Branching Workflow (Dev -> Main):** Never commit directly to `main`. At the end of every feature development / turn, always verify tests (`npx vitest run`), ensure zero TypeScript errors (`npx tsc --noEmit`), and commit & push all changes to GitHub on the `dev` branch (`git checkout dev ; git add . ; git commit -m '...' ; git push origin dev`). Merging to `main` must only occur after verification and approval, ensuring production stays rock-solid for live users.
 

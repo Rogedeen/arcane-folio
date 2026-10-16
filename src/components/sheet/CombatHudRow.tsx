@@ -156,7 +156,6 @@ export const CombatHudRow: React.FC<CombatHudRowProps> = ({
                 }}
                 title="İlham yalnızca Zindan Efendisi (DM) tarafından verilebilir"
               >
-                DM ÖDÜLÜ
               </span>
             )}
           </div>
@@ -186,6 +185,8 @@ export const CombatHudRow: React.FC<CombatHudRowProps> = ({
                 color: '#fff',
                 borderRadius: '3px',
                 textAlign: 'center',
+                MozAppearance: 'textfield',
+                appearance: 'textfield',
               }}
             />
             <button

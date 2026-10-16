@@ -288,6 +288,7 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
               min="0"
               value={currencyState.gp}
               onChange={(e) => handleUpdateCurrency('gp', Number(e.target.value))}
+              className="currency-number-input"
               style={{
                 width: '50px',
                 background: '#0a0d16',
@@ -298,6 +299,8 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
                 fontWeight: 700,
                 fontSize: '0.85rem',
                 padding: '0.15rem 0.2rem',
+                MozAppearance: 'textfield',
+                appearance: 'textfield',
               }}
             />
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
@@ -338,6 +341,7 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
               min="0"
               value={currencyState.sp}
               onChange={(e) => handleUpdateCurrency('sp', Number(e.target.value))}
+              className="currency-number-input"
               style={{
                 width: '50px',
                 background: '#0a0d16',
@@ -348,6 +352,8 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
                 fontWeight: 700,
                 fontSize: '0.85rem',
                 padding: '0.15rem 0.2rem',
+                MozAppearance: 'textfield',
+                appearance: 'textfield',
               }}
             />
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
@@ -388,6 +394,7 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
               min="0"
               value={currencyState.cp}
               onChange={(e) => handleUpdateCurrency('cp', Number(e.target.value))}
+              className="currency-number-input"
               style={{
                 width: '50px',
                 background: '#0a0d16',
@@ -398,6 +405,8 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
                 fontWeight: 700,
                 fontSize: '0.85rem',
                 padding: '0.15rem 0.2rem',
+                MozAppearance: 'textfield',
+                appearance: 'textfield',
               }}
             />
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>

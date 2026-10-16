@@ -87,9 +87,11 @@ Bu doküman, projede geliştirilen tüm bileşenlerin uymak ZORUNDA olduğu teme
 
 ---
 
-## 9. 🚀 Otomatik Git Commit & Push Kuralı
+## 9. 🚀 Katı Branch İş Akışı (Dev -> Main Kuralı)
+- **Asla doğrudan `main` branch'ine commit/push yapılmaz.**
 - Her geliştirme turunun veya özelliğin tamamlanmasının ardından:
   1. `npx tsc --noEmit` ile TypeScript kontrolü yapılır (0 hata zorunlu).
   2. `npx vitest run` ile tüm birim ve entegrasyon testleri çalıştırılır (tümü başarılı olmalıdır).
-  3. Yapılan tüm değişiklikler anlamlı bir commit mesajıyla commit'lenir ve GitHub uzak sunucusuna (`git push origin main`) push edilir.
+  3. Yapılan tüm değişiklikler anlamlı bir commit mesajıyla `dev` branch'ine commit'lenir ve GitHub uzak sunucusuna (`git push origin dev`) push edilir.
+  4. Yalnızca kullanıcı onayından sonra ve testler tamamsa `dev` branch'i `main`'e merge edilir. Böylece canlıdaki (production) kullanıcılar hiçbir zaman kararsız sürümle karşılaşmaz.
 
