@@ -42,68 +42,38 @@ export const HomeHub: React.FC<HomeHubProps> = ({ onNavigate }) => {
         )}
       </section>
 
-      {/* 5 Ana Eylem Kartı Grid */}
+      {/* 4 Ana Eylem Kartı Grid (Oyuncu, DM, Yaratım, Koleksiyon) */}
       <div className="hub-cards-grid">
-        {/* 1. Karakterlerim */}
-        <div
-          id="hub-card-gallery"
-          className="hub-action-card"
-          onClick={() => onNavigate('gallery')}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => e.key === 'Enter' && onNavigate('gallery')}
-        >
-          <div className="hub-card-icon">🧝</div>
-          <h3 className="font-cinzel hub-card-title">Karakterlerim</h3>
-          <p className="hub-card-desc">
-            {charCount > 0
-              ? `${charCount} kayıtlı karakter. Seç, düzenle veya yenisini ekle.`
-              : 'Henüz karakter yok. İlk kahramanını oluştur!'}
-          </p>
-          <span className="hub-card-btn font-cinzel">
-            {charCount > 0 ? `${charCount} Karakteri Gör →` : 'Galeriyi Aç →'}
-          </span>
-        </div>
-
-        {/* 2. Karakter Kağıdı */}
+        {/* 1. Karakter Kağıdı / Oyuncu Masası */}
         <div
           id="hub-card-sheet"
           className={`hub-action-card ${!activeCharacter ? 'dimmed' : ''}`}
-          onClick={() => activeCharacter ? onNavigate('sheet') : onNavigate('gallery')}
+          onClick={() => (activeCharacter ? onNavigate('sheet') : onNavigate('gallery'))}
           role="button"
           tabIndex={0}
           onKeyDown={(e) => e.key === 'Enter' && (activeCharacter ? onNavigate('sheet') : onNavigate('gallery'))}
         >
-          <div className="hub-card-icon">📜</div>
-          <h3 className="font-cinzel hub-card-title">Karakter Kağıdı</h3>
+          <div className="hub-card-icon">🛡️</div>
+          <h3 className="font-cinzel hub-card-title">Oyuncu Masası &amp; Karakter Kağıdı</h3>
           <p className="hub-card-desc">
             {activeCharacter
-              ? `${activeCharacter.name} — Sekmeli, az kaydırmalı, modern Bento Grid kağıt.`
-              : 'Önce bir karakter seçmeli veya oluşturmalısın.'}
+              ? `${activeCharacter.name} — Canlı zar atımı, envanter, büyüler ve sefere katılım.`
+              : 'Aktif bir karakter kağıdını açıp oyuna katılın veya koleksiyondan bir kahraman seçin.'}
           </p>
-          <span className="hub-card-btn font-cinzel">
-            {activeCharacter ? 'Kağıdı Aç →' : 'Karakter Seç →'}
-          </span>
+          <button
+            id="nav-btn-sheet"
+            className="hub-card-btn font-cinzel"
+            style={{ background: 'none', border: 'none', padding: 0, textAlign: 'left', cursor: 'pointer' }}
+            onClick={(e) => {
+              e.stopPropagation();
+              activeCharacter ? onNavigate('sheet') : onNavigate('gallery');
+            }}
+          >
+            {activeCharacter ? 'Karakter Masasına Gir →' : 'Karakter Seç →'}
+          </button>
         </div>
 
-        {/* 3. Karakter Oluşturucu */}
-        <div
-          id="hub-card-creator"
-          className="hub-action-card"
-          onClick={() => onNavigate('creator')}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => e.key === 'Enter' && onNavigate('creator')}
-        >
-          <div className="hub-card-icon">🧙</div>
-          <h3 className="font-cinzel hub-card-title">Karakter Oluştur</h3>
-          <p className="hub-card-desc">
-            SRD 5.1 kural motoruyla ırk, sınıf, statlar ve türetilmiş değerlerle yeni bir kahraman yarat.
-          </p>
-          <span className="hub-card-btn font-cinzel">Yeni Kahraman Yarat →</span>
-        </div>
-
-        {/* 4. DM Kokpiti */}
+        {/* 2. DM Kokpiti & Sefer Yönetimi */}
         <div
           id="hub-card-dm"
           className="hub-action-card"
@@ -113,11 +83,77 @@ export const HomeHub: React.FC<HomeHubProps> = ({ onNavigate }) => {
           onKeyDown={(e) => e.key === 'Enter' && onNavigate('dm')}
         >
           <div className="hub-card-icon">👑</div>
-          <h3 className="font-cinzel hub-card-title">DM Ekranı &amp; Kampanya</h3>
+          <h3 className="font-cinzel hub-card-title">Zindan Efendisi (DM Kokpiti)</h3>
           <p className="hub-card-desc">
-            Tüm partinin can barları, pasif algı radarı, durum takibi ve canlı senkronize sefer yönetimi.
+            Sefer oluştur, davet kodu ile oyuncularını masana topla, canlı parti can barlarını ve canavar karşılaşmalarını yönet.
           </p>
-          <span className="hub-card-btn font-cinzel">DM Ekranını Aç →</span>
+          <button
+            id="nav-btn-dm"
+            className="hub-card-btn font-cinzel"
+            style={{ background: 'none', border: 'none', padding: 0, textAlign: 'left', cursor: 'pointer' }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onNavigate('dm');
+            }}
+          >
+            DM Masasını Aç →
+          </button>
+        </div>
+
+        {/* 3. Yeni Karakter Yaratım */}
+        <div
+          id="hub-card-creator"
+          className="hub-action-card"
+          onClick={() => onNavigate('creator')}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => e.key === 'Enter' && onNavigate('creator')}
+        >
+          <div className="hub-card-icon">🧙</div>
+          <h3 className="font-cinzel hub-card-title">Karakter Yarat (Sihirbaz)</h3>
+          <p className="hub-card-desc">
+            SRD 5.1 kural motoruyla ırk, sınıf, statlar ve başlangıç eşyalarıyla sıfırdan yeni bir kahraman inşa et.
+          </p>
+          <button
+            id="nav-btn-creator"
+            className="hub-card-btn font-cinzel"
+            style={{ background: 'none', border: 'none', padding: 0, textAlign: 'left', cursor: 'pointer' }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onNavigate('creator');
+            }}
+          >
+            Yeni Kahraman Yarat →
+          </button>
+        </div>
+
+        {/* 4. Karakterlerim & Koleksiyon */}
+        <div
+          id="hub-card-gallery"
+          className="hub-action-card"
+          onClick={() => onNavigate('gallery')}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => e.key === 'Enter' && onNavigate('gallery')}
+        >
+          <div className="hub-card-icon">🧝</div>
+          <h3 className="font-cinzel hub-card-title">Karakterlerim &amp; Koleksiyon</h3>
+          <p className="hub-card-desc">
+            {charCount > 0
+              ? `${charCount} kayıtlı karakter. Seç, düzenle, sil veya yedekle.`
+              : 'Kayıtlı karakterlerinizi burada listeleyin ve yönetin.'}
+          </p>
+          <button
+            id="nav-btn-gallery"
+            className="hub-card-btn font-cinzel"
+            style={{ background: 'none', border: 'none', padding: 0, textAlign: 'left', cursor: 'pointer' }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onNavigate('gallery');
+            }}
+          >
+            {charCount > 0 ? `${charCount} Karakteri Gör →` : 'Koleksiyonu Aç →'}
+          </button>
         </div>
       </div>
     </div>

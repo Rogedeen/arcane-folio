@@ -101,6 +101,21 @@ export const CampaignView: React.FC = () => {
             return m;
           })
         }));
+      } else if (event.type === 'MEMBER_JOIN' && event.payload) {
+        const newMember = event.payload as PartyMember;
+        setCampaign((prev) => {
+          const exists = prev.members.some((m) => m.id === newMember.id);
+          if (exists) {
+            return {
+              ...prev,
+              members: prev.members.map((m) => (m.id === newMember.id ? newMember : m))
+            };
+          }
+          return {
+            ...prev,
+            members: [...prev.members, newMember]
+          };
+        });
       }
     });
 

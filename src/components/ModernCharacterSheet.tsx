@@ -170,6 +170,50 @@ export const ModernCharacterSheet: React.FC = () => {
     }
   }, [character.currentHp]);
 
+  // Sefer Kodu State'i (DM'in Seferine Katılma)
+  const [joinedCampaignCode, setJoinedCampaignCode] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('arcane_player_campaign') || null;
+    }
+    return null;
+  });
+
+  const handlePlayerJoinCampaign = (inviteCode: string) => {
+    setJoinedCampaignCode(inviteCode);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('arcane_player_campaign', inviteCode);
+    }
+    // DM'in ekranına canlı üye olarak yayınla
+    syncService.broadcast({
+      type: 'MEMBER_JOIN',
+      campaignId: inviteCode,
+      senderRole: 'player',
+      payload: {
+        id: character.id,
+        name: character.name,
+        charClass: `${character.class}${character.subclass ? ` (${character.subclass})` : ''}`,
+        level: character.level,
+        currentHp: character.currentHp,
+        maxHp: character.maxHp,
+        tempHp: character.tempHp ?? 0,
+        ac: ac,
+        passivePerception: passivePerception,
+        passiveInvestigation: passiveInvestigation,
+        stats: {
+          str: character.baseAbilities.str,
+          dex: character.baseAbilities.dex,
+          con: character.baseAbilities.con,
+          int: character.baseAbilities.int,
+          wis: character.baseAbilities.wis,
+          cha: character.baseAbilities.cha,
+        },
+        activeConditions: character.activeConditions ?? [],
+        playerName: character.playerName || 'Oyuncu',
+      },
+      timestamp: new Date().toISOString(),
+    });
+  };
+
   // DM Encounter senkronizasyonu dinleyicisi
   useEffect(() => {
     const unsub = syncService.subscribe((event) => {
@@ -533,7 +577,7 @@ export const ModernCharacterSheet: React.FC = () => {
       {/* Hızlı Zar Bildirim Banner'ı (D&D Beyond Toast Style - 8s) */}
       <SheetQuickToast toast={quickToast} onDismiss={() => setQuickToast(null)} />
 
-      {/* 1. ÜST HEADER: Portre, Karakter kimliği, Dinlenme, Stat Kilidi */}
+      {/* 1. ÜST HEADER: Portre, Karakter kimliği, Dinlenme, Stat Kilidi & Sefere Katıl */}
       <SheetHeader
         character={character}
         combatMode={combatMode}
@@ -542,6 +586,8 @@ export const ModernCharacterSheet: React.FC = () => {
         onLongRest={handleLongRest}
         isLocked={isLocked}
         onToggleLock={() => setIsLocked(!isLocked)}
+        onJoinCampaign={handlePlayerJoinCampaign}
+        joinedCampaignCode={joinedCampaignCode}
       />
 
       {/* 2. SAVAŞ & STAT ROZETLERİ BANDI */}

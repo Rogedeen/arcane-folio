@@ -79,48 +79,50 @@ function AppInner() {
           </div>
         </div>
 
-        {/* Ana Gezinme Sekmeleri */}
-        <nav className="top-nav-bar" aria-label="Ana Menü">
-          <button
-            id="nav-btn-home"
-            className={`nav-tab-btn ${currentView === 'home' ? 'active' : ''}`}
-            onClick={() => handleNavigate('home')}
-            aria-label="Ana Sayfa"
-          >
-            🏰 Ana Sayfa
-          </button>
-          <button
-            id="nav-btn-gallery"
-            className={`nav-tab-btn ${currentView === 'gallery' ? 'active' : ''}`}
-            onClick={() => handleNavigate('gallery')}
-            aria-label="Karakterlerim"
-          >
-            🧝 Karakterler
-          </button>
-          <button
-            id="nav-btn-sheet"
-            className={`nav-tab-btn ${currentView === 'sheet' ? 'active' : ''}`}
-            onClick={() => handleNavigate('sheet')}
-            aria-label="Karakter Kağıdı"
-          >
-            📜 Kağıt
-          </button>
-          <button
-            id="nav-btn-creator"
-            className={`nav-tab-btn ${currentView === 'creator' ? 'active' : ''}`}
-            onClick={() => handleNavigate('creator')}
-            aria-label="Karakter Oluştur"
-          >
-            🧙 Oluştur
-          </button>
-          <button
-            id="nav-btn-dm"
-            className={`nav-tab-btn ${currentView === 'dm' ? 'active' : ''}`}
-            onClick={() => handleNavigate('dm')}
-            aria-label="DM Ekranı"
-          >
-            👑 DM
-          </button>
+        {/* Rol Odaklı Sade Üst Gezinme: Ana sayfada temiz logo & tema, alt ekranlarda sadece '← Ana Sayfa' ve mod etiketi */}
+        <div className="top-nav-bar" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          {currentView !== 'home' && (
+            <>
+              <button
+                id="nav-btn-home"
+                className="nav-tab-btn"
+                onClick={() => handleNavigate('home')}
+                aria-label="Ana Sayfaya Dön"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                  fontWeight: 700,
+                  border: '1px solid var(--accent-gold)',
+                  background: 'rgba(212, 175, 53, 0.12)',
+                  color: 'var(--accent-gold)'
+                }}
+              >
+                ← Ana Sayfa
+              </button>
+              <span
+                id="current-role-badge"
+                style={{
+                  fontSize: '0.78rem',
+                  fontWeight: 800,
+                  letterSpacing: '0.05em',
+                  padding: '0.35rem 0.75rem',
+                  borderRadius: '9999px',
+                  background: currentView === 'dm' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(59, 130, 246, 0.15)',
+                  color: currentView === 'dm' ? '#f87171' : '#60a5fa',
+                  border: `1px solid ${currentView === 'dm' ? 'rgba(239, 68, 68, 0.3)' : 'rgba(59, 130, 246, 0.3)'}`,
+                  textTransform: 'uppercase',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                {currentView === 'sheet' && '🛡️ Oyuncu Masası'}
+                {currentView === 'dm' && '👑 Zindan Efendisi (DM)'}
+                {currentView === 'creator' && '🧙 Karakter Yaratım'}
+                {currentView === 'gallery' && '🧝 Karakter Koleksiyonu'}
+              </span>
+            </>
+          )}
+
           <button
             id="theme-toggle-btn"
             className="theme-toggle-btn"
@@ -130,7 +132,7 @@ function AppInner() {
           >
             {theme === 'dark' ? '📜 Parşömen' : '🌘 Zindan'}
           </button>
-        </nav>
+        </div>
       </header>
 
       {/* 2. Dinamik Sayfa Görünümleri */}

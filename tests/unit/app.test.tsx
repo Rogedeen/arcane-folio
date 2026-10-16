@@ -4,27 +4,46 @@ import App from '../../src/App';
 import { createDatabaseClient } from '../../src/data/supabaseClient';
 
 describe('Uygulama Temel İskelet ve Gezinme Birim Testleri', () => {
-  it('Başlık, üst menü ve ana sayfa kartlarını ekrana basar', async () => {
+  it('Başlık ve ana sayfa 4 temel rol kartını ekrana basar', async () => {
     render(<App />);
     expect(screen.getByRole('heading', { level: 1, name: /ArcaneFolio 5e/i })).toBeInTheDocument();
-    
-    expect(document.getElementById('nav-btn-home')).toBeInTheDocument();
-    expect(document.getElementById('nav-btn-sheet')).toBeInTheDocument();
-    expect(document.getElementById('nav-btn-creator')).toBeInTheDocument();
-    expect(document.getElementById('nav-btn-dm')).toBeInTheDocument();
 
-    expect(document.getElementById('home-hub-container')).toBeInTheDocument();
+    // 4 Temel Giriş Kartı
     expect(document.getElementById('hub-card-sheet')).toBeInTheDocument();
+    expect(document.getElementById('hub-card-dm')).toBeInTheDocument();
+    expect(document.getElementById('hub-card-creator')).toBeInTheDocument();
+    expect(document.getElementById('hub-card-gallery')).toBeInTheDocument();
+
+    // Kartlar üzerindeki eylem butonları
+    expect(document.getElementById('nav-btn-sheet')).toBeInTheDocument();
+    expect(document.getElementById('nav-btn-dm')).toBeInTheDocument();
+    expect(document.getElementById('nav-btn-creator')).toBeInTheDocument();
+    expect(document.getElementById('nav-btn-gallery')).toBeInTheDocument();
   });
 
-  it('Menüden DM Ekranına geçilebilir', async () => {
+  it('Ana sayfadan DM Ekranına geçilebilir ve üstte Ana Sayfaya dönüş butonu belirir', async () => {
     render(<App />);
     const dmNavBtn = document.getElementById('nav-btn-dm');
     expect(dmNavBtn).toBeInTheDocument();
     fireEvent.click(dmNavBtn!);
 
     await waitFor(() => {
-      expect(document.getElementById('campaign-hub-root') || document.getElementById('encounter-tracker-view') || document.getElementById('main-content-viewport')).toBeInTheDocument();
+      expect(
+        document.getElementById('campaign-view-container') ||
+        document.getElementById('campaign-hub-root') ||
+        document.getElementById('main-content-viewport')
+      ).toBeInTheDocument();
+    });
+
+    // Alt ekrana geçince üstte '← Ana Sayfa' butonu ve rol etiketi belirmeli
+    const homeBtn = document.getElementById('nav-btn-home');
+    expect(homeBtn).toBeInTheDocument();
+    expect(document.getElementById('current-role-badge')).toBeInTheDocument();
+
+    // Ana sayfaya geri dönülebilmeli
+    fireEvent.click(homeBtn!);
+    await waitFor(() => {
+      expect(document.getElementById('home-hub-container')).toBeInTheDocument();
     });
   });
 
@@ -35,14 +54,17 @@ describe('Uygulama Temel İskelet ve Gezinme Birim Testleri', () => {
     expect(status.message).toBeDefined();
   });
 
-  it('Menüden Karakter Kağıdına geçilebilir', async () => {
+  it('Ana sayfadan Karakter Kağıdına / Oyuncu Masasına geçilebilir', async () => {
     render(<App />);
     const sheetNavBtn = document.getElementById('nav-btn-sheet');
     expect(sheetNavBtn).toBeInTheDocument();
     fireEvent.click(sheetNavBtn!);
 
     await waitFor(() => {
-      expect(document.getElementById('modern-character-sheet-container')).toBeInTheDocument();
+      expect(
+        document.getElementById('modern-character-sheet-container') ||
+        document.getElementById('character-gallery-container')
+      ).toBeInTheDocument();
     });
   });
 });
