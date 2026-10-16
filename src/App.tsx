@@ -73,8 +73,9 @@ function AppInner() {
         <div className="logo-group" onClick={() => handleNavigate('home')} style={{ cursor: 'pointer' }}>
           <img src="/icons/icon-192.svg" alt="ArcaneFolio Logo" className="logo-icon" id="header-logo" />
           <div>
-            <h1 className="logo-title font-cinzel">ArcaneFolio 5e</h1>
-            <p className="logo-subtitle">5. Edisyon Karakter &amp; DM Kampanya Portali</p>
+            <h1 className="logo-title font-cinzel" lang="en" style={{ textTransform: 'none', letterSpacing: '0.04em' }}>
+              ARCANEFOLIO 5E
+            </h1>
           </div>
         </div>
 

@@ -28,18 +28,60 @@ export function getStorageAdapter(): IStorageAdapter {
 
 // --- Karakter İşlemleri ---
 
+export function sanitizeCharacter(char: FullCharacter): FullCharacter {
+  const c = { ...char };
+  // 1. Para birimi başlangıcı
+  if (!c.currency) {
+    c.currency = { cp: 0, sp: 0, gp: 15 };
+  }
+
+  // 2. Kuşanılmamış fazlalık zırh/kalkan/silah temizliği:
+  if (c.inventory && c.inventory.length > 2) {
+    const weaponNames = (c.weapons || []).map((w) => w.name.toLowerCase());
+    const equippedArmorName = c.equippedArmor?.name?.toLowerCase();
+
+    const filtered = c.inventory.filter((item) => {
+      // Zırh kontrolü: Karakterin aktif kuşanılmış zırhı varsa sadece onu tut, diğerlerini çantadan at
+      if (item.type === 'armor') {
+        return equippedArmorName ? item.name.toLowerCase().includes(equippedArmorName) : Boolean(item.equipped);
+      }
+      // Kalkan kontrolü: Sadece hasShield true ise kalkanı tut
+      if (item.type === 'shield' || item.slug === 'shield') {
+        return Boolean(c.hasShield);
+      }
+      // Silah kontrolü: Karakterin silah listesinde varsa tut
+      if (item.type === 'weapon') {
+        return weaponNames.length > 0
+          ? weaponNames.some((wn) => item.name.toLowerCase().includes(wn) || wn.includes(item.name.toLowerCase()))
+          : Boolean(item.equipped);
+      }
+      // İksir ve temel kamp ekipmanları tutulur
+      if (item.type === 'potion' || item.type === 'gear') return true;
+      return true;
+    });
+
+    if (filtered.length > 0) {
+      c.inventory = filtered;
+    }
+  }
+
+  return c;
+}
+
 export function loadCharacters(): FullCharacter[] {
-  return storageAdapter.getItem<FullCharacter[]>(KEYS.CHARACTERS, []);
+  const chars = storageAdapter.getItem<FullCharacter[]>(KEYS.CHARACTERS, []);
+  return chars.map(sanitizeCharacter);
 }
 
 export function saveCharacters(characters: FullCharacter[]): void {
-  storageAdapter.setItem(KEYS.CHARACTERS, characters);
+  storageAdapter.setItem(KEYS.CHARACTERS, characters.map(sanitizeCharacter));
 }
 
 export function saveCharacter(character: FullCharacter): FullCharacter[] {
   const all = loadCharacters();
-  const idx = all.findIndex((c) => c.id === character.id);
-  const updated = { ...character, updatedAt: new Date().toISOString() };
+  const sanitized = sanitizeCharacter(character);
+  const idx = all.findIndex((c) => c.id === sanitized.id);
+  const updated = { ...sanitized, updatedAt: new Date().toISOString() };
   if (idx >= 0) {
     all[idx] = updated;
   } else {

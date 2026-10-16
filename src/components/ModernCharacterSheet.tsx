@@ -733,6 +733,12 @@ export const ModernCharacterSheet: React.FC = () => {
               <InventoryManager
                 strScore={character.baseAbilities.str}
                 inventory={character.inventory ?? []}
+                currency={character.currency ?? { cp: 0, sp: 0, gp: 15 }}
+                onCurrencyChange={(newCurr) => {
+                  if (!isDemo) {
+                    saveCharacter({ ...character, currency: newCurr });
+                  }
+                }}
                 onInventoryChange={handleInventoryChange}
                 onUsePotion={handleUsePotion}
               />

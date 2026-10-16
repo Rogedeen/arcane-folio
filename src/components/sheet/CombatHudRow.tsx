@@ -128,22 +128,37 @@ export const CombatHudRow: React.FC<CombatHudRowProps> = ({
             </span>
           </div>
           <div className="unlocked-stat-stepper" style={{ marginTop: '0.15rem' }}>
-            <button
-              type="button"
-              id="btn-inspiration-dec"
-              onClick={() => onUpdateInspiration(Math.max(0, (character.inspiration ?? 0) - 1))}
-              title="İlham Harca"
-            >
-              -
-            </button>
-            <button
-              type="button"
-              id="btn-inspiration-inc"
-              onClick={() => onUpdateInspiration((character.inspiration ?? 0) + 1)}
-              title="İlham Ekle"
-            >
-              +
-            </button>
+            {(character.inspiration ?? 0) > 0 ? (
+              <button
+                type="button"
+                id="btn-inspiration-dec"
+                onClick={() => onUpdateInspiration(Math.max(0, (character.inspiration ?? 0) - 1))}
+                title="1 İlham Harca (Zar avantajı için kullan)"
+                style={{
+                  background: 'rgba(217, 119, 6, 0.3)',
+                  border: '1px solid #f59e0b',
+                  color: '#fbbf24',
+                  fontSize: '0.68rem',
+                  padding: '0.15rem 0.5rem',
+                  borderRadius: '4px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                }}
+              >
+                Harca (-1)
+              </button>
+            ) : (
+              <span
+                style={{
+                  fontSize: '0.62rem',
+                  color: 'var(--text-muted)',
+                  letterSpacing: '0.04em',
+                }}
+                title="İlham yalnızca Zindan Efendisi (DM) tarafından verilebilir"
+              >
+                DM ÖDÜLÜ
+              </span>
+            )}
           </div>
         </div>
 

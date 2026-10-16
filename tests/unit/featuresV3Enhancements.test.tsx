@@ -113,4 +113,76 @@ describe('V3 Enhancements & Features', () => {
       expect(speed).toBe(0);
     });
   });
+
+  describe('SyncService & Physical 3D Dice Local Dispatch', () => {
+    it('notifies subscribers synchronously in the calling window/tab', async () => {
+      const { syncService } = await import('../../src/data/syncService');
+      let receivedPayload: any = null;
+
+      const unsub = syncService.subscribe((ev) => {
+        if (ev.type === 'DICE_ROLLED') {
+          receivedPayload = ev.payload;
+        }
+      });
+
+      syncService.broadcastDiceRoll({
+        id: 'test-roll-1',
+        label: 'Gizlilik (Stealth) Kontrolü',
+        totalSum: 19,
+        modifier: 3,
+      });
+
+      expect(receivedPayload).not.toBeNull();
+      expect(receivedPayload.label).toBe('Gizlilik (Stealth) Kontrolü');
+      expect(receivedPayload.totalSum).toBe(19);
+
+      unsub();
+    });
+  });
+
+  describe('Inventory Sanitization & Currency', () => {
+    it('sanitizes legacy catalog dumps from character inventory and initializes currency', async () => {
+      const { sanitizeCharacter } = await import('../../src/data/persistenceService');
+      const { localDatabase } = await import('../../src/data/localDatabase');
+
+      const fullCatalog = [
+        ...localDatabase.getAllItems(),
+        {
+          slug: 'plate-armor-extra',
+          name: 'Plate Armor Extra',
+          type: 'armor',
+          cost: '1500 gp',
+          weight: 65,
+          description: 'Heavy armor',
+          properties: [],
+          quantity: 1,
+          equipped: false,
+          source: 'SRD 5.1',
+          source_ref: 'PHB',
+          license: 'CC-BY-4.0',
+        },
+      ];
+
+      const legacyChar: any = {
+        id: 'legacy-char-1',
+        name: 'Kaelen',
+        class: 'fighter',
+        weapons: [{ id: 'w1', name: 'Longsword', damage: '1d8', damageType: 'slashing', properties: ['versatile'], abilityUsed: 'str' }],
+        equippedArmor: { name: 'Chain Mail', type: 'heavy', baseAc: 16 },
+        hasShield: true,
+        inventory: fullCatalog,
+      };
+
+      const cleaned = sanitizeCharacter(legacyChar);
+      expect(cleaned.inventory?.length).toBeLessThan(fullCatalog.length);
+      // Equipped armor and weapons stay
+      expect(cleaned.inventory?.some((i) => i.name.toLowerCase().includes('chain mail'))).toBe(true);
+      expect(cleaned.inventory?.some((i) => i.name.toLowerCase().includes('longsword'))).toBe(true);
+      // Extra unequipped armor was discarded
+      expect(cleaned.inventory?.some((i) => i.name.toLowerCase().includes('plate armor extra'))).toBe(false);
+      // Currency initialized
+      expect(cleaned.currency).toBeDefined();
+      expect(cleaned.currency?.gp).toBeGreaterThanOrEqual(0);
+    });
+  });
 });

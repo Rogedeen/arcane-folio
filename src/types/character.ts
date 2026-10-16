@@ -83,6 +83,13 @@ export interface FullCharacter {
   activeConditions: string[];
   deathSaves?: { successes: number; failures: number };
   inspiration?: number; // Kahramanlık İlhamı (Heroic Inspiration - stacklenebilir)
+  currency?: {
+    cp: number; // Bakır (Copper)
+    sp: number; // Gümüş (Silver)
+    ep?: number;
+    gp: number; // Altın (Gold)
+    pp?: number;
+  };
 
   // Gelişim & Hikaye (Progression & Roleplay)
   feats?: string[];

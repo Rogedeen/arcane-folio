@@ -19,23 +19,24 @@ export const HomeHub: React.FC<HomeHubProps> = ({ onNavigate }) => {
     <div id="home-hub-container" className="home-hub-root">
       {/* Karşılama Kartı */}
       <section className="hub-welcome-banner">
-        <h2 className="font-cinzel hub-title">ArcaneFolio 5e: Karakter &amp; DM Portali</h2>
-        <p className="hub-subtitle">
-          SRD 5.1 kural seti uyumlu — 5. Edisyon mekaniklerinin tamamı, 3D fiziksel zar motoru ve canlı DM karşılaşma senkronizasyonu.
-        </p>
+        <h2 className="font-cinzel hub-title" lang="en" style={{ textTransform: 'none', letterSpacing: '0.04em', margin: '0 0 1rem 0' }}>
+          ARCANEFOLIO 5E
+        </h2>
         {activeCharacter && (
-          <div className="hub-active-char-pill">
-            <span className="hub-active-label">AKTİF KARAKTER:</span>
-            <span className="hub-active-name font-cinzel">{activeCharacter.name}</span>
-            <span className="hub-active-meta">
-              Svye {activeCharacter.level} {activeCharacter.class}
-              {' • '}{activeCharacter.currentHp}/{activeCharacter.maxHp} HP
-            </span>
+          <div className="hub-active-char-card" id="hub-active-character-banner">
+            <div className="hub-active-char-info">
+              <span className="hub-active-badge">AKTİF KARAKTER</span>
+              <span className="hub-active-name font-cinzel">{activeCharacter.name}</span>
+              <span className="hub-active-details">
+                Svye {activeCharacter.level} {activeCharacter.class} • {activeCharacter.currentHp}/{activeCharacter.maxHp} HP
+              </span>
+            </div>
             <button
-              className="hub-active-open-btn"
+              id="btn-open-active-sheet"
+              className="hub-active-open-btn font-cinzel"
               onClick={() => onNavigate('sheet')}
             >
-              Kağıdı Aç →
+              📜 Kâğıdı Aç →
             </button>
           </div>
         )}

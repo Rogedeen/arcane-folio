@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ItemData } from '../types/content';
 import { localDatabase } from '../data/localDatabase';
-import { open5eClient } from '../data/open5eClient';
 import { calculateCarryingCapacity, calculateTotalWeight, isEncumbered } from '../rules/inventory';
 import { useReference } from '../context/ReferenceContext';
 import { calculatePotionHealing, isPotionItem } from '../rules/potions';
@@ -10,28 +9,95 @@ import { soundEffects } from '../utils/soundEffects';
 interface InventoryManagerProps {
   strScore: number;
   inventory?: ItemData[];
+  currency?: {
+    cp: number;
+    sp: number;
+    gp: number;
+    ep?: number;
+    pp?: number;
+  };
+  onCurrencyChange?: (currency: { cp: number; sp: number; gp: number }) => void;
   onInventoryChange?: (items: ItemData[]) => void;
   onUsePotion?: (item: ItemData, healAmount: number, formula: string, rolls: number[]) => void;
 }
 
+const DEFAULT_STANDALONE_ITEMS: ItemData[] = [
+  {
+    slug: 'longsword',
+    name: 'Longsword',
+    type: 'weapon',
+    weight: 3,
+    cost: '15 gp',
+    description: 'Uzun kılıç',
+    properties: ['versatile'],
+    quantity: 1,
+    equipped: false,
+    source: 'SRD 5.1',
+    source_ref: 'PHB',
+    license: 'OGL / CC-BY-4.0',
+  },
+  {
+    slug: 'potion-of-healing',
+    name: 'Potion of Healing',
+    type: 'potion',
+    weight: 0.5,
+    cost: '50 gp',
+    description: '2d4 + 2 can iyileştirir.',
+    properties: ['consumable'],
+    quantity: 1,
+    equipped: false,
+    source: 'SRD 5.1',
+    source_ref: 'PHB',
+    license: 'OGL / CC-BY-4.0',
+  },
+];
+
 export const InventoryManager: React.FC<InventoryManagerProps> = ({
   strScore,
   inventory: externalInventory,
+  currency: externalCurrency,
+  onCurrencyChange,
   onInventoryChange,
   onUsePotion,
 }) => {
   const { openReference } = useReference();
   const [internalItems, setInternalItems] = useState<ItemData[]>(() =>
-    externalInventory !== undefined ? externalInventory : localDatabase.getAllItems()
+    externalInventory !== undefined ? externalInventory : DEFAULT_STANDALONE_ITEMS
   );
   const items = externalInventory !== undefined ? externalInventory : internalItems;
+
+  // Para Kesesi (Cüzdan) State'i
+  const [currencyState, setCurrencyState] = useState({
+    cp: externalCurrency?.cp ?? 0,
+    sp: externalCurrency?.sp ?? 0,
+    gp: externalCurrency?.gp ?? 15,
+  });
+
+  useEffect(() => {
+    if (externalCurrency) {
+      setCurrencyState({
+        cp: externalCurrency.cp ?? 0,
+        sp: externalCurrency.sp ?? 0,
+        gp: externalCurrency.gp ?? 0,
+      });
+    }
+  }, [externalCurrency]);
+
+  const handleUpdateCurrency = (coin: 'cp' | 'sp' | 'gp', value: number) => {
+    const updated = { ...currencyState, [coin]: Math.max(0, value) };
+    setCurrencyState(updated);
+    onCurrencyChange?.(updated);
+  };
 
   const [activeTab, setActiveTab] = useState<'bag' | 'add'>('bag');
   const [filterType, setFilterType] = useState<string>('all');
   const [catalogSearch, setCatalogSearch] = useState<string>('');
   const [catalogTypeFilter, setCatalogTypeFilter] = useState<string>('all');
   const [catalogResults, setCatalogResults] = useState<ItemData[]>(() => localDatabase.getAllItems());
-  const [isSearchingCatalog, setIsSearchingCatalog] = useState<boolean>(false);
+  
+  // Eşya Eklendi Geri Bildirimi State'leri
+  const [lastAddedSlug, setLastAddedSlug] = useState<string | null>(null);
+  const [feedbackToast, setFeedbackToast] = useState<string | null>(null);
 
   // Sekme açıldığında veya ilk yüklemede eşyaları veritabanından çek
   useEffect(() => {
@@ -94,7 +160,7 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
     updateItems(next);
   };
 
-  // Miktar Değiştir
+  // Miktar Değiştir (0 veya altına düşerse otomatik çantadan kaldırılır)
   const changeQuantity = (slug: string, delta: number) => {
     const next = items
       .map((it) => {
@@ -108,39 +174,33 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
     updateItems(next);
   };
 
-  // Katalogdan Çantaya Ekle
+  // Katalogdan Çantaya Ekle (Feedback Toast ve Buton Animasyonu ile)
   const addItemToBag = (itemToAdd: ItemData) => {
+    soundEffects.playDiceRollSound();
     const exists = items.find((i) => i.slug === itemToAdd.slug);
     if (exists) {
       changeQuantity(itemToAdd.slug, 1);
     } else {
       updateItems([...items, { ...itemToAdd, quantity: 1, equipped: false }]);
     }
+
+    setLastAddedSlug(itemToAdd.slug);
+    setFeedbackToast(`✓ "${itemToAdd.name}" başarıyla çantaya eklendi!`);
+
+    setTimeout(() => {
+      setLastAddedSlug((curr) => (curr === itemToAdd.slug ? null : curr));
+    }, 1400);
+
+    setTimeout(() => {
+      setFeedbackToast((curr) => (curr?.includes(itemToAdd.name) ? null : curr));
+    }, 3500);
   };
 
-  // Katalogda Anında Arama ve Filtreleme
-  const handleCatalogInputChange = async (query: string, typeFilt = catalogTypeFilter) => {
+  // Katalogda Anında "Tak Tak" Arama ve Filtreleme (Sıfır gecikmeli senkron arama)
+  const handleCatalogInputChange = (query: string, typeFilt = catalogTypeFilter) => {
     setCatalogSearch(query);
-    // 1. Anında yerel aramayı çalıştır
     const local = localDatabase.searchItems(query, typeFilt);
     setCatalogResults(local);
-
-    // 2. 2 harften uzunsa arka planda Open5e'den sorgula
-    if (query.trim().length >= 2) {
-      setIsSearchingCatalog(true);
-      try {
-        const apiRes = await open5eClient.searchItems(query.trim(), 25);
-        if (apiRes.data && apiRes.data.length > 0) {
-          localDatabase.saveItems(apiRes.data);
-          const updated = localDatabase.searchItems(query, typeFilt);
-          setCatalogResults(updated);
-        }
-      } catch (err) {
-        console.warn('Open5e eşya arama hatası:', err);
-      } finally {
-        setIsSearchingCatalog(false);
-      }
-    }
   };
 
   const handleCatalogFilterChange = (type: string) => {
@@ -158,6 +218,210 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
 
   return (
     <div id="inventory-manager-container" className="inventory-card">
+      {/* Bildirim Toast'ı */}
+      {feedbackToast && (
+        <div
+          style={{
+            background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.2) 0%, rgba(21, 128, 61, 0.3) 100%)',
+            border: '1px solid #22c55e',
+            color: '#86efac',
+            padding: '0.6rem 1rem',
+            borderRadius: '8px',
+            marginBottom: '1rem',
+            fontSize: '0.85rem',
+            fontWeight: 700,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            boxShadow: '0 4px 12px rgba(34, 197, 94, 0.2)',
+            animation: 'fadeIn 0.2s ease-out',
+          }}
+        >
+          <span>{feedbackToast}</span>
+          <button
+            onClick={() => setFeedbackToast(null)}
+            style={{ background: 'none', border: 'none', color: '#86efac', cursor: 'pointer', fontSize: '1rem' }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      {/* Para Kesesi / Cüzdan (Altın GP, Gümüş SP, Bakır CP) */}
+      <div
+        className="currency-wallet-bar"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '0.75rem',
+          padding: '0.75rem 1rem',
+          background: 'rgba(15, 23, 42, 0.75)',
+          border: '1px solid rgba(217, 119, 6, 0.3)',
+          borderRadius: '12px',
+          marginBottom: '1rem',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <span style={{ fontSize: '1.2rem' }}>💰</span>
+          <span className="font-cinzel" style={{ fontWeight: 700, color: 'var(--accent-gold)', fontSize: '0.95rem' }}>
+            PARA KESESİ
+          </span>
+        </div>
+        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
+          {/* Altın (GP) */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.35rem',
+              background: 'rgba(245, 158, 11, 0.12)',
+              padding: '0.3rem 0.55rem',
+              borderRadius: '8px',
+              border: '1px solid rgba(245, 158, 11, 0.35)',
+            }}
+          >
+            <span title="Altın (Gold Pieces - GP)" style={{ fontSize: '0.85rem' }}>🪙 <strong>GP</strong></span>
+            <input
+              type="number"
+              min="0"
+              value={currencyState.gp}
+              onChange={(e) => handleUpdateCurrency('gp', Number(e.target.value))}
+              style={{
+                width: '50px',
+                background: '#0a0d16',
+                border: '1px solid #d97706',
+                color: '#fbbf24',
+                borderRadius: '4px',
+                textAlign: 'center',
+                fontWeight: 700,
+                fontSize: '0.85rem',
+                padding: '0.15rem 0.2rem',
+              }}
+            />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+              <button
+                type="button"
+                onClick={() => handleUpdateCurrency('gp', currencyState.gp + 1)}
+                style={{ fontSize: '0.6rem', padding: '0 4px', cursor: 'pointer', background: '#334155', border: 'none', color: '#fff', borderRadius: '2px' }}
+                title="+1 Altın"
+              >
+                +
+              </button>
+              <button
+                type="button"
+                onClick={() => handleUpdateCurrency('gp', Math.max(0, currencyState.gp - 1))}
+                style={{ fontSize: '0.6rem', padding: '0 4px', cursor: 'pointer', background: '#334155', border: 'none', color: '#fff', borderRadius: '2px' }}
+                title="-1 Altın"
+              >
+                -
+              </button>
+            </div>
+          </div>
+
+          {/* Gümüş (SP) */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.35rem',
+              background: 'rgba(203, 213, 225, 0.12)',
+              padding: '0.3rem 0.55rem',
+              borderRadius: '8px',
+              border: '1px solid rgba(203, 213, 225, 0.35)',
+            }}
+          >
+            <span title="Gümüş (Silver Pieces - SP)" style={{ fontSize: '0.85rem' }}>🥈 <strong>SP</strong></span>
+            <input
+              type="number"
+              min="0"
+              value={currencyState.sp}
+              onChange={(e) => handleUpdateCurrency('sp', Number(e.target.value))}
+              style={{
+                width: '50px',
+                background: '#0a0d16',
+                border: '1px solid #94a3b8',
+                color: '#e2e8f0',
+                borderRadius: '4px',
+                textAlign: 'center',
+                fontWeight: 700,
+                fontSize: '0.85rem',
+                padding: '0.15rem 0.2rem',
+              }}
+            />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+              <button
+                type="button"
+                onClick={() => handleUpdateCurrency('sp', currencyState.sp + 1)}
+                style={{ fontSize: '0.6rem', padding: '0 4px', cursor: 'pointer', background: '#334155', border: 'none', color: '#fff', borderRadius: '2px' }}
+                title="+1 Gümüş"
+              >
+                +
+              </button>
+              <button
+                type="button"
+                onClick={() => handleUpdateCurrency('sp', Math.max(0, currencyState.sp - 1))}
+                style={{ fontSize: '0.6rem', padding: '0 4px', cursor: 'pointer', background: '#334155', border: 'none', color: '#fff', borderRadius: '2px' }}
+                title="-1 Gümüş"
+              >
+                -
+              </button>
+            </div>
+          </div>
+
+          {/* Bakır (CP) */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.35rem',
+              background: 'rgba(180, 83, 9, 0.12)',
+              padding: '0.3rem 0.55rem',
+              borderRadius: '8px',
+              border: '1px solid rgba(180, 83, 9, 0.35)',
+            }}
+          >
+            <span title="Bakır (Copper Pieces - CP)" style={{ fontSize: '0.85rem' }}>🥉 <strong>CP</strong></span>
+            <input
+              type="number"
+              min="0"
+              value={currencyState.cp}
+              onChange={(e) => handleUpdateCurrency('cp', Number(e.target.value))}
+              style={{
+                width: '50px',
+                background: '#0a0d16',
+                border: '1px solid #b45309',
+                color: '#fdba74',
+                borderRadius: '4px',
+                textAlign: 'center',
+                fontWeight: 700,
+                fontSize: '0.85rem',
+                padding: '0.15rem 0.2rem',
+              }}
+            />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+              <button
+                type="button"
+                onClick={() => handleUpdateCurrency('cp', currencyState.cp + 1)}
+                style={{ fontSize: '0.6rem', padding: '0 4px', cursor: 'pointer', background: '#334155', border: 'none', color: '#fff', borderRadius: '2px' }}
+                title="+1 Bakır"
+              >
+                +
+              </button>
+              <button
+                type="button"
+                onClick={() => handleUpdateCurrency('cp', Math.max(0, currencyState.cp - 1))}
+                style={{ fontSize: '0.6rem', padding: '0 4px', cursor: 'pointer', background: '#334155', border: 'none', color: '#fff', borderRadius: '2px' }}
+                title="-1 Bakır"
+              >
+                -
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* 1. Üst Sekme Seçici: Çantam vs Eşya Ekle */}
       <div className="inv-nav-header">
         <div className="inv-tab-switcher">
@@ -323,8 +587,8 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
               value={catalogSearch}
               onChange={(e) => handleCatalogInputChange(e.target.value)}
             />
-            <button id="btn-catalog-search" type="submit" className="action-button catalog-search-btn" disabled={isSearchingCatalog}>
-              {isSearchingCatalog ? 'Aranıyor...' : '🔍 Eşya Ara'}
+            <button id="btn-catalog-search" type="submit" className="action-button catalog-search-btn">
+              🔍 Eşya Ara
             </button>
           </form>
 
@@ -343,7 +607,7 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
 
           {/* Sonuçlar Listesi */}
           <div className="catalog-results-list" style={{ marginTop: '0.8rem' }}>
-            {catalogResults.length === 0 && !isSearchingCatalog && (
+            {catalogResults.length === 0 && (
               <div className="catalog-empty-prompt">
                 <p>🔍 Aradığınız kriterlere uygun eşya bulunamadı.</p>
               </div>
@@ -377,13 +641,16 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
                 <button
                   id={`btn-add-item-${item.slug}`}
                   className="catalog-add-btn"
-                  onClick={() => {
-                    addItemToBag(item);
-                    soundEffects.playDiceRollSound();
-                  }}
+                  onClick={() => addItemToBag(item)}
                   title="Çantama Ekle"
+                  style={{
+                    background: lastAddedSlug === item.slug ? '#16a34a' : undefined,
+                    borderColor: lastAddedSlug === item.slug ? '#22c55e' : undefined,
+                    color: lastAddedSlug === item.slug ? '#fff' : undefined,
+                    transition: 'all 0.2s ease',
+                  }}
                 >
-                  ➕ Çantaya Ekle
+                  {lastAddedSlug === item.slug ? '✓ Eklendi!' : '➕ Çantaya Ekle'}
                 </button>
               </div>
             ))}

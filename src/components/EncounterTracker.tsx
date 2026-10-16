@@ -14,6 +14,15 @@ import { loadCharacters } from '../data/persistenceService';
 import { calculateArmorClass } from '../rules/armorClass';
 import { localDatabase } from '../data/localDatabase';
 import { MonsterDetailModal } from './MonsterDetailModal';
+import { CONDITIONS, getAllConditions } from '../rules/conditions';
+
+export interface CombatantCondition {
+  id: string;
+  name: string;
+  nameTr: string;
+  icon: string;
+  roundsRemaining?: number; // undefined = kalıcı
+}
 
 export interface Combatant {
   id: string;
@@ -24,6 +33,7 @@ export interface Combatant {
   currentHp: number;
   maxHp: number;
   conditions: string[];
+  activeConditionsList?: CombatantCondition[];
   cr?: string;
   speed?: string;
   stats?: {
@@ -151,6 +161,11 @@ export const EncounterTracker: React.FC<EncounterTrackerProps> = ({ partyMembers
 
   // Seçilen Canavar Stat Blok İnceleme Modalı
   const [selectedMonsterForDetail, setSelectedMonsterForDetail] = useState<CreatureData | null>(null);
+
+  // Durum (Condition/Debuff) Ekleme Paneli State'i
+  const [activeConditionCombatantId, setActiveConditionCombatantId] = useState<string | null>(null);
+  const [modalConditionId, setModalConditionId] = useState<string>('blinded');
+  const [modalConditionDuration, setModalConditionDuration] = useState<string>('1');
 
   // İlk yüklemede yerel veritabanındaki tüm canavarları çek ve arka planda Open5e ile senkronize et
   useEffect(() => {
@@ -399,12 +414,49 @@ export const EncounterTracker: React.FC<EncounterTrackerProps> = ({ partyMembers
   // Sonraki Tur / Sıra (Tüm oyuncu ekranlarında senkronize ilerler)
   const handleNextTurn = () => {
     if (combatants.length === 0) return;
+    const currentCombatant = combatants[currentTurnIndex];
     const nextIndex = currentTurnIndex >= combatants.length - 1 ? 0 : currentTurnIndex + 1;
     const nextRound = currentTurnIndex >= combatants.length - 1 ? round + 1 : round;
 
+    let expiredNote: string | undefined;
+
+    // Turu tamamlanan aktif savaşçının (canavar veya oyuncu) süreli durumlarını 1 azalt
+    const updatedCombatants = combatants.map((c) => {
+      if (c.id !== currentCombatant?.id) return c;
+      const list = c.activeConditionsList || [];
+      if (list.length === 0) return c;
+
+      const remaining: CombatantCondition[] = [];
+      const expired: string[] = [];
+
+      list.forEach((item) => {
+        if (item.roundsRemaining === undefined || item.roundsRemaining <= 0) {
+          remaining.push(item);
+        } else {
+          const nextVal = item.roundsRemaining - 1;
+          if (nextVal > 0) {
+            remaining.push({ ...item, roundsRemaining: nextVal });
+          } else {
+            expired.push(`${item.icon} ${item.nameTr}`);
+          }
+        }
+      });
+
+      if (expired.length > 0) {
+        expiredNote = `⏳ ${c.name} üzerindeki ${expired.join(', ')} etkisi süresi bittiği için kaldırıldı.`;
+      }
+
+      return {
+        ...c,
+        activeConditionsList: remaining,
+        conditions: remaining.map((x) => x.name),
+      };
+    });
+
+    setCombatants(updatedCombatants);
     setCurrentTurnIndex(nextIndex);
     setRound(nextRound);
-    broadcastEncounterState(combatants, true, nextRound, nextIndex);
+    broadcastEncounterState(updatedCombatants, true, nextRound, nextIndex, expiredNote);
   };
 
   // Önceki Sıra
@@ -454,14 +506,47 @@ export const EncounterTracker: React.FC<EncounterTrackerProps> = ({ partyMembers
     });
   };
 
-  // Durum Ekle / Kaldır
-  const handleToggleCondition = (combatantId: string, cond: string) => {
+  // 15 SRD Durum / Debuff Ekle (Süre Seçimli)
+  const handleAddCondition = (combatantId: string) => {
+    const condDef = CONDITIONS[modalConditionId] || Object.values(CONDITIONS)[0];
+    const duration = modalConditionDuration === 'perm' ? undefined : parseInt(modalConditionDuration, 10);
+
     setCombatants((prev) =>
       prev.map((c) => {
         if (c.id !== combatantId) return c;
-        const has = c.conditions.includes(cond);
-        const next = has ? c.conditions.filter((x) => x !== cond) : [...c.conditions, cond];
-        return { ...c, conditions: next };
+        const currentList = c.activeConditionsList || [];
+        const nextList = [
+          ...currentList.filter((x) => x.id !== condDef.id),
+          {
+            id: condDef.id,
+            name: condDef.name,
+            nameTr: condDef.nameTr,
+            icon: condDef.icon,
+            roundsRemaining: duration,
+          },
+        ];
+        return {
+          ...c,
+          activeConditionsList: nextList,
+          conditions: nextList.map((x) => x.name),
+        };
+      })
+    );
+    setActiveConditionCombatantId(null);
+  };
+
+  // Durum Kaldır
+  const handleRemoveCondition = (combatantId: string, conditionId: string) => {
+    setCombatants((prev) =>
+      prev.map((c) => {
+        if (c.id !== combatantId) return c;
+        const currentList = c.activeConditionsList || [];
+        const nextList = currentList.filter((x) => x.id !== conditionId);
+        return {
+          ...c,
+          activeConditionsList: nextList,
+          conditions: nextList.map((x) => x.name),
+        };
       })
     );
   };
@@ -756,32 +841,170 @@ export const EncounterTracker: React.FC<EncounterTrackerProps> = ({ partyMembers
                         </button>
                       )}
 
-                      {/* Durum Rozetleri */}
-                      <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.2rem' }}>
-                        {['Prone', 'Poisoned', 'Stunned'].map((cond) => {
-                          const has = c.conditions.includes(cond);
-                          return (
+                      {/* Durum / Debuff Yönetim Alanı */}
+                      <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                        {/* Aktif Durum Rozetleri */}
+                        {(c.activeConditionsList || []).map((cond) => (
+                          <span
+                            key={cond.id}
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '0.25rem',
+                              padding: '0.15rem 0.45rem',
+                              fontSize: '0.7rem',
+                              borderRadius: '999px',
+                              background: 'rgba(239, 68, 68, 0.25)',
+                              border: '1px solid rgba(239, 68, 68, 0.5)',
+                              color: '#fca5a5',
+                            }}
+                            title={`${cond.nameTr} (${cond.name}) - ${cond.roundsRemaining !== undefined ? `${cond.roundsRemaining} tur kaldı` : 'Kalıcı'}`}
+                          >
+                            <span>{cond.icon}</span>
+                            <strong>{cond.nameTr}</strong>
+                            <span style={{ fontSize: '0.62rem', opacity: 0.85 }}>
+                              {cond.roundsRemaining !== undefined ? `(${cond.roundsRemaining}t)` : '(∞)'}
+                            </span>
                             <button
-                              key={cond}
-                              onClick={() => handleToggleCondition(c.id, cond)}
+                              type="button"
+                              onClick={() => handleRemoveCondition(c.id, cond.id)}
                               style={{
-                                padding: '0.15rem 0.4rem',
-                                fontSize: '0.7rem',
-                                borderRadius: '4px',
-                                border: has ? '1px solid #ef4444' : '1px solid #475569',
-                                background: has ? 'rgba(239, 68, 68, 0.3)' : 'transparent',
-                                color: has ? '#fca5a5' : '#94a3b8',
-                                cursor: 'pointer'
+                                background: 'none',
+                                border: 'none',
+                                color: '#fca5a5',
+                                cursor: 'pointer',
+                                padding: '0 2px',
+                                fontSize: '0.75rem',
+                                fontWeight: 'bold',
                               }}
+                              title="Durumu Kaldır"
                             >
-                              {cond}
+                              ✕
                             </button>
-                          );
-                        })}
+                          </span>
+                        ))}
+
+                        {/* Durum / Debuff Ekle Butonu */}
+                        <button
+                          type="button"
+                          className="action-button secondary"
+                          onClick={() => {
+                            setActiveConditionCombatantId(
+                              activeConditionCombatantId === c.id ? null : c.id
+                            );
+                          }}
+                          style={{
+                            padding: '0.15rem 0.5rem',
+                            fontSize: '0.7rem',
+                            borderRadius: '4px',
+                            background: activeConditionCombatantId === c.id ? 'var(--accent-gold)' : 'rgba(255,255,255,0.08)',
+                            color: activeConditionCombatantId === c.id ? '#000' : '#e2e8f0',
+                            border: '1px solid var(--border-subtle)',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                          }}
+                          title="Tüm SRD Durumlarından (Kör, Zehirli, Felçli vb.) süre belirleyerek ekle"
+                        >
+                          ⚡ {activeConditionCombatantId === c.id ? 'Kapat' : '+ Durum'}
+                        </button>
                       </div>
                     </div>
+
+                    {/* Açılır Durum / Debuff Ekleme Paneli */}
+                    {activeConditionCombatantId === c.id && (
+                      <div
+                        style={{
+                          marginTop: '0.6rem',
+                          padding: '0.6rem 0.8rem',
+                          background: 'rgba(15, 23, 42, 0.95)',
+                          border: '1px solid var(--border-gold)',
+                          borderRadius: '8px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.6rem',
+                          flexWrap: 'wrap',
+                          animation: 'fadeIn 0.15s ease-out',
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                          <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Durum:</span>
+                          <select
+                            value={modalConditionId}
+                            onChange={(e) => setModalConditionId(e.target.value)}
+                            style={{
+                              background: '#090d16',
+                              border: '1px solid var(--border-subtle)',
+                              color: '#fff',
+                              borderRadius: '4px',
+                              padding: '0.2rem 0.4rem',
+                              fontSize: '0.75rem',
+                            }}
+                          >
+                            {getAllConditions().map((cond) => (
+                              <option key={cond.id} value={cond.id}>
+                                {cond.icon} {cond.nameTr} ({cond.name})
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                          <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Süre:</span>
+                          <select
+                            value={modalConditionDuration}
+                            onChange={(e) => setModalConditionDuration(e.target.value)}
+                            style={{
+                              background: '#090d16',
+                              border: '1px solid var(--border-subtle)',
+                              color: '#fff',
+                              borderRadius: '4px',
+                              padding: '0.2rem 0.4rem',
+                              fontSize: '0.75rem',
+                            }}
+                          >
+                            <option value="1">1 Tur</option>
+                            <option value="2">2 Tur</option>
+                            <option value="3">3 Tur</option>
+                            <option value="5">5 Tur</option>
+                            <option value="10">10 Tur (1 Dakika)</option>
+                            <option value="perm">Kalıcı (Süresiz)</option>
+                          </select>
+                        </div>
+
+                        <button
+                          type="button"
+                          className="action-button"
+                          onClick={() => handleAddCondition(c.id)}
+                          style={{
+                            padding: '0.2rem 0.65rem',
+                            fontSize: '0.75rem',
+                            background: '#16a34a',
+                            color: '#fff',
+                            border: 'none',
+                            borderRadius: '4px',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                          }}
+                        >
+                          ✓ Uygula
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setActiveConditionCombatantId(null)}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: 'var(--text-muted)',
+                            fontSize: '0.75rem',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          İptal
+                        </button>
+                      </div>
+                    )}
+                    </div>
                   </div>
-                </div>
               );
             })
           )}

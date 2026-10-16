@@ -18,56 +18,64 @@ export const Physical3DDiceOverlay: React.FC = () => {
   const [activeRoll, setActiveRoll] = useState<ActiveRollVisual | null>(null);
   const [animStage, setAnimStage] = useState<'idle' | 'rolling' | 'settled'>('idle');
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const settleTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const triggerVisualRoll = (payload: any) => {
+    if (!payload) return;
+    const firstDie = payload.diceRolls?.[0];
+    const rolledVal = firstDie?.value ?? payload.totalSum;
+    const dieType = firstDie?.die ?? 'd20';
+    const isCrit = payload.hasCrit20 || (dieType === 'd20' && rolledVal === 20);
+    const isFumble = payload.hasFumble1 || (dieType === 'd20' && rolledVal === 1);
+
+    if (timerRef.current) clearTimeout(timerRef.current);
+    if (settleTimerRef.current) clearTimeout(settleTimerRef.current);
+
+    setActiveRoll({
+      id: payload.id ?? String(Date.now()),
+      label: payload.label ?? 'Zar Atışı',
+      formula: payload.formula ?? `${dieType}+${payload.modifier ?? 0}`,
+      dieType,
+      rolledValue: rolledVal,
+      modifier: payload.modifier ?? 0,
+      total: payload.totalSum,
+      isCrit: Boolean(isCrit),
+      isFumble: Boolean(isFumble),
+    });
+
+    setAnimStage('rolling');
+    soundEffects.playDiceRollSound();
+
+    settleTimerRef.current = setTimeout(() => {
+      setAnimStage('settled');
+      if (isCrit) {
+        soundEffects.playCritSound();
+      }
+    }, 750);
+
+    timerRef.current = setTimeout(() => {
+      setAnimStage('idle');
+      setActiveRoll(null);
+    }, 4500);
+  };
 
   useEffect(() => {
     const unsub = syncService.subscribe((event) => {
       if (event.type === 'DICE_ROLLED' && event.payload) {
-        const payload = event.payload;
-        const firstDie = payload.diceRolls?.[0];
-        const rolledVal = firstDie?.value ?? payload.totalSum;
-        const dieType = firstDie?.die ?? 'd20';
-        const isCrit = payload.hasCrit20 || (dieType === 'd20' && rolledVal === 20);
-        const isFumble = payload.hasFumble1 || (dieType === 'd20' && rolledVal === 1);
-
-        // Yeni atış geldiğinde animasyonu başlat
-        if (timerRef.current) clearTimeout(timerRef.current);
-
-        setActiveRoll({
-          id: payload.id ?? String(Date.now()),
-          label: payload.label ?? 'Zar Atışı',
-          formula: payload.formula ?? `${dieType}+${payload.modifier ?? 0}`,
-          dieType,
-          rolledValue: rolledVal,
-          modifier: payload.modifier ?? 0,
-          total: payload.totalSum,
-          isCrit: Boolean(isCrit),
-          isFumble: Boolean(isFumble),
-        });
-
-        setAnimStage('rolling');
-        soundEffects.playDiceRollSound();
-
-        // 750ms sonra zar yüzeye oturur (settle)
-        const settleTimer = setTimeout(() => {
-          setAnimStage('settled');
-          if (isCrit) {
-            soundEffects.playCritSound();
-          }
-        }, 750);
-
-        // 4.5 saniye sonra ekran temizlenir
-        timerRef.current = setTimeout(() => {
-          setAnimStage('idle');
-          setActiveRoll(null);
-        }, 4500);
-
-        return () => clearTimeout(settleTimer);
+        triggerVisualRoll(event.payload);
       }
     });
 
+    const onCustomRoll = (e: CustomEvent) => {
+      if (e.detail) triggerVisualRoll(e.detail);
+    };
+    window.addEventListener('dnd-dice-roll' as any, onCustomRoll);
+
     return () => {
       unsub();
+      window.removeEventListener('dnd-dice-roll' as any, onCustomRoll);
       if (timerRef.current) clearTimeout(timerRef.current);
+      if (settleTimerRef.current) clearTimeout(settleTimerRef.current);
     };
   }, []);
 

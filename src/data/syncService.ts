@@ -27,7 +27,10 @@ class SyncService {
   }
 
   public broadcast(event: SyncEvent): void {
-    // Broadcast to other tabs/windows
+    // 1. Bu penceredeki/sekmedeki dinleyicileri (3D zar katmanı vb.) anında tetikle
+    this.notifyListeners(event);
+
+    // 2. Diğer sekme ve pencerelere yayınla
     if (this.channel) {
       try {
         this.channel.postMessage(event);
