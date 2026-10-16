@@ -4,12 +4,14 @@
 // tur sayacı ve canlı canavar HP/durum yönetimi.
 // =============================================================================
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { open5eClient, CreatureData } from '../data/open5eClient';
 import { PartyMember } from '../types/campaign';
 import { calculateModifier } from '../rules/abilityScores';
 import { syncService } from '../data/syncService';
 import { soundEffects } from '../utils/soundEffects';
+import { loadCharacters } from '../data/persistenceService';
+import { calculateArmorClass } from '../rules/armorClass';
 
 export interface Combatant {
   id: string;
@@ -145,21 +147,142 @@ export const EncounterTracker: React.FC<EncounterTrackerProps> = ({ partyMembers
   // Hasar girişi için state
   const [damageInput, setDamageInput] = useState<Record<string, number>>({});
 
-  // Open5e Canavar Arama
+  // 1. SAVAŞ SİSİ (Fog of War) ile Senkronizasyon Yayıncısı
+  const broadcastEncounterState = (
+    cList: Combatant[],
+    active: boolean,
+    r: number,
+    turnIdx: number,
+    note?: string
+  ) => {
+    const activeCombatant = cList[turnIdx];
+    // Savaş Sisi: Oyunculara sadece canavar isimleri ve toplam aldıkları hasar gider
+    const monsterTargets = cList
+      .filter((c) => c.type === 'monster')
+      .map((m) => ({
+        id: m.id,
+        name: m.name,
+        totalDamageTaken: Math.max(0, m.maxHp - m.currentHp),
+      }));
+
+    syncService.broadcast({
+      type: 'ENCOUNTER_UPDATE',
+      campaignId: 'camp-default',
+      senderRole: 'dm',
+      payload: {
+        combatActive: active,
+        round: r,
+        turnIndex: turnIdx,
+        currentTurnName: activeCombatant?.name ?? '',
+        activeCombatantId: activeCombatant?.id ?? '',
+        note,
+        monsterTargets,
+      },
+      timestamp: new Date().toISOString(),
+    });
+  };
+
+  // 2. OTOMATİK KATILIM: Oyuncular otomatik olarak dövüşe eklenir
+  useEffect(() => {
+    setCombatants((prev) => {
+      const hasPlayers = prev.some((c) => c.type === 'player');
+      if (hasPlayers) return prev;
+
+      let playersSource: PartyMember[] = partyMembers;
+      if (!playersSource || playersSource.length === 0) {
+        const saved = loadCharacters();
+        if (saved && saved.length > 0) {
+          playersSource = saved.map((c) => {
+            const dexMod = calculateModifier(c.baseAbilities.dex);
+            const conMod = calculateModifier(c.baseAbilities.con);
+            const wisMod = calculateModifier(c.baseAbilities.wis);
+            const ac = calculateArmorClass({
+              charClass: c.class,
+              dexModifier: dexMod,
+              conModifier: conMod,
+              wisModifier: wisMod,
+              armor: c.equippedArmor,
+              hasShield: c.hasShield,
+            });
+            return {
+              id: c.id,
+              name: c.name,
+              charClass: c.class,
+              level: c.level,
+              currentHp: c.currentHp,
+              maxHp: c.maxHp,
+              tempHp: c.tempHp ?? 0,
+              ac,
+              passivePerception: 10 + wisMod,
+              passiveInvestigation: 10 + calculateModifier(c.baseAbilities.int),
+              activeConditions: c.activeConditions,
+              stats: c.baseAbilities,
+              playerName: c.playerName ?? 'Oyuncu',
+            };
+          });
+        }
+      }
+
+      if (playersSource && playersSource.length > 0) {
+        const playerCombatants: Combatant[] = playersSource.map((p) => {
+          const dexMod = calculateModifier(p.stats.dex);
+          return {
+            id: p.id,
+            name: p.name,
+            type: 'player',
+            initiative: 10 + dexMod,
+            armorClass: p.ac,
+            currentHp: p.currentHp,
+            maxHp: p.maxHp,
+            conditions: [...p.activeConditions],
+            stats: p.stats,
+          };
+        });
+        return [...prev, ...playerCombatants];
+      }
+      return prev;
+    });
+  }, [partyMembers]);
+
+  // 3. İNİSİYATİF DİNLEYİCİSİ: Oyuncunun kendi ekranında attığı inisiyatif DM ekranına düşer ve otomatik sıralanır
+  useEffect(() => {
+    const unsub = syncService.subscribe((event) => {
+      if (event.type === 'DICE_ROLLED' && event.payload) {
+        const roll = event.payload;
+        if (roll.label && roll.label.toLowerCase().includes('inisiyatif')) {
+          const totalInit = roll.totalSum;
+          const charNamePrefix = roll.label.split('•')[0]?.trim().toLowerCase() || '';
+
+          setCombatants((prev) => {
+            const updated = prev.map((c) => {
+              if (
+                c.type === 'player' &&
+                (c.name.toLowerCase() === charNamePrefix ||
+                  charNamePrefix.includes(c.name.toLowerCase()))
+              ) {
+                return { ...c, initiative: totalInit };
+              }
+              return c;
+            });
+            updated.sort((a, b) => b.initiative - a.initiative);
+            return updated;
+          });
+          soundEffects.playCritSound();
+        }
+      }
+    });
+    return unsub;
+  }, []);
+
+  // Open5e Canavar Arama (50 canavar ve tüm SRD desteği)
   const handleSearchCreatures = async (q: string) => {
     setSearchQuery(q);
-    if (!q.trim()) {
-      setSearchResults(DEFAULT_MONSTERS);
-      return;
-    }
-
     setIsSearching(true);
     try {
-      const res = await open5eClient.searchCreatures(q, undefined, 12);
+      const res = await open5eClient.searchCreatures(q, undefined, 50);
       if (res.data && res.data.length > 0) {
         setSearchResults(res.data);
       } else {
-        // Fallback: Yerel filtreleme
         const filtered = DEFAULT_MONSTERS.filter((m) =>
           m.name.toLowerCase().includes(q.toLowerCase())
         );
@@ -175,7 +298,7 @@ export const EncounterTracker: React.FC<EncounterTrackerProps> = ({ partyMembers
     }
   };
 
-  // Partiyi Karşılaşmaya Aktar
+  // Partiyi Karşılaşmaya Aktar (Manuel buton desteği de korunur)
   const handleAddParty = () => {
     const existingPlayerIds = new Set(
       combatants.filter((c) => c.type === 'player').map((c) => c.id)
@@ -232,7 +355,13 @@ export const EncounterTracker: React.FC<EncounterTrackerProps> = ({ partyMembers
       sourceData: monster,
     };
 
-    setCombatants((prev) => [...prev, newMonster]);
+    setCombatants((prev) => {
+      const nextList = [...prev, newMonster];
+      if (isCombatActive) {
+        broadcastEncounterState(nextList, true, round, currentTurnIndex);
+      }
+      return nextList;
+    });
   };
 
   // Tüm İnisiyatifleri Yuvarla ve Sırala
@@ -250,21 +379,7 @@ export const EncounterTracker: React.FC<EncounterTrackerProps> = ({ partyMembers
     setCurrentTurnIndex(0);
     setIsCombatActive(true);
 
-    const firstActive = updated[0];
-    syncService.broadcast({
-      type: 'ENCOUNTER_UPDATE',
-      campaignId: 'camp-default',
-      senderRole: 'dm',
-      payload: {
-        combatActive: true,
-        round: 1,
-        turnIndex: 0,
-        currentTurnName: firstActive?.name ?? '',
-        activeCombatantId: firstActive?.id ?? '',
-        note: 'İnisiyatif zarları atıldı ve dövüş başladı!',
-      },
-      timestamp: new Date().toISOString(),
-    });
+    broadcastEncounterState(updated, true, 1, 0, 'İnisiyatif zarları atıldı ve dövüş başladı!');
   };
 
   // Sonraki Tur / Sıra (Tüm oyuncu ekranlarında senkronize ilerler)
@@ -275,21 +390,7 @@ export const EncounterTracker: React.FC<EncounterTrackerProps> = ({ partyMembers
 
     setCurrentTurnIndex(nextIndex);
     setRound(nextRound);
-
-    const activeCombatant = combatants[nextIndex];
-    syncService.broadcast({
-      type: 'ENCOUNTER_UPDATE',
-      campaignId: 'camp-default',
-      senderRole: 'dm',
-      payload: {
-        combatActive: true,
-        round: nextRound,
-        turnIndex: nextIndex,
-        currentTurnName: activeCombatant?.name ?? '',
-        activeCombatantId: activeCombatant?.id ?? '',
-      },
-      timestamp: new Date().toISOString(),
-    });
+    broadcastEncounterState(combatants, true, nextRound, nextIndex);
   };
 
   // Önceki Sıra
@@ -307,21 +408,7 @@ export const EncounterTracker: React.FC<EncounterTrackerProps> = ({ partyMembers
 
     setCurrentTurnIndex(prevIndex);
     setRound(prevRound);
-
-    const activeCombatant = combatants[prevIndex];
-    syncService.broadcast({
-      type: 'ENCOUNTER_UPDATE',
-      campaignId: 'camp-default',
-      senderRole: 'dm',
-      payload: {
-        combatActive: true,
-        round: prevRound,
-        turnIndex: prevIndex,
-        currentTurnName: activeCombatant?.name ?? '',
-        activeCombatantId: activeCombatant?.id ?? '',
-      },
-      timestamp: new Date().toISOString(),
-    });
+    broadcastEncounterState(combatants, true, prevRound, prevIndex);
   };
 
   // DM'in Oyuncuya İlham Vermesi (Stacklenebilir Heroic Inspiration)
@@ -338,15 +425,19 @@ export const EncounterTracker: React.FC<EncounterTrackerProps> = ({ partyMembers
 
   // Hasar / İyileşme Uygula
   const handleApplyDamageOrHeal = (combatantId: string, delta: number, isHealing: boolean) => {
-    setCombatants((prev) =>
-      prev.map((c) => {
+    setCombatants((prev) => {
+      const nextList = prev.map((c) => {
         if (c.id !== combatantId) return c;
         const newHp = isHealing
           ? Math.min(c.maxHp, c.currentHp + Math.abs(delta))
           : Math.max(0, c.currentHp - Math.abs(delta));
         return { ...c, currentHp: newHp };
-      })
-    );
+      });
+      if (isCombatActive) {
+        broadcastEncounterState(nextList, true, round, currentTurnIndex);
+      }
+      return nextList;
+    });
   };
 
   // Durum Ekle / Kaldır

@@ -6,7 +6,7 @@ import { createDatabaseClient } from '../../src/data/supabaseClient';
 describe('Uygulama Temel İskelet ve Gezinme Birim Testleri', () => {
   it('Başlık, üst menü ve ana sayfa kartlarını ekrana basar', async () => {
     render(<App />);
-    expect(screen.getByRole('heading', { level: 1, name: /D&D 5e Asistani/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: /ArcaneFolio 5e/i })).toBeInTheDocument();
     
     expect(document.getElementById('nav-btn-home')).toBeInTheDocument();
     expect(document.getElementById('nav-btn-sheet')).toBeInTheDocument();

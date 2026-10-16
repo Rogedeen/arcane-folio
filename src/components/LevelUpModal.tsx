@@ -1,18 +1,20 @@
 // =============================================================================
-// LEVEL-UP WIZARD V3 — Adım Adım Karakter Geliştirme Sihirbazı
+// LEVEL-UP WIZARD V3 (REMASTERED — CLEAN D&D 5E PROGRESSION RULES & WIZARD FLOW)
 //
-// Desteklenen Özellikler:
 // 1. Can zarı atma veya ortalama alma (+CON mod)
-// 2. Modüler Alt Sınıf (Subclass) seçimi (Eldritch Knight, Arcane Trickster vb.)
-// 3. ASI (+2 tek stat / +1 iki stat) VEYA Hüner (Feat) seçimi
-// 4. Karakter Geçmişi (Backstory), İdealler ve Kusurlar
+// 2. Modüler Alt Sınıf (Subclass) seçimi (Seviyeye uygunluk kontrolü)
+// 3. Büyü Gelişimi & Yuvalar (Büyücü sınıflar için)
+// 4. ASI (+2 tek stat / +1 iki stat) VEYA Hüner (Feat) seçimi ("Seçebileceğiniz Feat: 1" sayacı)
+// 5. Karakter Geçmişi (Backstory)
+// 6. Özet & "Seviye Atlamayı Tamamla" son onay
 // =============================================================================
 
 import React, { useState } from 'react';
 import { calculateAverageHpIncrease, isAsiLevel, CLASS_HIT_DICE } from '../rules/levelUp';
-import { getSubclassesForClass, getSubclassUnlockLevel } from '../rules/subclasses';
+import { getSubclassesForClass, getSubclassUnlockLevel, isCasterSubclass } from '../rules/subclasses';
 import { FEATS } from '../rules/feats';
-import type { AbilityScores, AbilityName } from '../types/character';
+import { getSpellSlotsForLevel } from '../rules/spellSlots';
+import type { AbilityScores, AbilityName, CharacterClass } from '../types/character';
 
 export interface LevelUpResultPayload {
   level: number;
@@ -36,7 +38,7 @@ interface LevelUpModalProps {
   onDetailedLevelUpApplied?: (payload: LevelUpResultPayload) => void;
 }
 
-type WizardStep = 'hp' | 'subclass' | 'asi-feat' | 'backstory' | 'review';
+type WizardStep = 'hp' | 'subclass' | 'spells' | 'asi-feat' | 'backstory' | 'review';
 
 export const LevelUpModal: React.FC<LevelUpModalProps> = ({
   initialLevel = 2,
@@ -65,7 +67,7 @@ export const LevelUpModal: React.FC<LevelUpModalProps> = ({
   const [rolledDieValue, setRolledDieValue] = useState<number>(6);
   const [isRollingDie, setIsRollingDie] = useState<boolean>(false);
 
-  // Adım 3: ASI vs Feat State
+  // Adım 4: ASI vs Feat State
   const [progressionChoice, setProgressionChoice] = useState<'asi' | 'feat'>('asi');
   const [asiMode, setAsiMode] = useState<'plusTwo' | 'plusOnePlusOne'>('plusTwo');
   const [asiStat1, setAsiStat1] = useState<AbilityName>('str');
@@ -77,13 +79,23 @@ export const LevelUpModal: React.FC<LevelUpModalProps> = ({
 
   const hitDie = CLASS_HIT_DICE[charClass.toLowerCase()] ?? 8;
   const avgIncrease = calculateAverageHpIncrease(charClass, conModifier);
-  const hpIncrease = hpChoice === 'average'
-    ? avgIncrease
-    : Math.max(1, rolledDieValue + conModifier);
+  const hpIncrease =
+    hpChoice === 'average'
+      ? avgIncrease
+      : Math.max(1, rolledDieValue + conModifier);
 
   const availableSubclasses = getSubclassesForClass(charClass);
   const unlockLevel = getSubclassUnlockLevel(charClass);
   const grantsASI = isAsiLevel(charClass, nextLevel);
+
+  const isCaster =
+    ['cleric', 'druid', 'wizard', 'sorcerer', 'warlock', 'bard', 'paladin', 'ranger'].includes(
+      charClass.toLowerCase()
+    ) || isCasterSubclass(selectedSubclass);
+
+  const newSlots = isCaster
+    ? getSpellSlotsForLevel(charClass as CharacterClass, nextLevel)
+    : null;
 
   // Zar atma simülasyonu
   const handleRollHitDie = () => {
@@ -99,12 +111,34 @@ export const LevelUpModal: React.FC<LevelUpModalProps> = ({
     }, 60);
   };
 
+  const handleNextStep = () => {
+    if (activeStep === 'hp') {
+      setActiveStep('subclass');
+    } else if (activeStep === 'subclass') {
+      setActiveStep('spells');
+    } else if (activeStep === 'spells') {
+      setActiveStep('asi-feat');
+    } else if (activeStep === 'asi-feat') {
+      setActiveStep('backstory');
+    } else if (activeStep === 'backstory') {
+      setActiveStep('review');
+    }
+  };
+
+  const handlePrevStep = () => {
+    if (activeStep === 'subclass') setActiveStep('hp');
+    else if (activeStep === 'spells') setActiveStep('subclass');
+    else if (activeStep === 'asi-feat') setActiveStep('spells');
+    else if (activeStep === 'backstory') setActiveStep('asi-feat');
+    else if (activeStep === 'review') setActiveStep('backstory');
+  };
+
   const handleApplyLevelUp = () => {
     const newMaxHp = maxHp + hpIncrease;
     const newLevel = nextLevel;
     let newAbilities = { ...abilities };
 
-    // Eğer ASI seçildiyse statları artır
+    // Eğer ASI seviyesiyse ve ASI seçildiyse statları artır
     if (grantsASI) {
       if (progressionChoice === 'asi') {
         if (asiMode === 'plusTwo') {
@@ -125,9 +159,10 @@ export const LevelUpModal: React.FC<LevelUpModalProps> = ({
     setAbilities(newAbilities);
     setIsOpen(false);
 
-    const updatedFeats = grantsASI && progressionChoice === 'feat' && chosenFeatId && !feats.includes(chosenFeatId)
-      ? [...feats, chosenFeatId]
-      : feats;
+    const updatedFeats =
+      grantsASI && progressionChoice === 'feat' && chosenFeatId && !feats.includes(chosenFeatId)
+        ? [...feats, chosenFeatId]
+        : feats;
 
     if (onDetailedLevelUpApplied) {
       onDetailedLevelUpApplied({
@@ -149,13 +184,27 @@ export const LevelUpModal: React.FC<LevelUpModalProps> = ({
     <div id="levelup-manager-container" className="levelup-card">
       <div className="levelup-header">
         <div>
-          <h3 className="font-cinzel" style={{ color: 'var(--accent-gold)', fontSize: '1.35rem', margin: '0 0 0.3rem' }}>
+          <h3
+            className="font-cinzel"
+            style={{ color: 'var(--accent-gold)', fontSize: '1.35rem', margin: '0 0 0.3rem' }}
+          >
             🏆 Seviye Atlama & Karakter Gelişimi
           </h3>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0 }}>
-            Mevcut Seviye: <strong id="display-char-level">{level}</strong> | Maksimum Can: <strong>{maxHp} HP</strong>
-            {selectedSubclass && <> | Alt Sınıf: <strong>{selectedSubclass}</strong></>}
-            {feats.length > 0 && <> | Hünerler: <strong>{feats.length} adet</strong></>}
+            Mevcut Seviye: <strong id="display-char-level">{level}</strong> | Maksimum Can:{' '}
+            <strong>{maxHp} HP</strong>
+            {selectedSubclass && (
+              <>
+                {' '}
+                | Alt Sınıf: <strong>{selectedSubclass}</strong>
+              </>
+            )}
+            {feats.length > 0 && (
+              <>
+                {' '}
+                | Hünerler: <strong>{feats.length} adet</strong>
+              </>
+            )}
           </p>
         </div>
 
@@ -180,10 +229,19 @@ export const LevelUpModal: React.FC<LevelUpModalProps> = ({
           <div
             className="modal-content"
             onClick={(e) => e.stopPropagation()}
-            style={{ maxWidth: '680px', width: '92%', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}
+            style={{
+              maxWidth: '700px',
+              width: '94%',
+              maxHeight: '90vh',
+              display: 'flex',
+              flexDirection: 'column',
+            }}
           >
             {/* Modal Header */}
-            <div className="modal-header" style={{ borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.75rem' }}>
+            <div
+              className="modal-header"
+              style={{ borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.75rem' }}
+            >
               <div>
                 <h3 className="font-cinzel" style={{ color: 'var(--accent-gold)', margin: 0 }}>
                   Seviye {nextLevel} Atlama Sihirbazı
@@ -203,12 +261,21 @@ export const LevelUpModal: React.FC<LevelUpModalProps> = ({
             </div>
 
             {/* Wizard Adım Butonları */}
-            <div className="wizard-stepper-tabs" style={{ display: 'flex', gap: '0.4rem', padding: '0.75rem 0', overflowX: 'auto', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+            <div
+              className="wizard-stepper-tabs"
+              style={{
+                display: 'flex',
+                gap: '0.4rem',
+                padding: '0.75rem 0',
+                overflowX: 'auto',
+                borderBottom: '1px solid rgba(255,255,255,0.06)',
+              }}
+            >
               <button
                 className={`wizard-step-btn ${activeStep === 'hp' ? 'active' : ''}`}
                 onClick={() => setActiveStep('hp')}
               >
-                1. ❤️ Can Puanı
+                1. ❤️ Can
               </button>
               <button
                 className={`wizard-step-btn ${activeStep === 'subclass' ? 'active' : ''}`}
@@ -217,50 +284,85 @@ export const LevelUpModal: React.FC<LevelUpModalProps> = ({
                 2. 🌟 Alt Sınıf
               </button>
               <button
+                className={`wizard-step-btn ${activeStep === 'spells' ? 'active' : ''}`}
+                onClick={() => setActiveStep('spells')}
+              >
+                3. 📜 Büyüler
+              </button>
+              <button
                 className={`wizard-step-btn ${activeStep === 'asi-feat' ? 'active' : ''}`}
                 onClick={() => setActiveStep('asi-feat')}
               >
-                3. 💡 ASI / Feat {grantsASI && '⭐'}
+                4. 💡 Feat / ASI {grantsASI && '⭐'}
               </button>
               <button
                 className={`wizard-step-btn ${activeStep === 'backstory' ? 'active' : ''}`}
                 onClick={() => setActiveStep('backstory')}
               >
-                4. 📜 Hikaye & Biyo
+                5. 📖 Hikaye
               </button>
               <button
                 className={`wizard-step-btn ${activeStep === 'review' ? 'active' : ''}`}
                 onClick={() => setActiveStep('review')}
               >
-                5. ✓ Onayla
+                6. ✓ Özet
               </button>
             </div>
 
             {/* Modal Gövdesi */}
-            <div className="modal-body" style={{ overflowY: 'auto', padding: '1rem 0', flex: 1, display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
-              
+            <div
+              className="modal-body"
+              style={{
+                overflowY: 'auto',
+                padding: '1rem 0',
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '1.2rem',
+              }}
+            >
               {/* ADIM 1: CAN PUANI */}
               {activeStep === 'hp' && (
                 <div className="levelup-section-box">
-                  <h4 style={{ color: 'var(--text-primary)', margin: '0 0 0.5rem' }}>❤️ Can Puanı (HP) Artışı</h4>
+                  <h4 style={{ color: 'var(--text-primary)', margin: '0 0 0.5rem' }}>
+                    ❤️ Can Puanı (HP) Artışı
+                  </h4>
                   <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0 0 1rem' }}>
-                    Sınıfınız için 1d{hitDie} can zarı atabilir veya kural kitabındaki güvenli ortalama değeri alabilirsiniz (+{conModifier} CON Modifikatörü).
+                    Sınıfınız için 1d{hitDie} can zarı atabilir veya kural kitabındaki güvenli ortalama değeri
+                    seçebilirsiniz (+{conModifier} CON Modifikatörü).
                   </p>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 1fr',
+                      gap: '1rem',
+                      marginBottom: '1rem',
+                    }}
+                  >
                     <div
                       onClick={() => setHpChoice('average')}
                       style={{
                         padding: '1rem',
                         borderRadius: '8px',
                         cursor: 'pointer',
-                        border: hpChoice === 'average' ? '2px solid var(--accent-gold)' : '1px solid var(--border-subtle)',
-                        background: hpChoice === 'average' ? 'rgba(217, 119, 6, 0.15)' : 'rgba(15, 23, 42, 0.6)'
+                        border:
+                          hpChoice === 'average'
+                            ? '2px solid var(--accent-gold)'
+                            : '1px solid var(--border-subtle)',
+                        background:
+                          hpChoice === 'average'
+                            ? 'rgba(217, 119, 6, 0.15)'
+                            : 'rgba(15, 23, 42, 0.6)',
                       }}
                     >
                       <strong style={{ color: 'var(--accent-gold)' }}>Ortalama Değer Al</strong>
-                      <div style={{ fontSize: '1.3rem', fontWeight: 700, margin: '0.4rem 0' }}>+{avgIncrease} HP</div>
-                      <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>({Math.floor(hitDie / 2) + 1} + {conModifier} CON)</span>
+                      <div style={{ fontSize: '1.3rem', fontWeight: 700, margin: '0.4rem 0' }}>
+                        +{avgIncrease} HP
+                      </div>
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                        ({Math.floor(hitDie / 2) + 1} + {conModifier} CON)
+                      </span>
                     </div>
 
                     <div
@@ -269,20 +371,37 @@ export const LevelUpModal: React.FC<LevelUpModalProps> = ({
                         padding: '1rem',
                         borderRadius: '8px',
                         cursor: 'pointer',
-                        border: hpChoice === 'roll' ? '2px solid var(--accent-gold)' : '1px solid var(--border-subtle)',
-                        background: hpChoice === 'roll' ? 'rgba(217, 119, 6, 0.15)' : 'rgba(15, 23, 42, 0.6)'
+                        border:
+                          hpChoice === 'roll'
+                            ? '2px solid var(--accent-gold)'
+                            : '1px solid var(--border-subtle)',
+                        background:
+                          hpChoice === 'roll'
+                            ? 'rgba(217, 119, 6, 0.15)'
+                            : 'rgba(15, 23, 42, 0.6)',
                       }}
                     >
                       <strong style={{ color: 'var(--accent-gold)' }}>1d{hitDie} Can Zarı At</strong>
                       <div style={{ fontSize: '1.3rem', fontWeight: 700, margin: '0.4rem 0' }}>
                         +{Math.max(1, rolledDieValue + conModifier)} HP
                       </div>
-                      <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Zar: {rolledDieValue} (+{conModifier} CON)</span>
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                        Zar: {rolledDieValue} (+{conModifier} CON)
+                      </span>
                     </div>
                   </div>
 
                   {hpChoice === 'roll' && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', background: 'rgba(0,0,0,0.3)', padding: '0.75rem', borderRadius: '8px' }}>
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.75rem',
+                        background: 'rgba(0,0,0,0.3)',
+                        padding: '0.75rem',
+                        borderRadius: '8px',
+                      }}
+                    >
                       <button
                         className="action-button"
                         onClick={handleRollHitDie}
@@ -299,7 +418,14 @@ export const LevelUpModal: React.FC<LevelUpModalProps> = ({
                         max={hitDie}
                         value={rolledDieValue}
                         onChange={(e) => setRolledDieValue(Number(e.target.value))}
-                        style={{ width: '60px', padding: '0.3rem', background: '#1e293b', border: '1px solid #475569', color: '#fff', borderRadius: '4px' }}
+                        style={{
+                          width: '60px',
+                          padding: '0.3rem',
+                          background: '#1e293b',
+                          border: '1px solid #475569',
+                          color: '#fff',
+                          borderRadius: '4px',
+                        }}
                       />
                     </div>
                   )}
@@ -308,75 +434,239 @@ export const LevelUpModal: React.FC<LevelUpModalProps> = ({
 
               {/* ADIM 2: ALT SINIF (SUBCLASS) */}
               {activeStep === 'subclass' && (
-                <div className="levelup-section-box">
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                    <h4 style={{ color: 'var(--accent-gold)', margin: 0 }}>🌟 Alt Sınıf (Subclass) Seçimi</h4>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Kilit Seviyesi: {unlockLevel}</span>
+                <div className="levelup-section-box" id="subclass-unlock-box">
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      marginBottom: '0.75rem',
+                    }}
+                  >
+                    <h4 style={{ color: 'var(--accent-gold)', margin: 0 }}>
+                      🌟 Alt Sınıf (Subclass) Seçimi
+                    </h4>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                      Kilit Seviyesi: {unlockLevel}
+                    </span>
                   </div>
 
-                  <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0 0 1rem' }}>
-                    Alt sınıfınız karakterinizin dövüş stilini veya büyü kabiliyetlerini derinden şekillendirir.
-                    Örneğin Eldritch Knight veya Arcane Trickster seçildiğinde büyücülük özellikleri ve büyü yuvaları otomatik açılır.
-                  </p>
+                  {nextLevel < unlockLevel ? (
+                    <div
+                      style={{
+                        background: 'rgba(0,0,0,0.3)',
+                        border: '1px solid var(--border-subtle)',
+                        borderRadius: '8px',
+                        padding: '1rem',
+                        fontSize: '0.85rem',
+                        color: 'var(--text-secondary)',
+                      }}
+                    >
+                      ℹ️ Alt sınıfınız <strong>{unlockLevel}. Seviyede</strong> açılacaktır. Şu anda genel sınıf
+                      eğitiminiz devam etmektedir. İlerleyerek sonraki adımlara geçebilirsiniz.
+                    </div>
+                  ) : (
+                    <>
+                      <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0 0 1rem' }}>
+                        {nextLevel === unlockLevel
+                          ? `🎉 Tebrikler! ${nextLevel}. Seviyede uzmanlaşmak istediğiniz alt sınıfı belirliyorsunuz.`
+                          : `Mevcut Alt Sınıfınız: ${selectedSubclass || 'Seçilmedi'}. Değiştirmek isterseniz aşağıdan farklı bir alt sınıf seçebilirsiniz:`}
+                      </p>
 
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                    {availableSubclasses.map((sc) => {
-                      const isSelected = selectedSubclass === sc.name || selectedSubclass === sc.id;
-                      return (
-                        <div
-                          key={sc.id}
-                          onClick={() => setSelectedSubclass(sc.name)}
-                          style={{
-                            padding: '1rem',
-                            borderRadius: '10px',
-                            cursor: 'pointer',
-                            border: isSelected ? '2px solid var(--accent-gold)' : '1px solid var(--border-subtle)',
-                            background: isSelected ? 'rgba(217, 119, 6, 0.12)' : 'rgba(15, 23, 42, 0.6)',
-                            transition: 'all 0.2s ease'
-                          }}
-                        >
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <strong style={{ color: isSelected ? 'var(--accent-gold)' : 'var(--text-primary)', fontSize: '1rem' }}>
-                              {sc.nameTr} ({sc.name})
-                            </strong>
-                            {sc.isSpellcaster && (
-                              <span style={{ fontSize: '0.75rem', background: 'rgba(168, 85, 247, 0.25)', color: '#d8b4fe', padding: '0.2rem 0.5rem', borderRadius: '4px', border: '1px solid #c084fc' }}>
-                                ✨ Büyücü (Int)
-                              </span>
-                            )}
-                          </div>
-                          <p style={{ fontSize: '0.83rem', color: 'var(--text-secondary)', margin: '0.4rem 0' }}>
-                            {sc.description}
-                          </p>
-                          <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                            <strong>İlk Özellik:</strong> {sc.features[0]?.name} — {sc.features[0]?.description}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                        {availableSubclasses.map((sc) => {
+                          const isSelected =
+                            selectedSubclass === sc.name || selectedSubclass === sc.id;
+                          return (
+                            <div
+                              key={sc.id}
+                              onClick={() => setSelectedSubclass(sc.name)}
+                              style={{
+                                padding: '1rem',
+                                borderRadius: '10px',
+                                cursor: 'pointer',
+                                border: isSelected
+                                  ? '2px solid var(--accent-gold)'
+                                  : '1px solid var(--border-subtle)',
+                                background: isSelected
+                                  ? 'rgba(217, 119, 6, 0.12)'
+                                  : 'rgba(15, 23, 42, 0.6)',
+                                transition: 'all 0.2s ease',
+                              }}
+                            >
+                              <div
+                                style={{
+                                  display: 'flex',
+                                  justifyContent: 'space-between',
+                                  alignItems: 'center',
+                                }}
+                              >
+                                <strong
+                                  style={{
+                                    color: isSelected ? 'var(--accent-gold)' : 'var(--text-primary)',
+                                    fontSize: '1rem',
+                                  }}
+                                >
+                                  {sc.nameTr} ({sc.name})
+                                </strong>
+                                {sc.isSpellcaster && (
+                                  <span
+                                    style={{
+                                      fontSize: '0.75rem',
+                                      background: 'rgba(168, 85, 247, 0.25)',
+                                      color: '#d8b4fe',
+                                      padding: '0.2rem 0.5rem',
+                                      borderRadius: '4px',
+                                      border: '1px solid #c084fc',
+                                    }}
+                                  >
+                                    ✨ Büyücü (Int)
+                                  </span>
+                                )}
+                              </div>
+                              <p
+                                style={{
+                                  fontSize: '0.83rem',
+                                  color: 'var(--text-secondary)',
+                                  margin: '0.4rem 0',
+                                }}
+                              >
+                                {sc.description}
+                              </p>
+                              <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                                <strong>İlk Özellik:</strong> {sc.features[0]?.name} —{' '}
+                                {sc.features[0]?.description}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
 
-              {/* ADIM 3: ASI VEYA FEAT */}
+              {/* ADIM 3: BÜYÜ GELİŞİMİ */}
+              {activeStep === 'spells' && (
+                <div className="levelup-section-box">
+                  <h4 style={{ color: 'var(--accent-gold)', margin: '0 0 0.5rem' }}>
+                    📜 Büyü Gelişimi & Yuvalar
+                  </h4>
+                  {isCaster && newSlots ? (
+                    <div>
+                      <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0 0 1rem' }}>
+                        Seviye {nextLevel} büyücü profiliniz güncellendi! Yeni seviyenizde kullanabileceğiniz toplam büyü yuvaları:
+                      </p>
+                      <div
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))',
+                          gap: '0.5rem',
+                        }}
+                      >
+                        {Object.entries(newSlots).map(([slotLvl, slotData]) => (
+                          <div
+                            key={slotLvl}
+                            style={{
+                              background: 'rgba(168, 85, 247, 0.15)',
+                              border: '1px solid rgba(168, 85, 247, 0.35)',
+                              borderRadius: '6px',
+                              padding: '0.5rem',
+                              textAlign: 'center',
+                            }}
+                          >
+                            <span style={{ fontSize: '0.72rem', color: '#d8b4fe' }}>
+                              {slotLvl}. Kademe
+                            </span>
+                            <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#fff' }}>
+                              {slotData.total} Yuva
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div
+                      style={{
+                        background: 'rgba(0,0,0,0.3)',
+                        border: '1px solid var(--border-subtle)',
+                        borderRadius: '8px',
+                        padding: '1rem',
+                        fontSize: '0.85rem',
+                        color: 'var(--text-secondary)',
+                      }}
+                    >
+                      🛡️ {charClass.toUpperCase()} bir büyücü sınıfı olmadığı için bu seviyede büyü yuvası
+                      veya cantrip öğrenmez. Fiziksel dövüş ve sınıf hünerleriniz gelişmeye devam eder.
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ADIM 4: ASI VEYA FEAT */}
               {activeStep === 'asi-feat' && (
                 <div className="levelup-section-box">
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                    <h4 style={{ color: 'var(--text-primary)', margin: 0 }}>💡 Yetenek Skoru Artışı (ASI) veya Hüner (Feat)</h4>
-                    {grantsASI ? (
-                      <span style={{ fontSize: '0.8rem', background: 'rgba(34, 197, 94, 0.2)', color: '#4ade80', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>
-                        ⭐ Seviye {nextLevel} Hak Kazandı
-                      </span>
-                    ) : (
-                      <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                        (Sonraki ASI: Seviye 4, 8, 12, 16, 19)
-                      </span>
-                    )}
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      marginBottom: '0.75rem',
+                    }}
+                  >
+                    <h4 style={{ color: 'var(--text-primary)', margin: 0 }}>
+                      💡 Yetenek Skoru Artışı (ASI) veya Hüner (Feat)
+                    </h4>
                   </div>
 
-                  <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0 0 1rem' }}>
-                    İster ana statlarınızı artırın, ister karakterinize Great Weapon Master, War Caster veya Sharpshooter gibi güçlü bir hüner ekleyin.
-                  </p>
+                  {/* KULLANICININ İSTEDİĞİ NET SAYI SAYAÇ KUTUSU */}
+                  <div
+                    style={{
+                      background: grantsASI
+                        ? 'rgba(34, 197, 94, 0.15)'
+                        : 'rgba(255, 255, 255, 0.05)',
+                      border: `1px solid ${
+                        grantsASI ? 'rgba(34, 197, 94, 0.4)' : 'var(--border-subtle)'
+                      }`,
+                      borderRadius: '8px',
+                      padding: '0.75rem 1rem',
+                      marginBottom: '1rem',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <div>
+                      <strong style={{ color: grantsASI ? '#4ade80' : 'var(--text-secondary)' }}>
+                        {grantsASI
+                          ? '🎯 Seçebileceğiniz Yeni Feat / Stat Artışı:'
+                          : '🎯 Seçebileceğiniz Yeni Feat:'}
+                      </strong>
+                      <p
+                        style={{
+                          margin: '0.2rem 0 0',
+                          fontSize: '0.8rem',
+                          color: 'var(--text-muted)',
+                        }}
+                      >
+                        {grantsASI
+                          ? `Tebrikler! ${nextLevel}. seviyede 1 adet yeni Feat (Hüner) seçebilir veya statlarınızı artırabilirsiniz.`
+                          : `Bu seviyede yeni Feat hakkı verilmez (Seviye 4, 8, 12, 16, 19'da verilir). Mevcut listenizi inceleyebilirsiniz.`}
+                      </p>
+                    </div>
+                    <div
+                      style={{
+                        fontSize: '1.8rem',
+                        fontWeight: 900,
+                        color: grantsASI ? '#4ade80' : 'var(--text-muted)',
+                        background: 'rgba(0,0,0,0.3)',
+                        padding: '0.2rem 0.8rem',
+                        borderRadius: '6px',
+                      }}
+                    >
+                      {grantsASI ? '1' : '0'}
+                    </div>
+                  </div>
 
                   <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
                     <button
@@ -396,9 +686,26 @@ export const LevelUpModal: React.FC<LevelUpModalProps> = ({
                   </div>
 
                   {progressionChoice === 'asi' ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', background: 'rgba(0,0,0,0.25)', padding: '1rem', borderRadius: '8px' }}>
+                    <div
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '0.75rem',
+                        background: 'rgba(0,0,0,0.25)',
+                        padding: '1rem',
+                        borderRadius: '8px',
+                      }}
+                    >
                       <div style={{ display: 'flex', gap: '1rem' }}>
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer', fontSize: '0.88rem' }}>
+                        <label
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.4rem',
+                            cursor: 'pointer',
+                            fontSize: '0.88rem',
+                          }}
+                        >
                           <input
                             type="radio"
                             name="asiMode"
@@ -407,7 +714,15 @@ export const LevelUpModal: React.FC<LevelUpModalProps> = ({
                           />
                           Tek Yeteneğe +2
                         </label>
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer', fontSize: '0.88rem' }}>
+                        <label
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.4rem',
+                            cursor: 'pointer',
+                            fontSize: '0.88rem',
+                          }}
+                        >
                           <input
                             type="radio"
                             name="asiMode"
@@ -424,7 +739,14 @@ export const LevelUpModal: React.FC<LevelUpModalProps> = ({
                           <select
                             value={asiStat1}
                             onChange={(e) => setAsiStat1(e.target.value as AbilityName)}
-                            style={{ marginLeft: '0.4rem', padding: '0.3rem 0.6rem', background: '#1e293b', color: '#fff', border: '1px solid #475569', borderRadius: '4px' }}
+                            style={{
+                              marginLeft: '0.4rem',
+                              padding: '0.3rem 0.6rem',
+                              background: '#1e293b',
+                              color: '#fff',
+                              border: '1px solid #475569',
+                              borderRadius: '4px',
+                            }}
                           >
                             <option value="str">Kuvvet (STR: {abilities.str})</option>
                             <option value="dex">Çeviklik (DEX: {abilities.dex})</option>
@@ -441,7 +763,14 @@ export const LevelUpModal: React.FC<LevelUpModalProps> = ({
                             <select
                               value={asiStat2}
                               onChange={(e) => setAsiStat2(e.target.value as AbilityName)}
-                              style={{ marginLeft: '0.4rem', padding: '0.3rem 0.6rem', background: '#1e293b', color: '#fff', border: '1px solid #475569', borderRadius: '4px' }}
+                              style={{
+                                marginLeft: '0.4rem',
+                                padding: '0.3rem 0.6rem',
+                                background: '#1e293b',
+                                color: '#fff',
+                                border: '1px solid #475569',
+                                borderRadius: '4px',
+                              }}
                             >
                               <option value="str">Kuvvet (STR: {abilities.str})</option>
                               <option value="dex">Çeviklik (DEX: {abilities.dex})</option>
@@ -455,7 +784,15 @@ export const LevelUpModal: React.FC<LevelUpModalProps> = ({
                       </div>
                     </div>
                   ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', maxHeight: '280px', overflowY: 'auto' }}>
+                    <div
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '0.6rem',
+                        maxHeight: '280px',
+                        overflowY: 'auto',
+                      }}
+                    >
                       {FEATS.map((feat) => {
                         const isChosen = chosenFeatId === feat.id;
                         return (
@@ -466,20 +803,51 @@ export const LevelUpModal: React.FC<LevelUpModalProps> = ({
                               padding: '0.75rem',
                               borderRadius: '6px',
                               cursor: 'pointer',
-                              border: isChosen ? '2px solid var(--accent-gold)' : '1px solid var(--border-subtle)',
-                              background: isChosen ? 'rgba(217, 119, 6, 0.12)' : 'rgba(15, 23, 42, 0.6)',
+                              border: isChosen
+                                ? '2px solid var(--accent-gold)'
+                                : '1px solid var(--border-subtle)',
+                              background: isChosen
+                                ? 'rgba(217, 119, 6, 0.12)'
+                                : 'rgba(15, 23, 42, 0.6)',
                             }}
                           >
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <strong style={{ color: isChosen ? 'var(--accent-gold)' : 'var(--text-primary)' }}>
+                            <div
+                              style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                              }}
+                            >
+                              <strong
+                                style={{
+                                  color: isChosen ? 'var(--accent-gold)' : 'var(--text-primary)',
+                                }}
+                              >
                                 {feat.nameTr} ({feat.name})
                               </strong>
-                              {isChosen && <span style={{ color: 'var(--accent-gold)', fontSize: '0.8rem' }}>✓ Seçildi</span>}
+                              {isChosen && (
+                                <span style={{ color: 'var(--accent-gold)', fontSize: '0.8rem' }}>
+                                  ✓ Seçildi
+                                </span>
+                              )}
                             </div>
-                            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '0.3rem 0' }}>
+                            <p
+                              style={{
+                                fontSize: '0.8rem',
+                                color: 'var(--text-secondary)',
+                                margin: '0.3rem 0',
+                              }}
+                            >
                               {feat.description}
                             </p>
-                            <ul style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0, paddingLeft: '1.2rem' }}>
+                            <ul
+                              style={{
+                                fontSize: '0.75rem',
+                                color: 'var(--text-muted)',
+                                margin: 0,
+                                paddingLeft: '1.2rem',
+                              }}
+                            >
                               {feat.features.map((f, i) => (
                                 <li key={i}>{f}</li>
                               ))}
@@ -492,12 +860,15 @@ export const LevelUpModal: React.FC<LevelUpModalProps> = ({
                 </div>
               )}
 
-              {/* ADIM 4: HİKAYE & GEÇMİŞ (BACKSTORY) */}
+              {/* ADIM 5: HİKAYE & GEÇMİŞ (BACKSTORY) */}
               {activeStep === 'backstory' && (
                 <div className="levelup-section-box">
-                  <h4 style={{ color: 'var(--text-primary)', margin: '0 0 0.5rem' }}>📜 Karakter Hikayesi & Geçmişi (Backstory)</h4>
+                  <h4 style={{ color: 'var(--text-primary)', margin: '0 0 0.5rem' }}>
+                    📜 Karakter Hikayesi & Geçmişi (Backstory)
+                  </h4>
                   <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0 0 0.75rem' }}>
-                    Karakterinizin yaşadığı serüvenleri, yeni kazandığı motivasyonları veya idealleri buraya serbestçe yazabilirsiniz.
+                    Karakterinizin yaşadığı serüvenleri, yeni kazandığı motivasyonları veya idealleri buraya
+                    serbestçe yazabilirsiniz.
                   </p>
                   <textarea
                     value={backstory}
@@ -512,84 +883,131 @@ export const LevelUpModal: React.FC<LevelUpModalProps> = ({
                       color: 'var(--text-primary)',
                       padding: '0.75rem',
                       fontSize: '0.88rem',
-                      fontFamily: 'Inter, sans-serif',
                       lineHeight: 1.5,
-                      resize: 'vertical'
+                      resize: 'vertical',
                     }}
                   />
                 </div>
               )}
 
-              {/* ADIM 5: ÖZET & ONAY */}
+              {/* ADIM 6: ÖZET & ONAY */}
               {activeStep === 'review' && (
-                <div className="levelup-section-box" style={{ background: 'rgba(0,0,0,0.35)', border: '1px solid var(--border-gold)' }}>
-                  <h4 style={{ color: 'var(--accent-gold)', margin: '0 0 0.75rem' }}>✓ Seviye Atlama Özeti</h4>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.9rem' }}>
-                    <div>Yeni Seviye: <strong>{level} ➔ {nextLevel}</strong></div>
-                    <div>Can Puanı Artışı: <strong>+{hpIncrease} HP</strong> (Yeni Maks HP: <strong>{maxHp + hpIncrease}</strong>)</div>
-                    <div>Alt Sınıf: <strong>{selectedSubclass || 'Henüz seçilmedi'}</strong></div>
+                <div
+                  className="levelup-section-box"
+                  style={{ background: 'rgba(0,0,0,0.35)', border: '1px solid var(--border-gold)' }}
+                >
+                  <h4 style={{ color: 'var(--accent-gold)', margin: '0 0 0.75rem' }}>
+                    ✓ Seviye Atlama Özeti
+                  </h4>
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '0.5rem',
+                      fontSize: '0.9rem',
+                    }}
+                  >
+                    <div>
+                      Yeni Seviye: <strong>{level} ➔ {nextLevel}</strong>
+                    </div>
+                    <div>
+                      Can Puanı Artışı: <strong>+{hpIncrease} HP</strong> (Yeni Maks HP:{' '}
+                      <strong>{maxHp + hpIncrease}</strong>)
+                    </div>
+                    <div>
+                      Alt Sınıf: <strong>{selectedSubclass || 'Henüz seçilmedi'}</strong>
+                    </div>
                     {grantsASI && (
                       <div>
                         {progressionChoice === 'asi' ? (
-                          <span>Stat Artışı: <strong>{asiMode === 'plusTwo' ? `+2 ${asiStat1.toUpperCase()}` : `+1 ${asiStat1.toUpperCase()} & +1 ${asiStat2.toUpperCase()}`}</strong></span>
+                          <span>
+                            Stat Artışı:{' '}
+                            <strong>
+                              {asiMode === 'plusTwo'
+                                ? `+2 ${asiStat1.toUpperCase()}`
+                                : `+1 ${asiStat1.toUpperCase()} & +1 ${asiStat2.toUpperCase()}`}
+                            </strong>
+                          </span>
                         ) : (
-                          <span>Seçilen Hüner: <strong>{chosenFeatId}</strong></span>
+                          <span>
+                            Seçilen Hüner: <strong>{chosenFeatId}</strong>
+                          </span>
                         )}
                       </div>
                     )}
                     {backstory && (
-                      <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: '0.4rem' }}>
+                      <div
+                        style={{
+                          fontSize: '0.82rem',
+                          color: 'var(--text-muted)',
+                          marginTop: '0.4rem',
+                        }}
+                      >
                         Hikaye notu kaydedildi ({backstory.length} karakter).
                       </div>
                     )}
                   </div>
                 </div>
               )}
-
             </div>
 
-            {/* Modal Alt Kontroller */}
-            <div className="modal-footer" style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
+            {/* Modal Alt Kontroller (İlerle vs Seviye Atlamayı Tamamla) */}
+            <div
+              className="modal-footer"
+              style={{
+                borderTop: '1px solid var(--border-subtle)',
+                paddingTop: '0.75rem',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}
+            >
+              <div>
                 {activeStep !== 'hp' && (
                   <button
                     className="action-button secondary"
-                    onClick={() => {
-                      if (activeStep === 'subclass') setActiveStep('hp');
-                      else if (activeStep === 'asi-feat') setActiveStep('subclass');
-                      else if (activeStep === 'backstory') setActiveStep('asi-feat');
-                      else if (activeStep === 'review') setActiveStep('backstory');
-                    }}
+                    onClick={handlePrevStep}
                     style={{ fontSize: '0.85rem' }}
                   >
                     ← Geri
                   </button>
                 )}
-                {activeStep !== 'review' && (
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                {activeStep !== 'review' ? (
                   <button
-                    className="action-button secondary"
-                    onClick={() => {
-                      if (activeStep === 'hp') setActiveStep('subclass');
-                      else if (activeStep === 'subclass') setActiveStep('asi-feat');
-                      else if (activeStep === 'asi-feat') setActiveStep('backstory');
-                      else if (activeStep === 'backstory') setActiveStep('review');
+                    id="btn-wizard-next"
+                    className="action-button"
+                    style={{
+                      minHeight: '42px',
+                      padding: '0.5rem 1.4rem',
+                      fontWeight: 600,
+                      background: 'linear-gradient(135deg, var(--accent-bronze) 0%, var(--accent-gold) 100%)',
+                      color: '#000',
                     }}
-                    style={{ fontSize: '0.85rem' }}
+                    onClick={handleNextStep}
                   >
-                    İleri →
+                    İlerle →
+                  </button>
+                ) : (
+                  <button
+                    id="btn-confirm-levelup"
+                    className="action-button"
+                    style={{
+                      minHeight: '42px',
+                      padding: '0.5rem 1.4rem',
+                      fontWeight: 600,
+                      background: 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)',
+                      color: '#fff',
+                    }}
+                    onClick={handleApplyLevelUp}
+                    aria-label="Seviye Atlamayı Onayla"
+                  >
+                    ✓ Seviye Atlamayı Tamamla
                   </button>
                 )}
               </div>
-
-              <button
-                id="btn-confirm-levelup"
-                className="action-button"
-                style={{ minHeight: '42px', padding: '0.5rem 1.4rem', fontWeight: 600, background: 'linear-gradient(135deg, #d97706 0%, #b45309 100%)' }}
-                onClick={handleApplyLevelUp}
-                aria-label="Seviye Atlamayı Onayla"
-              >
-                ✓ Seviye Atlamayı Tamamla
-              </button>
             </div>
           </div>
         </div>

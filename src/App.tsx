@@ -71,10 +71,10 @@ function AppInner() {
       {/* 1. Üst Gezinme ve Logo Çubuğu */}
       <header className="app-header" role="banner">
         <div className="logo-group" onClick={() => handleNavigate('home')} style={{ cursor: 'pointer' }}>
-          <img src="/icons/icon-192.svg" alt="D&D Logo" className="logo-icon" id="header-logo" />
+          <img src="/icons/icon-192.svg" alt="ArcaneFolio Logo" className="logo-icon" id="header-logo" />
           <div>
-            <h1 className="logo-title font-cinzel">D&D 5e Asistani</h1>
-            <p className="logo-subtitle">D&D Beyond Seviyesinde Kampanya &amp; Karakter Portali</p>
+            <h1 className="logo-title font-cinzel">ArcaneFolio 5e</h1>
+            <p className="logo-subtitle">5. Edisyon Karakter &amp; DM Kampanya Portali</p>
           </div>
         </div>
 
@@ -174,9 +174,30 @@ function AppInner() {
       <FloatingDice onOpenFullTray={() => handleNavigate('dice')} />
       <ReferenceDrawer />
 
-      {/* 4. Footer */}
-      <footer className="app-footer">
-        <p>D&amp;D 5e Kampanya &amp; Karakter Portali • SRD 5.1 Lisansı (CC-BY-4.0) Uyumlu • V3</p>
+      {/* 4. Footer & Yasal Feragatname (Fan Content Policy & CC-BY-4.0) */}
+      <footer
+        className="app-footer"
+        style={{
+          borderTop: '1px solid var(--border-subtle)',
+          padding: '1.5rem 1rem',
+          marginTop: '2rem',
+          textAlign: 'center',
+          fontSize: '0.78rem',
+          color: 'var(--text-muted)',
+          lineHeight: '1.6',
+        }}
+      >
+        <p style={{ fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>
+          ArcaneFolio 5e • 5. Edisyon Masaüstü Rol Yapma Portali
+        </p>
+        <p style={{ maxWidth: '800px', margin: '0 auto' }}>
+          ArcaneFolio 5e, Wizards of the Coast'un <em>Hayran İçerik Politikası (Fan Content Policy)</em> kapsamında
+          geliştirilmiş bağımsız, kâr amacı gütmeyen bir hayran içeriğidir. Kural seti ve referans verileri,
+          Wizards of the Coast LLC tarafından <em>Creative Commons Attribution 4.0 International (CC-BY-4.0)</em>{' '}
+          ile lisanslanan <strong>System Reference Document 5.1 (SRD 5.1)</strong> ve Open5e veri tabanından
+          alınmıştır. Bu site Wizards of the Coast LLC tarafından desteklenmemekte, onaylanmamakta veya finanse
+          edilmemektedir.
+        </p>
       </footer>
     </div>
   );

@@ -9,6 +9,7 @@ import { Character, CharacterRace, CharacterClass, AbilityName, ArmorItem } from
 import type { FullCharacter } from '../types/character';
 import { calculateDerivedStats, RACE_SPEED } from '../rules/character';
 import { getSpellSlotsForLevel } from '../rules/spellSlots';
+import { getStarterKitForClass } from '../rules/starterEquipment';
 import { useCharacter } from '../context/CharacterContext';
 
 const RACES: { value: CharacterRace; label: string }[] = [
@@ -138,6 +139,12 @@ export const CharacterCreator: React.FC<CharacterCreatorProps> = ({ onSaved }) =
       return;
     }
 
+    const starterKit = getStarterKitForClass(
+      character.class,
+      character.equippedArmor,
+      character.hasShield
+    );
+
     const now = new Date().toISOString();
     const fullChar: FullCharacter = {
       id: character.id,
@@ -150,9 +157,10 @@ export const CharacterCreator: React.FC<CharacterCreatorProps> = ({ onSaved }) =
       baseAbilities: character.baseAbilities,
       proficientSkills: [],
       proficientSavingThrows: [],
-      equippedArmor: character.equippedArmor,
-      hasShield: character.hasShield,
-      weapons: [],
+      equippedArmor: starterKit.equippedArmor,
+      hasShield: starterKit.hasShield,
+      weapons: starterKit.weapons,
+      inventory: starterKit.inventory,
       currentHp: derived.maxHp,
       maxHp: derived.maxHp,
       tempHp: 0,

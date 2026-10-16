@@ -62,6 +62,50 @@ const DEMO_CHARACTER: FullCharacter = {
     { id: 'w1', name: 'Uzunkilic (Longsword)', damage: '1d8', damageType: 'slashing', properties: ['versatile'], range: '5 ft', abilityUsed: 'str' },
     { id: 'w2', name: 'Hancer (Dagger)', damage: '1d4', damageType: 'piercing', properties: ['finesse', 'thrown'], range: '20/60 ft', abilityUsed: 'dex' },
   ],
+  inventory: [
+    {
+      slug: 'scale-mail',
+      name: 'Scale Mail',
+      type: 'armor',
+      weight: 45,
+      cost: '50 gp',
+      description: 'Orta zırh, taban AC 14.',
+      properties: ['medium'],
+      quantity: 1,
+      equipped: true,
+      source: 'SRD 5.1',
+      source_ref: 'PHB',
+      license: 'OGL / CC-BY-4.0',
+    },
+    {
+      slug: 'shield',
+      name: 'Shield',
+      type: 'shield',
+      weight: 6,
+      cost: '10 gp',
+      description: '+2 AC kalkan.',
+      properties: ['shield'],
+      quantity: 1,
+      equipped: true,
+      source: 'SRD 5.1',
+      source_ref: 'PHB',
+      license: 'OGL / CC-BY-4.0',
+    },
+    {
+      slug: 'potion-of-healing',
+      name: 'Potion of Healing',
+      type: 'potion',
+      weight: 0.5,
+      cost: '50 gp',
+      description: '2d4 + 2 can iyileştirir.',
+      properties: ['consumable'],
+      quantity: 1,
+      equipped: false,
+      source: 'SRD 5.1',
+      source_ref: 'PHB',
+      license: 'OGL / CC-BY-4.0',
+    },
+  ],
   currentHp: 28,
   maxHp: 28,
   tempHp: 0,
@@ -106,6 +150,9 @@ export const ModernCharacterSheet: React.FC = () => {
   const baseSpeed = 30; // ft
   const [remainingSpeed, setRemainingSpeed] = useState<number>(baseSpeed);
 
+  // Savaş Sisi (Fog of War) Canavar Hedefleri
+  const [monsterTargets, setMonsterTargets] = useState<import('./sheet/CombatModePanel').MonsterTargetFog[]>([]);
+
   // Hızlı Zar Bildirim Toast'ı
   const [quickToast, setQuickToast] = useState<QuickToastData | null>(null);
 
@@ -129,6 +176,9 @@ export const ModernCharacterSheet: React.FC = () => {
       if (event.type === 'ENCOUNTER_UPDATE' && event.payload) {
         if (event.payload.combatActive !== undefined) {
           setCombatMode(Boolean(event.payload.combatActive));
+        }
+        if (Array.isArray(event.payload.monsterTargets)) {
+          setMonsterTargets(event.payload.monsterTargets);
         }
         if (
           event.payload.currentTurnName &&
@@ -529,6 +579,7 @@ export const ModernCharacterSheet: React.FC = () => {
         baseSpeed={baseSpeed}
         onSpendSpeed={(amt) => setRemainingSpeed((s) => Math.max(0, s - amt))}
         onResetSpeed={() => setRemainingSpeed(baseSpeed)}
+        monsterTargets={monsterTargets}
         onEndTurn={() => {
           soundEffects.playDiceRollSound();
           setActionUsed(false);
@@ -566,18 +617,20 @@ export const ModernCharacterSheet: React.FC = () => {
 
           <ProficienciesCard />
 
-          {/* Ölüm Kurtarma Zarları Widget'ı */}
-          <div className="dndbeyond-card">
-            <div className="dndbeyond-card-header">DEATH SAVES</div>
-            <DeathSaves
-              currentHp={character.currentHp}
-              initialSuccesses={character.deathSaves?.successes ?? 0}
-              initialFailures={character.deathSaves?.failures ?? 0}
-              onSavesChange={(s, f) => {
-                if (!isDemo) updateDeathSaves(s, f);
-              }}
-            />
-          </div>
+          {/* Ölüm Kurtarma Zarları Widget'ı — YALNIZCA ÖLÜM EŞİĞİNDE (HP <= 0) GÖRÜNÜR */}
+          {character.currentHp <= 0 && (
+            <div className="dndbeyond-card" id="death-saves-card-container">
+              <div className="dndbeyond-card-header">DEATH SAVES (Ölüm Zarları)</div>
+              <DeathSaves
+                currentHp={character.currentHp}
+                initialSuccesses={character.deathSaves?.successes ?? 0}
+                initialFailures={character.deathSaves?.failures ?? 0}
+                onSavesChange={(s, f) => {
+                  if (!isDemo) updateDeathSaves(s, f);
+                }}
+              />
+            </div>
+          )}
         </aside>
 
         {/* ORTA SÜTUN: ALFABETİK 18 BECERİ MATRİSİ */}
@@ -679,7 +732,7 @@ export const ModernCharacterSheet: React.FC = () => {
             <div id="tab-content-inventory">
               <InventoryManager
                 strScore={character.baseAbilities.str}
-                inventory={character.inventory}
+                inventory={character.inventory ?? []}
                 onInventoryChange={handleInventoryChange}
                 onUsePotion={handleUsePotion}
               />

@@ -56,6 +56,7 @@ describe('LevelUpModal Component', () => {
     );
 
     fireEvent.click(screen.getByRole('button', { name: /Seviye Atla Modalı Aç/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Özet/i }));
     const confirmBtn = screen.getByRole('button', { name: /Seviye Atlamayı Onayla/i });
     fireEvent.click(confirmBtn);
 

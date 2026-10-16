@@ -19,9 +19,9 @@ export const HomeHub: React.FC<HomeHubProps> = ({ onNavigate }) => {
     <div id="home-hub-container" className="home-hub-root">
       {/* Karşılama Kartı */}
       <section className="hub-welcome-banner">
-        <h2 className="font-cinzel hub-title">D&amp;D 5e Kampanya &amp; Karakter Portali</h2>
+        <h2 className="font-cinzel hub-title">ArcaneFolio 5e: Karakter &amp; DM Portali</h2>
         <p className="hub-subtitle">
-          D&amp;D Beyond'un ötesinde — PHB kurallarının tamamı, sıfır ücret, arkadaşlarınla 5 saniyede başla.
+          SRD 5.1 kural seti uyumlu — 5. Edisyon mekaniklerinin tamamı, 3D fiziksel zar motoru ve canlı DM karşılaşma senkronizasyonu.
         </p>
         {activeCharacter && (
           <div className="hub-active-char-pill">
