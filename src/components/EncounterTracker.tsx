@@ -570,7 +570,7 @@ export const EncounterTracker: React.FC<EncounterTrackerProps> = ({ partyMembers
     <div className="encounter-tracker-container" id="encounter-tracker-view" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
       
       {/* 1. ÜST KONTROL PANELİ (TUR & İNİSİYATİF YÖNETİMİ) */}
-      <div className="encounter-header-panel" style={{ background: 'rgba(18, 26, 45, 0.8)', border: '1px solid var(--border-gold)', borderRadius: '16px', padding: '1.2rem', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
+      <div className="encounter-header-panel" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-gold)', borderRadius: '16px', padding: '1.2rem', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', boxShadow: 'var(--shadow-card)' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <h2 className="font-cinzel" style={{ color: 'var(--accent-gold)', margin: 0, fontSize: '1.4rem' }}>
@@ -657,7 +657,7 @@ export const EncounterTracker: React.FC<EncounterTrackerProps> = ({ partyMembers
           </div>
 
           {combatants.length === 0 ? (
-            <div style={{ background: 'rgba(18, 26, 45, 0.5)', border: '1px dashed var(--border-subtle)', borderRadius: '12px', padding: '2.5rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+            <div style={{ background: 'var(--bg-card)', border: '1px dashed var(--border-subtle)', borderRadius: '12px', padding: '2.5rem', textAlign: 'center', color: 'var(--text-muted)' }}>
               <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>⚔️</div>
               <p style={{ margin: 0, fontSize: '1rem', color: 'var(--text-primary)' }}>Karşılaşmada henüz kimse yok.</p>
               <p style={{ fontSize: '0.85rem', margin: '0.3rem 0 1rem' }}>
@@ -679,13 +679,13 @@ export const EncounterTracker: React.FC<EncounterTrackerProps> = ({ partyMembers
                   key={c.id}
                   className={`combatant-card ${isActive ? 'active-turn' : ''}`}
                   style={{
-                    background: isActive ? 'rgba(217, 119, 6, 0.15)' : 'rgba(18, 26, 45, 0.7)',
+                    background: isActive ? 'rgba(217, 119, 6, 0.15)' : 'var(--bg-card)',
                     border: isActive ? '2px solid var(--accent-gold)' : '1px solid var(--border-subtle)',
                     borderRadius: '12px',
                     padding: '0.9rem',
                     transition: 'all 0.2s ease',
                     position: 'relative',
-                    boxShadow: isActive ? '0 0 15px rgba(217, 119, 6, 0.3)' : 'none',
+                    boxShadow: isActive ? '0 0 15px rgba(217, 119, 6, 0.3)' : 'var(--shadow-card)',
                     opacity: isDead ? 0.6 : 1,
                   }}
                 >
@@ -698,8 +698,9 @@ export const EncounterTracker: React.FC<EncounterTrackerProps> = ({ partyMembers
                           width: '34px',
                           height: '34px',
                           borderRadius: '8px',
-                          background: isActive ? 'var(--accent-gold)' : 'rgba(255,255,255,0.08)',
-                          color: isActive ? '#000' : '#fff',
+                          background: isActive ? 'var(--accent-gold)' : 'var(--bg-inset)',
+                          color: isActive ? '#000' : 'var(--text-primary)',
+                          border: '1px solid var(--border-subtle)',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
@@ -713,7 +714,7 @@ export const EncounterTracker: React.FC<EncounterTrackerProps> = ({ partyMembers
 
                       <div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                          <strong style={{ color: '#fff', fontSize: '1rem' }}>{c.name}</strong>
+                          <strong style={{ color: 'var(--text-primary)', fontSize: '1rem' }}>{c.name}</strong>
                           <span style={{ fontSize: '0.72rem', background: c.type === 'player' ? 'rgba(59, 130, 246, 0.2)' : 'rgba(239, 68, 68, 0.2)', color: c.type === 'player' ? '#93c5fd' : '#fca5a5', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>
                             {c.type === 'player' ? 'Oyuncu' : `Canavar (CR ${c.cr ?? '?'})`}
                           </span>
@@ -750,7 +751,7 @@ export const EncounterTracker: React.FC<EncounterTrackerProps> = ({ partyMembers
                           )}
                         </div>
                         <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
-                          Zırh Sınıfı (AC): <strong style={{ color: '#fff' }}>{c.armorClass}</strong>
+                          Zırh Sınıfı (AC): <strong style={{ color: 'var(--text-primary)' }}>{c.armorClass}</strong>
                           {c.speed && ` • Hız: ${c.speed}`}
                         </div>
                       </div>
@@ -812,7 +813,7 @@ export const EncounterTracker: React.FC<EncounterTrackerProps> = ({ partyMembers
                       <input
                         type="number"
                         placeholder="Örn: 8"
-                        style={{ width: '55px', padding: '0.2rem 0.4rem', fontSize: '0.75rem', background: '#0f172a', border: '1px solid #334155', color: '#fff', borderRadius: '4px' }}
+                        style={{ width: '55px', padding: '0.2rem 0.4rem', fontSize: '0.75rem', background: 'var(--bg-inset)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)', borderRadius: '4px' }}
                         value={damageInput[c.id] || ''}
                         onChange={(e) => setDamageInput({ ...damageInput, [c.id]: Number(e.target.value) })}
                       />
@@ -1011,7 +1012,7 @@ export const EncounterTracker: React.FC<EncounterTrackerProps> = ({ partyMembers
         </div>
 
         {/* SAĞ: OPEN5E CANAVAR ARAMA & EKLEME */}
-        <div style={{ background: 'rgba(18, 26, 45, 0.7)', border: '1px solid var(--border-subtle)', borderRadius: '16px', padding: '1.2rem', display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
+        <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: '16px', padding: '1.2rem', display: 'flex', flexDirection: 'column', gap: '0.9rem', boxShadow: 'var(--shadow-card)' }}>
           <div>
             <h3 className="font-cinzel" style={{ color: 'var(--accent-gold)', margin: '0 0 0.3rem', fontSize: '1.15rem' }}>
               🐉 Canavar Kataloğu (Open5e v2)
@@ -1032,10 +1033,10 @@ export const EncounterTracker: React.FC<EncounterTrackerProps> = ({ partyMembers
               style={{
                 width: '100%',
                 padding: '0.55rem 0.8rem',
-                background: 'rgba(15, 23, 42, 0.8)',
+                background: 'var(--bg-inset)',
                 border: '1px solid var(--border-subtle)',
                 borderRadius: '8px',
-                color: '#fff',
+                color: 'var(--text-primary)',
                 fontSize: '0.85rem'
               }}
             />
@@ -1052,7 +1053,7 @@ export const EncounterTracker: React.FC<EncounterTrackerProps> = ({ partyMembers
               <div
                 key={monster.slug}
                 style={{
-                  background: 'rgba(15, 23, 42, 0.6)',
+                  background: 'var(--bg-inset)',
                   border: '1px solid var(--border-subtle)',
                   borderRadius: '8px',
                   padding: '0.75rem',
@@ -1063,7 +1064,7 @@ export const EncounterTracker: React.FC<EncounterTrackerProps> = ({ partyMembers
               >
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                    <strong style={{ color: '#fff', fontSize: '0.92rem' }}>{monster.name}</strong>
+                    <strong style={{ color: 'var(--text-primary)', fontSize: '0.92rem' }}>{monster.name}</strong>
                     <span style={{ fontSize: '0.72rem', color: 'var(--accent-gold)', background: 'rgba(217,119,6,0.15)', padding: '0.1rem 0.3rem', borderRadius: '4px' }}>
                       CR {monster.challengeRating}
                     </span>

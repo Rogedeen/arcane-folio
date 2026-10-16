@@ -373,3 +373,72 @@ input.currency-number-input::-webkit-inner-spin-button {
   margin: 0 !important;
   display: none !important;
 }
+
+/* =============================================================================
+   PARCHMENT (LIGHT) THEME COMPATIBILITY: INVENTORY & SPELLBOOK
+   ============================================================================= */
+[data-theme="parchment"] .spellbook-card,
+[data-theme="parchment"] .inventory-card {
+  background: var(--bg-card);
+  border-color: var(--border-bronze);
+  box-shadow: 0 4px 16px rgba(100, 80, 50, 0.1);
+}
+
+[data-theme="parchment"] .prepared-counter-box {
+  background: #ffffff;
+  border-color: rgba(140, 101, 39, 0.3);
+}
+
+[data-theme="parchment"] .spell-search-input,
+[data-theme="parchment"] .catalog-input {
+  background: #ffffff !important;
+  color: #1c1817 !important;
+  border-color: rgba(140, 101, 39, 0.35) !important;
+}
+
+[data-theme="parchment"] .spell-item-card {
+  background: #ffffff;
+  border-color: rgba(140, 101, 39, 0.25);
+  box-shadow: 0 2px 6px rgba(100, 80, 50, 0.05);
+}
+
+[data-theme="parchment"] .spell-item-card:hover {
+  background: #fdfbf7;
+  border-color: #8c6527;
+  box-shadow: 0 6px 16px rgba(140, 101, 39, 0.15);
+}
+
+[data-theme="parchment"] .spell-name {
+  color: #1c1817;
+}
+
+[data-theme="parchment"] .spell-snippet {
+  color: #5c524a;
+}
+
+[data-theme="parchment"] .inv-tab-switcher {
+  background: #eae3d9;
+  border-color: rgba(140, 101, 39, 0.3);
+}
+
+[data-theme="parchment"] .inv-main-tab-btn {
+  color: #5c524a;
+}
+
+[data-theme="parchment"] .inv-main-tab-btn.active {
+  background: #ffffff;
+  color: #8c6527;
+  border-color: #8c6527;
+  box-shadow: 0 2px 6px rgba(100, 80, 50, 0.15);
+}
+
+[data-theme="parchment"] .catalog-item-card {
+  background: #ffffff;
+  border-color: rgba(140, 101, 39, 0.25);
+}
+
+[data-theme="parchment"] .catalog-item-card:hover {
+  background: #fdfbf7;
+  border-color: #8c6527;
+}
+

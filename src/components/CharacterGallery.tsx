@@ -207,9 +207,11 @@ const CharacterCard: React.FC<CharacterCardProps> = ({
         )}
       </div>
 
-      {/* Aktif rozetleri */}
-      {isActive && (
-        <div className="char-card-active-badge">AKTİF</div>
+      {/* Aktif veya Seç Rozeti */}
+      {isActive ? (
+        <div className="char-card-active-badge">✓ AKTİF</div>
+      ) : (
+        <div className="char-card-select-badge">Karakteri Seç →</div>
       )}
     </div>
   );

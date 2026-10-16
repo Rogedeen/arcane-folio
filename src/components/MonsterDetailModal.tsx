@@ -39,15 +39,15 @@ export const MonsterDetailModal: React.FC<MonsterDetailModalProps> = ({
       <div
         className="monster-stat-card"
         style={{
-          background: 'linear-gradient(145deg, #1e293b 0%, #0f172a 100%)',
+          background: 'var(--bg-card)',
           border: '2px solid var(--accent-gold)',
           borderRadius: '12px',
           width: '100%',
           maxWidth: '620px',
           maxHeight: '90vh',
           overflowY: 'auto',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 25px rgba(217, 119, 6, 0.25)',
-          color: '#f8fafc',
+          boxShadow: 'var(--shadow-card), 0 0 25px rgba(217, 119, 6, 0.25)',
+          color: 'var(--text-primary)',
           position: 'relative',
           padding: '1.5rem',
         }}
