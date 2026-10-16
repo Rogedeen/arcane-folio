@@ -1,19 +1,22 @@
 // =============================================================================
-// MODERN CHARACTER SHEET V3 (REMASTERED — CRIMSON CITADEL / RED DARK)
+// MODERN CHARACTER SHEET V3 (REMASTERED — CLEAN ARCHITECTURE & SOLID ORCHESTRATOR)
 // 21st.dev 'Red Dark' & D&D Beyond 1:1 Bento Dashboard
 //
 // MİMARİ:
-// - Üst Bar: Portre, Karakter kimliği, Kısa/Uzun Dinlenme, Stat Kilidi
-// - Yatay Bant: 6 Yetenek Skoru Rozeti (Modifikatör üstte, stat altta), AC, İnisiyatif, Hız, Can Barı
-// - Sol Sütun (260px): Çift kolon Kurtarma Zarları, Duyular, Ustalıklar
-// - Orta Sütun (300px): A-Z 18 Beceri Listesi (Arama filtreli, tıkla-at)
-// - Sağ Sütun (1fr): D&D Beyond Pill Sekmeler (Actions, Inventory, Spells/Features, Background, Notes)
+// - SheetHeader: Portre, Karakter kimliği, Dinlenme, Stat Kilidi, Savaş Modu geçişi
+// - SheetEmergencyDeathBanner & CinematicDeathSaves: Ölüm Eşiği & 3D zarlar
+// - CombatHudRow: 6 Yetenek Skoru Rozetleri, AC, İnisiyatif, Hız, İlham, Can Barı
+// - CombatModePanel: Taktiksel eylem, bonus action, tepki ve hareket takibi
+// - LeftColumnCards: SavingThrowsCard, SensesCard, ProficienciesCard, DeathSaves
+// - SkillsListCard: A-Z 18 Beceri Listesi (Arama filtreli, tıkla-at)
+// - Right Column Tabs: ActionsTabContent, Spellbook, FeaturesTabContent, InventoryManager,
+//                      LevelUpModal, BackgroundTabContent, NotesTabContent, ConditionsTracker
 // =============================================================================
 
 import React, { useState, useEffect } from 'react';
 import { calculateModifier } from '../rules/abilityScores';
 import { calculateProficiencyBonus } from '../rules/proficiency';
-import { SKILLS, calculateSkillModifier, calculatePassivePerception, calculatePassiveInvestigation } from '../rules/skills';
+import { calculatePassivePerception, calculatePassiveInvestigation } from '../rules/skills';
 import { calculateArmorClass } from '../rules/armorClass';
 import { InventoryManager } from './InventoryManager';
 import { Spellbook } from './Spellbook';
@@ -26,7 +29,21 @@ import { useReference } from '../context/ReferenceContext';
 import { soundEffects } from '../utils/soundEffects';
 import { syncService } from '../data/syncService';
 import { isCasterSubclass } from '../rules/subclasses';
-import type { FullCharacter, AbilityName, ArmorItem } from '../types/character';
+import type { FullCharacter, AbilityName, ArmorItem, WeaponItem } from '../types/character';
+import type { ItemData } from '../types/content';
+
+// Subcomponents
+import { SheetHeader } from './sheet/SheetHeader';
+import { SheetQuickToast, type QuickToastData } from './sheet/SheetQuickToast';
+import { SheetEmergencyDeathBanner } from './sheet/SheetEmergencyDeathBanner';
+import { CombatModePanel } from './sheet/CombatModePanel';
+import { CombatHudRow } from './sheet/CombatHudRow';
+import { SavingThrowsCard, SensesCard, ProficienciesCard } from './sheet/LeftColumnCards';
+import { SkillsListCard } from './sheet/SkillsListCard';
+import { ActionsTabContent, type ActionSubPill } from './sheet/ActionsTabContent';
+import { FeaturesTabContent } from './sheet/FeaturesTabContent';
+import { BackgroundTabContent } from './sheet/BackgroundTabContent';
+import { NotesTabContent } from './sheet/NotesTabContent';
 
 const DEMO_CHARACTER: FullCharacter = {
   id: 'demo-char',
@@ -59,7 +76,6 @@ const DEMO_CHARACTER: FullCharacter = {
 };
 
 type SheetTab = 'actions' | 'spells' | 'inventory' | 'conditions' | 'features' | 'background' | 'notes';
-type ActionSubPill = 'all' | 'attack' | 'action' | 'bonus' | 'reaction';
 
 export const ModernCharacterSheet: React.FC = () => {
   const {
@@ -77,7 +93,6 @@ export const ModernCharacterSheet: React.FC = () => {
   const [isLocked, setIsLocked] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState<SheetTab>('actions');
   const [actionSubPill, setActionSubPill] = useState<ActionSubPill>('all');
-  const [skillFilter, setSkillFilter] = useState<string>('');
   const [customHpInput, setCustomHpInput] = useState<string>('');
 
   // Sinematik Ölüm Ekranı Kapatılıp Kağıda Dönüldü mü?
@@ -91,6 +106,16 @@ export const ModernCharacterSheet: React.FC = () => {
   const baseSpeed = 30; // ft
   const [remainingSpeed, setRemainingSpeed] = useState<number>(baseSpeed);
 
+  // Hızlı Zar Bildirim Toast'ı
+  const [quickToast, setQuickToast] = useState<QuickToastData | null>(null);
+
+  // Silah bazlı dönüştürmeli hasar zarı animasyonu state'i (2d6 -> 10 -> [10] 2d6)
+  const [damageAnimState, setDamageAnimState] = useState<
+    Record<string, { isRolling: boolean; labelText: string; ghostVal: string | null }>
+  >({});
+
+  const { openReference } = useReference();
+
   // HP 0'dan yukarı çıkarsa ölüm penceresi kapatma durumunu sıfırla
   useEffect(() => {
     if (character.currentHp > 0) {
@@ -98,7 +123,7 @@ export const ModernCharacterSheet: React.FC = () => {
     }
   }, [character.currentHp]);
 
-  // DM Encounter senkronizasyonu dinleyicisi (Sıranın kimde olduğunu ve tur eylemlerini dinler)
+  // DM Encounter senkronizasyonu dinleyicisi
   useEffect(() => {
     const unsub = syncService.subscribe((event) => {
       if (event.type === 'ENCOUNTER_UPDATE' && event.payload) {
@@ -156,29 +181,12 @@ export const ModernCharacterSheet: React.FC = () => {
     hasShield: character.hasShield,
   });
 
-  const { openReference } = useReference();
-
-  // Yüksek Okunabilirlikli Zar Bildirim Toast'ı
-  const [quickToast, setQuickToast] = useState<{
-    text: string;
-    label?: string;
-    d20?: number;
-    mod?: number;
-    total?: number;
-    isCrit?: boolean;
-    isFumble?: boolean;
-  } | null>(null);
-
   const isSpellcaster =
-    ['cleric', 'druid', 'wizard', 'sorcerer', 'warlock', 'bard', 'paladin', 'ranger'].includes(character.class.toLowerCase()) ||
-    isCasterSubclass(character.subclass);
+    ['cleric', 'druid', 'wizard', 'sorcerer', 'warlock', 'bard', 'paladin', 'ranger'].includes(
+      character.class.toLowerCase()
+    ) || isCasterSubclass(character.subclass);
 
-  // Silah bazlı dönüştürmeli hasar zarı animasyonu state'i (2d6 -> 10 -> [10] 2d6)
-  const [damageAnimState, setDamageAnimState] = useState<
-    Record<string, { isRolling: boolean; labelText: string; ghostVal: string | null }>
-  >({});
-
-  // Doğrudan Kağıt Üzerinden Zar Atma (D&D Beyond tarzı tıkla-at, 8 saniye ekranda kalır, net d20 ve modifikasyon)
+  // Kağıt Üzerinden Zar Atma (8 saniye ekranda kalır, net d20 ve modifikasyon)
   const rollCheck = (label: string, mod: number) => {
     soundEffects.playDiceRollSound();
     const d20 = Math.floor(Math.random() * 20) + 1;
@@ -209,7 +217,7 @@ export const ModernCharacterSheet: React.FC = () => {
   };
 
   // Hasar zarı animasyonlu atışı
-  const handleAnimatedDamageRoll = (weapon: import('../types/character').WeaponItem, abilityMod: number) => {
+  const handleAnimatedDamageRoll = (weapon: WeaponItem, abilityMod: number) => {
     soundEffects.playDiceRollSound();
     const wId = weapon.id;
     const defaultLabel = `${weapon.damage}+${abilityMod}`;
@@ -267,8 +275,7 @@ export const ModernCharacterSheet: React.FC = () => {
   };
 
   // Envanterden kuşanma / çıkarma yapıldığında AC ve Silahları senkronize et
-  // KURAL: Aynı anda sadece 1 adet zırh takılabilir, zırh çıkarılınca AC unarmored seviyesine döner
-  const handleInventoryChange = (newInventory: import('../types/content').ItemData[]) => {
+  const handleInventoryChange = (newInventory: ItemData[]) => {
     const equippedArmorItem = newInventory.find(
       (i) => i.equipped && i.type === 'armor'
     );
@@ -348,7 +355,7 @@ export const ModernCharacterSheet: React.FC = () => {
 
   // İksir Kullanımı (Potion Usage) & Can Yenileme
   const handleUsePotion = (
-    item: import('../types/content').ItemData,
+    item: ItemData,
     healAmount: number,
     formula: string,
     rolls: number[]
@@ -378,7 +385,7 @@ export const ModernCharacterSheet: React.FC = () => {
     });
   };
 
-  // Second Wind
+  // Savaşçı: Second Wind
   const handleSecondWind = () => {
     soundEffects.playDiceRollSound();
     const roll = Math.floor(Math.random() * 10) + 1;
@@ -438,13 +445,6 @@ export const ModernCharacterSheet: React.FC = () => {
     setTimeout(() => setQuickToast(null), 4500);
   };
 
-  // Filtrelenmiş Beceriler
-  const filteredSkills = SKILLS.filter(
-    (sk) =>
-      sk.nameTr.toLowerCase().includes(skillFilter.toLowerCase()) ||
-      sk.name.toLowerCase().includes(skillFilter.toLowerCase())
-  );
-
   return (
     <div id="modern-character-sheet-container" className="dndbeyond-sheet-container">
       {/* Sinematik Ölüm Eşiği (HP = 0) Modu */}
@@ -464,26 +464,13 @@ export const ModernCharacterSheet: React.FC = () => {
       />
 
       {/* 0 HP Acil Durum / Ölüm Ekranına Dönüş Banner'ı */}
-      {character.currentHp <= 0 && isDeathDismissed && (
-        <div className="sheet-death-emergency-banner" role="alert" id="death-emergency-banner">
-          <div className="emergency-info">
-            <span className="emergency-icon">💀</span>
-            <div className="emergency-text">
-              <strong>ÖLÜM EŞİĞİNDESİN (HP: 0)!</strong> Bilincin kapalı, her tur ölüm kurtarma zarı atmalısın.
-              <span className="emergency-stats">
-                (Başarı: {character.deathSaves?.successes ?? 0}/3 • Başarısızlık: {character.deathSaves?.failures ?? 0}/3)
-              </span>
-            </div>
-          </div>
-          <button
-            id="btn-reopen-death-modal"
-            className="emergency-reopen-btn"
-            onClick={() => setIsDeathDismissed(false)}
-          >
-            💀 Ölüm Zarları Ekranına Dön
-          </button>
-        </div>
-      )}
+      <SheetEmergencyDeathBanner
+        currentHp={character.currentHp}
+        isDismissed={isDeathDismissed}
+        successes={character.deathSaves?.successes ?? 0}
+        failures={character.deathSaves?.failures ?? 0}
+        onReopen={() => setIsDeathDismissed(false)}
+      />
 
       {/* Demo Uyarısı */}
       {isDemo && (
@@ -493,442 +480,91 @@ export const ModernCharacterSheet: React.FC = () => {
         </div>
       )}
 
-      {/* Hızlı Zar Bildirim Banner'ı (D&D Beyond Toast Style - 8s kalır, okunabilir net d20 ve modifikasyon) */}
-      {quickToast && (
-        <div
-          className={`sheet-quick-toast ${quickToast.isCrit ? 'crit' : ''} ${quickToast.isFumble ? 'fumble' : ''}`}
-          role="status"
-          aria-live="polite"
-        >
-          <div className="toast-inner-row">
-            <span className="toast-icon">{quickToast.isCrit ? '🌟 KRİTİK BAŞARI!' : quickToast.isFumble ? '💀 DOĞAL 1!' : '🎲 ZAR SONUCU'}</span>
-            {quickToast.label && <span className="toast-label-chip">{quickToast.label}</span>}
-            <div className="toast-breakdown">
-              {quickToast.d20 !== undefined && (
-                <span className="toast-die-roll">d20: <strong>{quickToast.d20}</strong></span>
-              )}
-              {quickToast.mod !== undefined && (
-                <span className="toast-mod-span">{quickToast.mod >= 0 ? `+ ${quickToast.mod}` : `- ${Math.abs(quickToast.mod)}`}</span>
-              )}
-              {quickToast.total !== undefined && (
-                <>
-                  <span className="toast-equals">=</span>
-                  <span className="toast-total-badge">{quickToast.total}</span>
-                </>
-              )}
-              {quickToast.d20 === undefined && quickToast.total === undefined && (
-                <span className="toast-simple-text">{quickToast.text}</span>
-              )}
-            </div>
-            <button className="toast-dismiss" onClick={() => setQuickToast(null)}>✕</button>
-          </div>
-        </div>
-      )}
+      {/* Hızlı Zar Bildirim Banner'ı (D&D Beyond Toast Style - 8s) */}
+      <SheetQuickToast toast={quickToast} onDismiss={() => setQuickToast(null)} />
 
-      {/* 1. ÜST BAR: PORTRE, KİMLİK & DİNLENME BUTONLARI */}
-      <header className="dndbeyond-top-bar">
-        <div className="dndbeyond-avatar-name">
-          <div className="dndbeyond-avatar-circle font-cinzel">
-            {character.name.charAt(0)}
-          </div>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <h2 className="font-cinzel" style={{ color: 'var(--text-primary)', margin: 0, fontSize: '1.4rem' }}>
-                {character.name}
-              </h2>
-              {character.subclass && (
-                <span style={{ fontSize: '0.78rem', background: 'rgba(212, 175, 53, 0.15)', color: 'var(--accent-gold)', border: '1px solid var(--border-gold)', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>
-                  {character.subclass}
-                </span>
-              )}
-            </div>
-            <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
-              {character.race} • {character.class.toUpperCase()} Seviye {character.level} • {character.background}
-              {character.playerName && ` • 👤 ${character.playerName}`}
-            </div>
-          </div>
-        </div>
+      {/* 1. ÜST HEADER: Portre, Karakter kimliği, Dinlenme, Stat Kilidi */}
+      <SheetHeader
+        character={character}
+        combatMode={combatMode}
+        onToggleCombatMode={() => setCombatMode(!combatMode)}
+        onShortRest={handleShortRest}
+        onLongRest={handleLongRest}
+        isLocked={isLocked}
+        onToggleLock={() => setIsLocked(!isLocked)}
+      />
 
-        {/* Sağ Kısım: Savaş Modu, Kısa / Uzun Dinlenme ve Stat Kilidi */}
-        <div className="dndbeyond-rest-btn-group">
-          <button
-            id="btn-toggle-combat-mode"
-            className={`dndbeyond-rest-btn ${combatMode ? 'combat-mode-active' : ''}`}
-            onClick={() => setCombatMode(!combatMode)}
-            title="Savaş Modu (Action / Bonus / Movement Takibi)"
-          >
-            ⚔️ {combatMode ? 'SAVAŞ MODU (AÇIK)' : 'SAVAŞ MODU'}
-          </button>
-          <button
-            className="dndbeyond-rest-btn"
-            onClick={handleShortRest}
-            title="Kısa Dinlenme (Can zarı harca)"
-          >
-            ⛺ SHORT REST
-          </button>
-          <button
-            className="dndbeyond-rest-btn"
-            onClick={handleLongRest}
-            title="Uzun Dinlenme (Tüm canı yenile)"
-          >
-            🌙 LONG REST
-          </button>
-          <button
-            id="btn-toggle-stat-lock"
-            className="dndbeyond-rest-btn"
-            onClick={() => setIsLocked(!isLocked)}
-            title={isLocked ? 'Statlar kilitli' : 'Stat düzenleme modu açık'}
-          >
-            {isLocked ? '🔒 Kilitli' : '🔓 Duzenle'}
-          </button>
-        </div>
-      </header>
-
-      {/* 2. YATAY BANT: 6 YETENEK SKORU KARTI & SAVAŞ GÖSTERGELERİ */}
-      <section className="dndbeyond-hud-row">
-        {/* 6'lı Yetenek Skorları Bandı (Modifikatör üstte büyük, skor altta rozette) */}
-        <div className="dndbeyond-abilities-band" id="ability-scores-column">
-          {[
-            { id: 'str' as const, label: 'STRENGTH', name: 'Güç', val: character.baseAbilities.str, mod: strMod },
-            { id: 'dex' as const, label: 'DEXTERITY', name: 'Çeviklik', val: character.baseAbilities.dex, mod: dexMod },
-            { id: 'con' as const, label: 'CONSTITUTION', name: 'Dayanıklılık', val: character.baseAbilities.con, mod: conMod },
-            { id: 'int' as const, label: 'INTELLIGENCE', name: 'Zeka', val: character.baseAbilities.int, mod: intMod },
-            { id: 'wis' as const, label: 'WISDOM', name: 'Bilgelik', val: character.baseAbilities.wis, mod: wisMod },
-            { id: 'cha' as const, label: 'CHARISMA', name: 'Karizma', val: character.baseAbilities.cha, mod: chaMod }
-          ].map((st) => (
-            <div
-              key={st.id}
-              className="dndbeyond-stat-badge"
-              id={`ability-box-${st.id}`}
-              onClick={() => rollCheck(`${st.name} (${st.label}) Kontrolü`, st.mod)}
-              title={`${st.name} Zarı At (1d20+${st.mod})`}
-            >
-              <span className="dndbeyond-stat-label">{st.label.slice(0, 3)}</span>
-              <span className="dndbeyond-stat-mod">
-                {st.mod >= 0 ? `+${st.mod}` : st.mod}
-              </span>
-              <span className="dndbeyond-stat-score-pill">{st.val}</span>
-              {!isLocked && (
-                <div className="unlocked-stat-stepper" onClick={(e) => e.stopPropagation()}>
-                  <button onClick={() => handleStatChange(st.id, -1)}>-</button>
-                  <button onClick={() => handleStatChange(st.id, +1)}>+</button>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-
-        {/* Savaş Göstergeleri: Ustalık, Hız, İnisiyatif, AC, Can Barı */}
-        <div className="dndbeyond-combat-hud-group">
-          {/* Ustalık Bonusu */}
-          <div className="dndbeyond-hud-box">
-            <span className="dndbeyond-stat-label">PROFICIENCY</span>
-            <span style={{ fontSize: '1.25rem', fontWeight: 900, color: 'var(--text-primary)' }}>
-              +{profBonus}
-            </span>
-            <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>BONUS</span>
-          </div>
-
-          {/* Yürüme Hızı */}
-          <div className="dndbeyond-hud-box">
-            <span className="dndbeyond-stat-label">SPEED</span>
-            <span style={{ fontSize: '1.25rem', fontWeight: 900, color: 'var(--text-primary)' }}>
-              30 <span style={{ fontSize: '0.8rem' }}>ft</span>
-            </span>
-            <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>WALKING</span>
-          </div>
-
-          {/* İnisiyatif (Elmas Şekli) */}
-          <div
-            className="dndbeyond-hud-box"
-            onClick={() => rollCheck('İnisiyatif', dexMod)}
-            style={{ cursor: 'pointer', border: '1px solid rgba(212, 175, 53, 0.4)' }}
-            title="İnisiyatif Zarı At (1d20+DEX)"
-          >
-            <span className="dndbeyond-stat-label">INITIATIVE</span>
-            <span style={{ fontSize: '1.35rem', fontWeight: 900, color: 'var(--accent-gold)' }}>
-              {dexMod >= 0 ? `+${dexMod}` : dexMod}
-            </span>
-          </div>
-
-          {/* Zırh Sınıfı (Kalkan Şekli) */}
-          <div className="dndbeyond-hud-box" style={{ border: '1px solid rgba(200, 30, 30, 0.4)' }}>
-            <span className="dndbeyond-stat-label">ARMOR CLASS</span>
-            <span style={{ fontSize: '1.35rem', fontWeight: 900, color: '#fff' }} id="sheet-ac-val">
-              🛡️ {ac}
-            </span>
-          </div>
-
-          {/* Heroic Inspiration (Stacklenebilir İlham) */}
-          <div
-            className="dndbeyond-hud-box dndbeyond-inspiration-box"
-            title="Heroic Inspiration (Stacklenebilir İlham)"
-          >
-            <span className="dndbeyond-stat-label">INSPIRATION</span>
-            <div className="inspiration-content-row">
-              <span className="inspiration-icon">✨</span>
-              <span className="inspiration-count-val" id="sheet-inspiration-val">
-                {character.inspiration ?? 0}
-              </span>
-            </div>
-            <div className="unlocked-stat-stepper" style={{ marginTop: '0.15rem' }}>
-              <button
-                type="button"
-                id="btn-inspiration-dec"
-                onClick={() => updateInspiration(Math.max(0, (character.inspiration ?? 0) - 1))}
-                title="İlham Harca"
-              >
-                -
-              </button>
-              <button
-                type="button"
-                id="btn-inspiration-inc"
-                onClick={() => updateInspiration((character.inspiration ?? 0) + 1)}
-                title="İlham Ekle"
-              >
-                +
-              </button>
-            </div>
-          </div>
-
-          {/* Can Puanı Modülü (HEAL / DAMAGE Butonları & Can) */}
-          <div className="dndbeyond-hp-module">
-            <div className="dndbeyond-hp-btn-col">
-              <button
-                className="dndbeyond-hp-mini-btn heal"
-                onClick={() => handleApplyCustomHp(true)}
-                title="Can Ver"
-              >
-                HEAL
-              </button>
-              <input
-                type="number"
-                placeholder="±"
-                value={customHpInput}
-                onChange={(e) => setCustomHpInput(e.target.value)}
-                style={{ width: '42px', padding: '0.1rem', fontSize: '0.75rem', background: '#090d16', border: '1px solid #334155', color: '#fff', borderRadius: '3px', textAlign: 'center' }}
-              />
-              <button
-                className="dndbeyond-hp-mini-btn damage"
-                onClick={() => handleApplyCustomHp(false)}
-                title="Hasar Ver"
-              >
-                DMG
-              </button>
-            </div>
-
-            <div>
-              <span className="dndbeyond-stat-label" style={{ display: 'block', marginBottom: '0.15rem' }}>HIT POINTS</span>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.3rem' }}>
-                <strong style={{ fontSize: '1.35rem', color: character.currentHp <= 5 ? '#ef4444' : '#22c55e' }}>
-                  {character.currentHp}
-                </strong>
-                <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>/ {character.maxHp}</span>
-                {character.tempHp > 0 && (
-                  <span style={{ fontSize: '0.75rem', color: '#38bdf8' }}>(+{character.tempHp})</span>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* 2. SAVAŞ & STAT ROZETLERİ BANDI */}
+      <CombatHudRow
+        character={character}
+        strMod={strMod}
+        dexMod={dexMod}
+        conMod={conMod}
+        intMod={intMod}
+        wisMod={wisMod}
+        chaMod={chaMod}
+        profBonus={profBonus}
+        ac={ac}
+        isLocked={isLocked}
+        customHpInput={customHpInput}
+        onChangeCustomHpInput={setCustomHpInput}
+        onApplyCustomHp={handleApplyCustomHp}
+        onStatChange={handleStatChange}
+        onRollCheck={rollCheck}
+        onUpdateInspiration={(count) => {
+          if (!isDemo) updateInspiration(count);
+        }}
+      />
 
       {/* SAVAŞ MODU PANELİ (Eylemler, Bonus Action, Tepki ve Hareket Takibi) */}
-      {combatMode && (
-        <section className="combat-mode-turn-panel" id="combat-mode-panel">
-          <div className="combat-panel-top">
-            <div className="combat-turn-indicator">
-              <span className="combat-live-indicator"></span>
-              <span className="font-cinzel combat-heading">SAVAŞ MODU • SENİN TURUN</span>
-            </div>
-            <button
-              id="btn-combat-end-turn"
-              className="combat-end-turn-btn"
-              onClick={() => {
-                soundEffects.playDiceRollSound();
-                setActionUsed(false);
-                setBonusActionUsed(false);
-                setReactionUsed(false);
-                setRemainingSpeed(baseSpeed);
-                setQuickToast({
-                  text: `🔄 Tur tamamlandı! Eylemler ve hareket (${baseSpeed} ft) tazelendi.`,
-                });
-                setTimeout(() => setQuickToast(null), 5000);
-              }}
-            >
-              🔄 Sırayı / Turu Bitir (Eylemleri Tazele)
-            </button>
-          </div>
+      <CombatModePanel
+        combatMode={combatMode}
+        actionUsed={actionUsed}
+        onToggleAction={() => setActionUsed(!actionUsed)}
+        bonusActionUsed={bonusActionUsed}
+        onToggleBonusAction={() => setBonusActionUsed(!bonusActionUsed)}
+        reactionUsed={reactionUsed}
+        onToggleReaction={() => setReactionUsed(!reactionUsed)}
+        remainingSpeed={remainingSpeed}
+        baseSpeed={baseSpeed}
+        onSpendSpeed={(amt) => setRemainingSpeed((s) => Math.max(0, s - amt))}
+        onResetSpeed={() => setRemainingSpeed(baseSpeed)}
+        onEndTurn={() => {
+          soundEffects.playDiceRollSound();
+          setActionUsed(false);
+          setBonusActionUsed(false);
+          setReactionUsed(false);
+          setRemainingSpeed(baseSpeed);
+          setQuickToast({
+            text: `🔄 Tur tamamlandı! Eylemler ve hareket (${baseSpeed} ft) tazelendi.`,
+          });
+          setTimeout(() => setQuickToast(null), 5000);
+        }}
+      />
 
-          <div className="combat-slots-grid">
-            {/* Action */}
-            <div
-              className={`combat-slot-card ${actionUsed ? 'used' : 'ready'}`}
-              onClick={() => setActionUsed(!actionUsed)}
-              role="button"
-              tabIndex={0}
-              title="Tıklayarak harca veya geri al"
-            >
-              <div className="slot-type">ANA EYLEM (ACTION)</div>
-              <div className="slot-state">{actionUsed ? '✓ Harcandı' : '⚡ 1/1 Hazır'}</div>
-              <div className="slot-desc">Saldırı, Büyü Yapma, Dash, Dodge vb.</div>
-            </div>
-
-            {/* Bonus Action */}
-            <div
-              className={`combat-slot-card ${bonusActionUsed ? 'used' : 'ready'}`}
-              onClick={() => setBonusActionUsed(!bonusActionUsed)}
-              role="button"
-              tabIndex={0}
-              title="Tıklayarak harca veya geri al"
-            >
-              <div className="slot-type">BONUS ACTION</div>
-              <div className="slot-state">{bonusActionUsed ? '✓ Harcandı' : '✨ 1/1 Hazır'}</div>
-              <div className="slot-desc">Hızlı büyüler, İkinci Nefes vb.</div>
-            </div>
-
-            {/* Reaction */}
-            <div
-              className={`combat-slot-card ${reactionUsed ? 'used' : 'ready'}`}
-              onClick={() => setReactionUsed(!reactionUsed)}
-              role="button"
-              tabIndex={0}
-              title="Tıklayarak harca veya geri al"
-            >
-              <div className="slot-type">TEPKİ (REACTION)</div>
-              <div className="slot-state">{reactionUsed ? '✓ Harcandı' : '🛡️ 1/1 Hazır'}</div>
-              <div className="slot-desc">Fırsat saldırısı, Kalkan büyüsü vb.</div>
-            </div>
-
-            {/* Movement Speed */}
-            <div className="combat-slot-card movement-tracker">
-              <div className="slot-type">HAREKET (SPEED)</div>
-              <div className="movement-display">
-                <span className="movement-current" id="val-remaining-speed">{remainingSpeed}</span>
-                <span className="movement-max">/ {baseSpeed} ft</span>
-              </div>
-              <div className="movement-actions">
-                <button
-                  type="button"
-                  disabled={remainingSpeed <= 0}
-                  onClick={() => setRemainingSpeed((s) => Math.max(0, s - 5))}
-                  title="5 ft yürü"
-                >
-                  -5 ft
-                </button>
-                <button
-                  type="button"
-                  disabled={remainingSpeed <= 0}
-                  onClick={() => setRemainingSpeed((s) => Math.max(0, s - 10))}
-                  title="10 ft yürü"
-                >
-                  -10 ft
-                </button>
-                <button
-                  type="button"
-                  disabled={remainingSpeed >= baseSpeed}
-                  onClick={() => setRemainingSpeed((s) => Math.min(baseSpeed, s + 5))}
-                  title="5 ft geri al"
-                >
-                  +5 ft
-                </button>
-                <button
-                  type="button"
-                  className="reset-speed-btn"
-                  onClick={() => setRemainingSpeed(baseSpeed)}
-                  title="Hareketi sıfırla (tazele)"
-                >
-                  ↺
-                </button>
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* 3. BENTO 3-COLUMN ANA GÖVDE (Nielsen #8 & D&D Beyond Layout) */}
+      {/* 3. BENTO 3-COLUMN ANA GÖVDE */}
       <div className="dndbeyond-bento-grid">
-        
-        {/* =========================================================================
-            SOL SÜTUN: KURTARMA ZARLARI, DUYULAR & USTALIKLAR
-            ========================================================================= */}
+        {/* SOL SÜTUN: KURTARMA ZARLARI, DUYULAR & USTALIKLAR */}
         <aside className="dndbeyond-left-col" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          
-          {/* Kurtarma Zarları (Saving Throws) — 2 Sütunlu Grid */}
-          <div className="dndbeyond-card">
-            <div className="dndbeyond-card-header">SAVING THROWS (Kurtarma Zarları)</div>
-            <div className="saving-throws-grid-2col">
-              {[
-                { id: 'str', label: 'STR', name: 'Güç', mod: strMod },
-                { id: 'int', label: 'INT', name: 'Zeka', mod: intMod },
-                { id: 'dex', label: 'DEX', name: 'Çeviklik', mod: dexMod },
-                { id: 'wis', label: 'WIS', name: 'Bilgelik', mod: wisMod },
-                { id: 'con', label: 'CON', name: 'Dayanıklılık', mod: conMod },
-                { id: 'cha', label: 'CHA', name: 'Karizma', mod: chaMod },
-              ].map((st) => {
-                const isProf = character.proficientSavingThrows.includes(st.id);
-                const totalSaveMod = isProf ? st.mod + profBonus : st.mod;
+          <SavingThrowsCard
+            character={character}
+            strMod={strMod}
+            dexMod={dexMod}
+            conMod={conMod}
+            intMod={intMod}
+            wisMod={wisMod}
+            chaMod={chaMod}
+            profBonus={profBonus}
+            onRollCheck={rollCheck}
+          />
 
-                return (
-                  <div
-                    key={st.id}
-                    className={`saving-throw-item ${isProf ? 'proficient' : ''}`}
-                    onClick={() => rollCheck(`${st.name} (${st.label}) Kurtarma Zarı`, totalSaveMod)}
-                    title={`${st.name} Kurtarma Zarı At`}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                      <span className="st-dot">{isProf ? '●' : '○'}</span>
-                      <span style={{ fontWeight: isProf ? 800 : 500 }}>{st.label}</span>
-                    </div>
-                    <strong style={{ color: isProf ? 'var(--accent-red)' : 'var(--text-secondary)' }}>
-                      {totalSaveMod >= 0 ? `+${totalSaveMod}` : totalSaveMod}
-                    </strong>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+          <SensesCard
+            passivePerception={passivePerception}
+            passiveInvestigation={passiveInvestigation}
+            passiveInsight={passiveInsight}
+          />
 
-          {/* Duyular (Senses) */}
-          <div className="dndbeyond-card" id="passive-senses-box">
-            <div className="dndbeyond-card-header">SENSES (Duyular & Algı)</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', fontSize: '0.82rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', background: 'rgba(0,0,0,0.25)', padding: '0.3rem 0.5rem', borderRadius: '4px' }}>
-                <span style={{ color: 'var(--text-secondary)' }}>Passive Perception:</span>
-                <strong style={{ color: 'var(--accent-gold)' }} id="val-passive-perception">{passivePerception}</strong>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', background: 'rgba(0,0,0,0.25)', padding: '0.3rem 0.5rem', borderRadius: '4px' }}>
-                <span style={{ color: 'var(--text-secondary)' }}>Passive Investigation:</span>
-                <strong style={{ color: 'var(--accent-gold)' }} id="val-passive-investigation">{passiveInvestigation}</strong>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', background: 'rgba(0,0,0,0.25)', padding: '0.3rem 0.5rem', borderRadius: '4px' }}>
-                <span style={{ color: 'var(--text-secondary)' }}>Passive Insight:</span>
-                <strong style={{ color: 'var(--accent-gold)' }}>{passiveInsight}</strong>
-              </div>
-              <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
-                🌙 Darkvision: 60 ft.
-              </div>
-            </div>
-          </div>
-
-          {/* Ustalıklar (Proficiencies) */}
-          <div className="dndbeyond-card">
-            <div className="dndbeyond-card-header">PROFICIENCIES (Eğitimler)</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', fontSize: '0.78rem' }}>
-              <div>
-                <strong style={{ color: 'var(--text-primary)' }}>Armor:</strong>{' '}
-                <span style={{ color: 'var(--text-secondary)' }}>Light, Medium, Shields</span>
-              </div>
-              <div>
-                <strong style={{ color: 'var(--text-primary)' }}>Weapons:</strong>{' '}
-                <span style={{ color: 'var(--text-secondary)' }}>Simple Weapons, Martial Weapons</span>
-              </div>
-              <div>
-                <strong style={{ color: 'var(--text-primary)' }}>Languages:</strong>{' '}
-                <span style={{ color: 'var(--text-secondary)' }}>Common, Elvish / Dwarvish</span>
-              </div>
-            </div>
-          </div>
+          <ProficienciesCard />
 
           {/* Ölüm Kurtarma Zarları Widget'ı */}
           <div className="dndbeyond-card">
@@ -942,65 +578,24 @@ export const ModernCharacterSheet: React.FC = () => {
               }}
             />
           </div>
-
         </aside>
 
-        {/* =========================================================================
-            ORTA SÜTUN: ALFABETİK 18 BECERİ MATRİSİ (A-Z SKILLS TABLE)
-            ========================================================================= */}
-        <section className="dndbeyond-middle-col">
-          <div className="dndbeyond-card" id="skills-list-container">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div className="dndbeyond-card-header" style={{ border: 'none', padding: 0, margin: 0 }}>
-                SKILLS (Beceriler)
-              </div>
-              <input
-                type="text"
-                placeholder="Ara..."
-                value={skillFilter}
-                onChange={(e) => setSkillFilter(e.target.value)}
-                style={{ width: '80px', padding: '0.15rem 0.4rem', fontSize: '0.72rem', background: '#0a0d16', border: '1px solid var(--border-subtle)', borderRadius: '4px', color: '#fff' }}
-              />
-            </div>
+        {/* ORTA SÜTUN: ALFABETİK 18 BECERİ MATRİSİ */}
+        <SkillsListCard
+          character={character}
+          strMod={strMod}
+          dexMod={dexMod}
+          conMod={conMod}
+          intMod={intMod}
+          wisMod={wisMod}
+          chaMod={chaMod}
+          profBonus={profBonus}
+          onRollCheck={rollCheck}
+        />
 
-            <div className="skills-bento-table" style={{ marginTop: '0.4rem' }}>
-              {filteredSkills.map((sk) => {
-                const isProf = character.proficientSkills.includes(sk.id);
-                const modVal = sk.ability === 'str' ? strMod
-                  : sk.ability === 'dex' ? dexMod
-                  : sk.ability === 'con' ? conMod
-                  : sk.ability === 'int' ? intMod
-                  : sk.ability === 'wis' ? wisMod : chaMod;
-
-                const totalMod = calculateSkillModifier(modVal, isProf, profBonus);
-
-                return (
-                  <div
-                    key={sk.id}
-                    className={`skill-bento-row ${isProf ? 'proficient' : ''}`}
-                    onClick={() => rollCheck(`${sk.nameTr} (${sk.name}) Kontrolü`, totalMod)}
-                    title={`${sk.nameTr} Zarı At (1d20 ${totalMod >= 0 ? `+${totalMod}` : totalMod})`}
-                  >
-                    <span className="skill-bento-dot">{isProf ? '●' : '○'}</span>
-                    <span className="skill-bento-mod-tag">{sk.ability.toUpperCase()}</span>
-                    <span className="skill-bento-name">{sk.nameTr}</span>
-                    <span className="skill-bento-bonus">
-                      {totalMod >= 0 ? `+${totalMod}` : totalMod}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </section>
-
-        {/* =========================================================================
-            SAĞ SÜTUN: D&D BEYOND SEAN0205 PILL TABS & İÇERİK ALANI
-            ========================================================================= */}
-        <main className="dndbeyond-right-col" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-          
-          {/* 21st.dev / sean0205 Tabs Pill Navigasyon Çubuğu */}
-          <nav className="dndbeyond-pill-tabs-nav" role="tablist">
+        {/* SAĞ SÜTUN: SEKMELER */}
+        <main className="dndbeyond-right-col" id="sheet-tabs-main">
+          <nav className="dndbeyond-pills-nav" id="dndbeyond-pills-tab-nav">
             <button
               id="tab-btn-actions"
               className={`dndbeyond-pill-tab ${activeTab === 'actions' ? 'active' : ''}`}
@@ -1015,23 +610,13 @@ export const ModernCharacterSheet: React.FC = () => {
             >
               🎒 INVENTORY ({character.inventory?.length ?? 0})
             </button>
-            {isSpellcaster ? (
-              <button
-                id="tab-btn-spells"
-                className={`dndbeyond-pill-tab ${activeTab === 'spells' ? 'active' : ''}`}
-                onClick={() => setActiveTab('spells')}
-              >
-                📜 SPELLS
-              </button>
-            ) : (
-              <button
-                id="tab-btn-spells"
-                className={`dndbeyond-pill-tab ${activeTab === 'spells' ? 'active' : ''}`}
-                onClick={() => setActiveTab('spells')}
-              >
-                ⚡ FEATURES
-              </button>
-            )}
+            <button
+              id="tab-btn-spells"
+              className={`dndbeyond-pill-tab ${activeTab === 'spells' ? 'active' : ''}`}
+              onClick={() => setActiveTab('spells')}
+            >
+              {isSpellcaster ? '📜 SPELLS' : '⚡ FEATURES'}
+            </button>
             <button
               id="tab-btn-features"
               className={`dndbeyond-pill-tab ${activeTab === 'features' ? 'active' : ''}`}
@@ -1062,123 +647,20 @@ export const ModernCharacterSheet: React.FC = () => {
             </button>
           </nav>
 
-          {/* 1. ACTIONS SEKMESİ (D&D Beyond 1:1 Attacks Table & Combat Actions) */}
+          {/* 1. ACTIONS SEKMESİ */}
           {activeTab === 'actions' && (
-            <div id="tab-content-actions" className="dndbeyond-card">
-              {/* Alt Filtre Hapları */}
-              <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
-                {(['all', 'attack', 'action', 'bonus', 'reaction'] as ActionSubPill[]).map((pill) => (
-                  <button
-                    key={pill}
-                    onClick={() => setActionSubPill(pill)}
-                    style={{
-                      background: actionSubPill === pill ? 'var(--accent-red)' : 'rgba(255,255,255,0.05)',
-                      color: actionSubPill === pill ? '#fff' : 'var(--text-muted)',
-                      border: 'none',
-                      borderRadius: '4px',
-                      padding: '0.2rem 0.55rem',
-                      fontSize: '0.72rem',
-                      fontWeight: 800,
-                      cursor: 'pointer'
-                    }}
-                  >
-                    {pill.toUpperCase()}
-                  </button>
-                ))}
-              </div>
-
-              {/* Attacks Tablosu */}
-              <div style={{ overflowX: 'auto' }}>
-                <table className="attacks-bento-table">
-                  <thead>
-                    <tr>
-                      <th>ATTACK</th>
-                      <th>RANGE</th>
-                      <th>HIT / DC</th>
-                      <th>DAMAGE</th>
-                      <th>NOTES</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {character.weapons.map((w) => {
-                      const abilityMod = w.abilityUsed === 'str' ? strMod : dexMod;
-                      const toHitMod = abilityMod + profBonus;
-                      const anim = damageAnimState[w.id];
-
-                      return (
-                        <tr key={w.id}>
-                          <td>
-                            <strong
-                              style={{ color: 'var(--text-primary)', display: 'block', cursor: 'pointer' }}
-                              onClick={() => openReference({
-                                type: 'item',
-                                data: {
-                                  slug: w.id,
-                                  name: w.name,
-                                  type: 'weapon',
-                                  cost: '15 gp',
-                                  weight: 3,
-                                  description: `${w.damage} ${w.damageType}. Özellikler: ${w.properties?.join(', ') || 'Standard'}. Menzil: ${w.range ?? '5 ft'}.`,
-                                  quantity: 1,
-                                  source: 'PHB',
-                                  source_ref: 'PHB',
-                                  license: 'OGL'
-                                }
-                              })}
-                              title="Detayları İncele (Reference Drawer)"
-                            >
-                              {w.name}
-                            </strong>
-                            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Melee Weapon • Mastery</span>
-                          </td>
-                          <td style={{ color: 'var(--text-secondary)' }}>{w.range ?? '5 ft'}</td>
-                          <td>
-                            <button
-                              id={`btn-attack-${w.id}`}
-                              className="dndbeyond-attack-box-btn"
-                              onClick={() => rollCheck(`${w.name} Saldırısı`, toHitMod)}
-                              title="1d20+Bonus ile Saldırı Yap"
-                            >
-                              {toHitMod >= 0 ? `+${toHitMod}` : toHitMod}
-                            </button>
-                          </td>
-                          <td>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                              <button
-                                id={`btn-damage-${w.id}`}
-                                className={`dndbeyond-attack-box-btn damage-active-btn ${anim?.isRolling ? 'rolling' : ''}`}
-                                style={{ background: 'rgba(200, 30, 30, 0.25)', borderColor: 'var(--accent-red)' }}
-                                onClick={() => handleAnimatedDamageRoll(w, abilityMod)}
-                                disabled={anim?.isRolling}
-                                title="Hasar Zarı At"
-                              >
-                                💥 {anim?.labelText || `${w.damage}+${abilityMod}`}
-                              </button>
-                              {anim?.ghostVal && (
-                                <span className="damage-prev-result-ghost">
-                                  [{anim.ghostVal}]
-                                </span>
-                              )}
-                            </div>
-                          </td>
-                          <td style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                            {w.properties?.join(', ') || 'Standard'} • {w.damageType}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Dövüş İçi Standart Eylemler (Actions in Combat) */}
-              <div style={{ marginTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '0.75rem' }}>
-                <span style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--accent-gold)' }}>ACTIONS IN COMBAT</span>
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '0.3rem 0' }}>
-                  Attack, Dash, Disengage, Dodge, Grapple, Help, Hide, Improvise, Influence, Ready, Search, Shove, Study, Utilize.
-                </p>
-              </div>
-            </div>
+            <ActionsTabContent
+              weapons={character.weapons}
+              strMod={strMod}
+              dexMod={dexMod}
+              profBonus={profBonus}
+              damageAnimState={damageAnimState}
+              actionSubPill={actionSubPill}
+              onChangeActionSubPill={setActionSubPill}
+              onRollCheck={rollCheck}
+              onAnimatedDamageRoll={handleAnimatedDamageRoll}
+              onOpenReference={openReference}
+            />
           )}
 
           {/* 2. SPELLS / CLASS FEATURES SEKMESİ */}
@@ -1187,48 +669,7 @@ export const ModernCharacterSheet: React.FC = () => {
               {isSpellcaster ? (
                 <Spellbook level={character.level} castingModifier={intMod} />
               ) : (
-                <div className="dndbeyond-card">
-                  <div className="dndbeyond-card-header">SAVAŞÇI YETENEKLERİ (CLASS FEATURES)</div>
-                  
-                  {/* Second Wind */}
-                  <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-gold)', borderRadius: '8px', padding: '0.85rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <strong style={{ color: 'var(--accent-gold)' }}>💨 İkinci Nefes (Second Wind)</strong>
-                      <button
-                        id="btn-second-wind-action"
-                        className="dndbeyond-attack-box-btn"
-                        style={{ background: '#16a34a', borderColor: '#22c55e', color: '#fff' }}
-                        onClick={handleSecondWind}
-                      >
-                        ❤️ 1d10 + {character.level} İyileş
-                      </button>
-                    </div>
-                    <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '0.4rem 0 0' }}>
-                      Bonus eylem olarak 1d10 + Savaşçı seviyen kadar can yenilersin. Kısa veya uzun dinlenmede dolar.
-                    </p>
-                  </div>
-
-                  {/* Action Surge */}
-                  <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-subtle)', borderRadius: '8px', padding: '0.85rem' }}>
-                    <strong style={{ color: '#fff' }}>⚡ Eylem Akışı (Action Surge)</strong>
-                    <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '0.4rem 0 0' }}>
-                      Kendi turunda fazladan 1 Eylem (Action) hakkı kazanırsın. Kısa veya uzun dinlenmede yenilenir.
-                    </p>
-                  </div>
-
-                  {/* Rage (Barbar ise) */}
-                  {character.class.toLowerCase() === 'barbarian' && (
-                    <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-red)', borderRadius: '8px', padding: '0.85rem' }}>
-                      <strong style={{ color: 'var(--accent-red)' }}>🔥 Öfke (Rage)</strong>
-                      <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', marginTop: '0.3rem' }}>
-                        <span>Kullanım:</span>
-                        <input type="checkbox" />
-                        <input type="checkbox" />
-                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>/ Long Rest</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
+                <FeaturesTabContent character={character} onSecondWind={handleSecondWind} />
               )}
             </div>
           )}
@@ -1290,7 +731,18 @@ export const ModernCharacterSheet: React.FC = () => {
                   <div className="dndbeyond-card-header">KAZANILAN HÜNERLER (FEATS)</div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
                     {character.feats.map((f) => (
-                      <span key={f} style={{ background: 'rgba(212, 175, 53, 0.2)', border: '1px solid var(--border-gold)', color: '#fef08a', padding: '0.2rem 0.6rem', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 700 }}>
+                      <span
+                        key={f}
+                        style={{
+                          background: 'rgba(212, 175, 53, 0.2)',
+                          border: '1px solid var(--border-gold)',
+                          color: '#fef08a',
+                          padding: '0.2rem 0.6rem',
+                          borderRadius: '4px',
+                          fontSize: '0.8rem',
+                          fontWeight: 700,
+                        }}
+                      >
                         ✦ {f.replace(/-/g, ' ').toUpperCase()}
                       </span>
                     ))}
@@ -1301,52 +753,10 @@ export const ModernCharacterSheet: React.FC = () => {
           )}
 
           {/* 5. BACKGROUND SEKMESİ */}
-          {activeTab === 'background' && (
-            <div className="dndbeyond-card">
-              <div className="dndbeyond-card-header">BACKGROUND & CHARACTERISTICS</div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.6rem', fontSize: '0.8rem', background: 'rgba(0,0,0,0.3)', padding: '0.75rem', borderRadius: '8px' }}>
-                <div><strong>Geçmiş:</strong> {character.background}</div>
-                <div><strong>Irk / Tür:</strong> {character.race}</div>
-                <div><strong>Boyut:</strong> Medium</div>
-                <div><strong>Hizalanma:</strong> Neutral Good</div>
-                <div><strong>Gözler:</strong> Kahverengi</div>
-                <div><strong>Saç:</strong> Kızıl / Sakallı</div>
-              </div>
-
-              {character.backstory ? (
-                <div style={{ marginTop: '0.6rem' }}>
-                  <strong>Karakter Hikayesi:</strong>
-                  <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginTop: '0.3rem' }}>
-                    {character.backstory}
-                  </p>
-                </div>
-              ) : (
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                  Karakter geçmişi henüz yazılmadı. Seviye atlama ekranından ekleyebilirsiniz.
-                </p>
-              )}
-            </div>
-          )}
+          {activeTab === 'background' && <BackgroundTabContent character={character} />}
 
           {/* 6. NOTES SEKMESİ */}
-          {activeTab === 'notes' && (
-            <div className="dndbeyond-card">
-              <div className="dndbeyond-card-header">CAMPAIGN & ADVENTURE NOTES</div>
-              <textarea
-                placeholder="Önemli NPC'ler, harita konumları, görevler ve ganimet notları..."
-                rows={8}
-                style={{
-                  width: '100%',
-                  background: 'rgba(10, 13, 22, 0.8)',
-                  border: '1px solid var(--border-subtle)',
-                  borderRadius: '6px',
-                  color: '#fff',
-                  padding: '0.6rem',
-                  fontSize: '0.85rem'
-                }}
-              />
-            </div>
-          )}
+          {activeTab === 'notes' && <NotesTabContent />}
 
           {/* 7. CONDITIONS SEKMESİ */}
           {activeTab === 'conditions' && (
@@ -1359,9 +769,7 @@ export const ModernCharacterSheet: React.FC = () => {
               />
             </div>
           )}
-
         </main>
-
       </div>
     </div>
   );

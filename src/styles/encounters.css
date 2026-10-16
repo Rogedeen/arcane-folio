@@ -1,0 +1,482 @@
+/* DM Dashboard */
+.dm-dashboard-card {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 1.5rem;
+}
+
+.dm-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.role-badge {
+  padding: 0.4rem 0.85rem;
+  border-radius: 9999px;
+  border: 1px solid;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.party-members-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 1.25rem;
+}
+
+.party-member-card {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  transition: all 0.2s;
+}
+
+.party-member-card.member-bloodied {
+  border-color: rgba(245, 158, 11, 0.5);
+  box-shadow: 0 0 15px rgba(245, 158, 11, 0.15);
+}
+
+.party-member-card.member-down {
+  border-color: #ef4444;
+  box-shadow: 0 0 15px rgba(239, 68, 68, 0.25);
+  background: rgba(239, 68, 68, 0.08);
+}
+
+.member-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.member-name {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.2rem;
+}
+
+.member-subtitle {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.member-ac-badge {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--accent-gold);
+}
+
+.member-hp-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.member-hp-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.member-hp-numbers strong {
+  font-size: 1.1rem;
+  color: #34d399;
+}
+
+.member-hp-track {
+  width: 100%;
+  height: 8px;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.member-hp-fill {
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 0.3s ease-out, background 0.3s ease-out;
+}
+
+.member-radar-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  padding-top: 0.75rem;
+}
+
+.passive-perception-tag {
+  color: var(--text-secondary);
+}
+
+.passive-perception-tag strong {
+  color: var(--accent-gold);
+}
+
+.member-conditions-tags {
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+}
+
+.member-cond-tag {
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid #ef4444;
+  border-radius: 9999px;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.7rem;
+  color: #fca5a5;
+  font-weight: 600;
+}
+
+.dm-actions-bar {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 0.25rem;
+}
+
+.dm-action-btn {
+  flex: 1;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0.4rem 0.5rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: all 0.15s;
+}
+
+.dm-btn-damage {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  color: #fca5a5;
+}
+
+.dm-btn-damage:hover {
+  background: rgba(239, 68, 68, 0.3);
+  border-color: #ef4444;
+}
+
+.dm-btn-heal {
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.5);
+  color: #6ee7b7;
+}
+
+.dm-btn-heal:hover {
+  background: rgba(16, 185, 129, 0.3);
+  border-color: #10b981;
+}
+
+.dm-btn-cond {
+  background: rgba(168, 85, 247, 0.15);
+  border: 1px solid rgba(168, 85, 247, 0.5);
+  color: #d8b4fe;
+}
+
+.dm-btn-cond:hover {
+  background: rgba(168, 85, 247, 0.3);
+  border-color: #a855f7;
+}
+
+/* ===================================================
+   V2: ANA GEZİNME & HOME HUB
+   =================================================== */
+.top-nav-bar {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding: 0.25rem 0;
+  scrollbar-width: none;
+}
+
+.top-nav-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.nav-tab-btn {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0.5rem 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease-in-out;
+  touch-action: manipulation;
+}
+
+.nav-tab-btn:hover {
+  border-color: var(--border-bronze);
+  color: var(--text-primary);
+  background: var(--bg-card-hover);
+}
+
+.nav-tab-btn:active {
+  transform: translateY(1px);
+}
+
+.nav-tab-btn.active {
+  background: linear-gradient(180deg, rgba(200, 155, 60, 0.25) 0%, rgba(140, 101, 39, 0.45) 100%);
+  border-color: var(--border-bronze);
+  color: #fff;
+  font-weight: 700;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 0 12px rgba(200, 155, 60, 0.25);
+}
+
+[data-theme="parchment"] .nav-tab-btn.active {
+  background: linear-gradient(180deg, #dfd2be 0%, #caa97b 100%);
+  border-color: #8c6527;
+  color: #1c1817;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 2px 6px rgba(100, 80, 50, 0.15);
+}
+
+.theme-toggle-btn {
+  min-height: 40px;
+  padding: 0.45rem 0.85rem;
+  background: var(--bg-inset);
+  border: 1px solid var(--border-bronze);
+  border-radius: var(--radius-sm);
+  color: var(--accent-gold);
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  transition: all 0.15s ease-in-out;
+  user-select: none;
+}
+
+.theme-toggle-btn:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--accent-gold);
+  box-shadow: 0 0 10px rgba(200, 155, 60, 0.25);
+}
+
+.theme-toggle-btn:active {
+  transform: translateY(1px);
+}
+
+.home-hub-root {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.hub-welcome-banner {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.85) 0%, rgba(15, 23, 42, 0.95) 100%);
+  border: 2px solid var(--border-gold);
+  border-radius: var(--radius-lg);
+  padding: 2.5rem 2rem;
+  text-align: center;
+  box-shadow: var(--shadow-glow), var(--shadow-card);
+}
+
+.hub-title {
+  font-size: 2.2rem;
+  color: var(--accent-gold);
+  margin-bottom: 0.75rem;
+  text-shadow: 0 0 20px rgba(245, 158, 11, 0.3);
+}
+
+.hub-subtitle {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  max-width: 700px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+.hub-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.5rem;
+}
+
+.hub-action-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 2rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.2s, box-shadow 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+
+.hub-action-card:hover {
+  transform: translateY(-6px);
+  border-color: var(--accent-gold);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.7), 0 0 20px rgba(245, 158, 11, 0.2);
+}
+
+.hub-card-icon {
+  font-size: 2.5rem;
+}
+
+.hub-card-title {
+  font-size: 1.25rem;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.hub-card-desc {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  flex: 1;
+  margin: 0;
+}
+
+.hub-card-btn {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--accent-gold);
+  margin-top: 0.5rem;
+}
+
+/* ===================================================
+   V2: D&D BEYOND TARZI TEK SAYFA KARAKTER KAĞIDI
+   =================================================== */
+.modern-sheet-root {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-bottom: 2.5rem;
+}
+
+.sheet-top-header {
+  background: var(--bg-card);
+  border: 1px solid var(--border-gold);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  box-shadow: var(--shadow-glow);
+}
+
+.char-identity-block {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.char-avatar {
+  width: 60px;
+  height: 60px;
+  background: radial-gradient(circle, var(--accent-gold) 0%, #92400e 100%);
+  border: 2px solid var(--border-gold);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  font-weight: 900;
+  color: #0f172a;
+  box-shadow: 0 0 15px rgba(245, 158, 11, 0.4);
+}
+
+.char-sheet-name {
+  font-size: 1.6rem;
+  color: var(--accent-gold);
+  margin: 0 0 0.3rem 0;
+}
+
+.char-sheet-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.subclass-tag {
+  color: #38bdf8;
+  font-weight: 600;
+}
+
+.header-stats-group {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.stat-pill-box {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 0.4rem 0.8rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.pill-title {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+}
+
+.pill-val {
+  font-size: 1.1rem;
+  font-weight: 900;
+  color: var(--text-primary);
+}
+
+.lock-toggle-btn {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0.5rem 0.9rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  touch-action: manipulation;
+  border: 1px solid;
+}
+
+.lock-toggle-btn.locked {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--border-subtle);
+  color: var(--text-secondary);
+}
+
+.lock-toggle-btn.unlocked {
+  background: rgba(245, 158, 11, 0.2);
+  border-color: var(--accent-gold);
+  color: #fbbf24;
+}

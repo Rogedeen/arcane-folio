@@ -1,0 +1,316 @@
+/* =============================================================================
+   CINEMATIC DEATH SAVES (DRAMATIC HP = 0 OVERLAY)
+   ============================================================================= */
+
+.cinematic-death-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  background: rgba(4, 7, 15, 0.88);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  animation: fadeInDeath 0.4s ease-out;
+}
+
+@keyframes fadeInDeath {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.cinematic-vignette-pulse {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  box-shadow: inset 0 0 120px rgba(220, 38, 38, 0.45), inset 0 0 250px rgba(0, 0, 0, 0.8);
+  animation: deathHeartbeat 1.8s infinite ease-in-out;
+}
+
+@keyframes deathHeartbeat {
+  0% { box-shadow: inset 0 0 100px rgba(220, 38, 38, 0.3), inset 0 0 220px rgba(0, 0, 0, 0.8); }
+  30% { box-shadow: inset 0 0 160px rgba(239, 68, 68, 0.65), inset 0 0 300px rgba(0, 0, 0, 0.9); }
+  60% { box-shadow: inset 0 0 110px rgba(220, 38, 38, 0.35), inset 0 0 240px rgba(0, 0, 0, 0.8); }
+  100% { box-shadow: inset 0 0 100px rgba(220, 38, 38, 0.3), inset 0 0 220px rgba(0, 0, 0, 0.8); }
+}
+
+.cinematic-death-modal {
+  position: relative;
+  z-index: 3001;
+  width: 100%;
+  max-width: 520px;
+  background: linear-gradient(180deg, #180d12 0%, #0c0810 100%);
+  border: 2px solid #ef4444;
+  border-radius: 24px;
+  padding: 2rem 1.8rem;
+  box-shadow: 0 25px 60px -10px rgba(0, 0, 0, 0.9), 0 0 40px rgba(239, 68, 68, 0.35);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 1.4rem;
+  animation: scaleUpDeath 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes scaleUpDeath {
+  from { transform: scale(0.92); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.death-modal-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.death-skull-icon {
+  font-size: 3rem;
+  line-height: 1;
+  filter: drop-shadow(0 0 15px rgba(239, 68, 68, 0.6));
+  animation: skullBob 2s infinite ease-in-out;
+}
+
+@keyframes skullBob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+.cinematic-death-modal .death-title {
+  color: #fca5a5;
+  font-size: 1.7rem;
+  letter-spacing: 0.08em;
+  text-shadow: 0 0 20px rgba(239, 68, 68, 0.5);
+  margin: 0;
+}
+
+.death-subtitle {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  max-width: 380px;
+  line-height: 1.5;
+}
+
+/* Success & Failure Indicators */
+.death-saves-meter-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.2rem;
+  width: 100%;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 1rem;
+}
+
+.meter-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.meter-label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.meter-col.successes .meter-label { color: #4ade80; }
+.meter-col.failures .meter-label { color: #f87171; }
+
+.meter-pills {
+  display: flex;
+  gap: 10px;
+}
+
+.meter-circle {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 1.1rem;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.meter-circle.succ.filled {
+  background: #16a34a;
+  border-color: #4ade80;
+  color: #fff;
+  box-shadow: 0 0 16px rgba(74, 222, 128, 0.6);
+  transform: scale(1.1);
+}
+
+.meter-circle.fail.filled {
+  background: #dc2626;
+  border-color: #f87171;
+  color: #fff;
+  box-shadow: 0 0 16px rgba(248, 113, 113, 0.6);
+  transform: scale(1.1);
+}
+
+
+/* =========================================================================
+   1. DEATH SAVES WIDGET (LEFT COLUMN 260px)
+   ========================================================================= */
+.death-saves-box {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  box-shadow: var(--shadow-card);
+  transition: all 0.25s ease;
+}
+
+.death-saves-box.active-dying {
+  border-color: #ef4444;
+  box-shadow: 0 0 16px rgba(239, 68, 68, 0.4);
+  background: rgba(140, 45, 25, 0.12);
+}
+
+.death-saves-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: 0.4rem;
+}
+
+.death-widget-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--accent-gold);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.reset-saves-btn {
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.reset-saves-btn:hover {
+  color: var(--text-primary);
+  border-color: var(--border-bronze);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.dying-pulse-alert {
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid #ef4444;
+  color: #fca5a5;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-align: center;
+  padding: 3px;
+  border-radius: 4px;
+  animation: pulse 1.5s infinite;
+}
+
+.dead-alert {
+  background: #450a0a;
+  border: 1px solid #ef4444;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-align: center;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.stable-alert {
+  background: rgba(34, 197, 94, 0.2);
+  border: 1px solid #22c55e;
+  color: #86efac;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-align: center;
+  padding: 3px;
+  border-radius: 4px;
+}
+
+.death-tracks-vertical {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.death-tracks-vertical .track-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--bg-inset);
+  padding: 0.35rem 0.6rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+}
+
+.death-tracks-vertical .track-label {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+}
+
+.death-tracks-vertical .success-label { color: #4ade80; }
+.death-tracks-vertical .failure-label { color: #f87171; }
+
+.pips-group {
+  display: flex;
+  gap: 6px;
+}
+
+.death-pip {
+  font-size: 1rem;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.15);
+  transition: all 0.2s ease;
+}
+
+[data-theme="parchment"] .death-pip {
+  color: rgba(0, 0, 0, 0.15);
+}
+
+.death-pip.success.filled {
+  color: #22c55e;
+  filter: drop-shadow(0 0 4px #22c55e);
+}
+
+.death-pip.failure.filled {
+  color: #ef4444;
+  filter: drop-shadow(0 0 4px #ef4444);
+}
+
+.roll-action-wrap {
+  margin-top: 0.2rem;
+}
+
+.roll-death-btn {
+  width: 100%;
+  padding: 0.45rem !important;
+  font-size: 0.8rem !important;
+  background: var(--accent-red) !important;
+  border-color: var(--border-red) !important;
+  color: #fff !important;
+}
+
+.roll-death-btn:hover {
+  background: var(--accent-red-hover) !important;
+}

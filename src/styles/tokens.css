@@ -1,0 +1,73 @@
+:root {
+  /* =========================================================================
+     MODERN ARCANE FOLIO DESIGN SYSTEM (ANTI-AI SLOP)
+     Theme: Dungeon Dark (Deep Leather & Inset Bronze)
+     ========================================================================= */
+  --bg-primary: #14100e;        /* Deep Leather Dark */
+  --bg-secondary: #1a1412;      /* Worn Dark Wood / Armor Slate */
+  --bg-card: #201a16;           /* Iron-Reinforced Chest / Slate Armor */
+  --bg-card-hover: #2a221d;     /* Highlighted plate */
+  --bg-inset: #110d0b;          /* Engraved well / Inset relief */
+  
+  --border-subtle: rgba(200, 155, 60, 0.22); /* Inset Bronze / Aged Gold Hairline */
+  --border-bronze: #c89b3c;                  /* Aged Gold / Bronze */
+  --border-red: #8c2d19;                     /* Crimson Dragon Red */
+  
+  --text-primary: #e6e1da;                   /* Bone White */
+  --text-secondary: #b8b0a5;                 /* Aged Parchment Grey */
+  --text-muted: #8c827a;                     /* Worn Charcoal */
+  
+  --accent-gold: #c89b3c;                    /* Aged Gold / Polished Brass */
+  --accent-bronze: #a37827;                  /* Ancient Bronze */
+  --accent-red: #8c2d19;                     /* Crimson Dragon Red */
+  --accent-red-hover: #a8361f;
+  --accent-green: #2e7d32;                   /* Alchemist Emerald */
+  --accent-cyan: #38bdf8;
+  --primary: #8c2d19;
+  --secondary: #c89b3c;
+  
+  --font-serif: 'Cinzel', serif;
+  --font-display: 'MedievalSharp', 'Cinzel', serif;
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-text: 'Spectral', Georgia, serif;
+  
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  
+  --shadow-glow: 0 0 16px rgba(200, 155, 60, 0.2);
+  --shadow-card: 0 4px 14px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(200, 155, 60, 0.18);
+  --shadow-inset: inset 0 2px 4px rgba(0, 0, 0, 0.65);
+}
+
+[data-theme="parchment"] {
+  /* =========================================================================
+     Theme: Warm Parchment Light (Antique Folio & Dark Iron Ink)
+     ========================================================================= */
+  --bg-primary: #f5f0eb;        /* Warm Parchment Light */
+  --bg-secondary: #eae3d9;      /* Aged Vellum */
+  --bg-card: #fdfbf7;           /* Illuminated Manuscript Card */
+  --bg-card-hover: #f3ece1;
+  --bg-inset: #eae3d9;          /* Pressed Parchment Well */
+  
+  --border-subtle: rgba(140, 101, 39, 0.28); /* Bookbinder Bronze Thread */
+  --border-bronze: #8c6527;                  /* Antique Burnished Bronze */
+  --border-red: #8c2d19;                     /* Dragon Blood Seal */
+  
+  --text-primary: #1c1817;                   /* Ink Black */
+  --text-secondary: #423b36;                 /* Dark Walnut Ink */
+  --text-muted: #635b54;                     /* Charcoal Quill */
+  
+  --accent-gold: #8c6527;
+  --accent-bronze: #735019;
+  --accent-red: #8c2d19;
+  --accent-red-hover: #a8361f;
+  --accent-green: #1b5e20;
+  --primary: #8c2d19;
+  --secondary: #8c6527;
+  
+  --shadow-glow: 0 0 16px rgba(140, 101, 39, 0.15);
+  --shadow-card: 0 4px 14px rgba(100, 80, 60, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  --shadow-inset: inset 0 2px 4px rgba(100, 80, 60, 0.2);
+}

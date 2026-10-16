@@ -1,12 +1,14 @@
 // =============================================================================
-// PERSISTENCE SERVICE — V3
-// localStorage ile otomatik kayıt/yükleme.
+// PERSISTENCE SERVICE — V3 (DIP REFACTORED)
+// IStorageAdapter üzerinden soyutlanmış kalıcılık katmanı.
 // Sayfa yenilenince tüm veriler korunur.
 // =============================================================================
 
 import type { FullCharacter } from '../types/character';
 import type { AppPreferences } from '../types/app';
 import { DEFAULT_PREFERENCES } from '../types/app';
+import type { IStorageAdapter } from '../services/storage/IStorageAdapter';
+import { LocalStorageAdapter } from '../services/storage/LocalStorageAdapter';
 
 const KEYS = {
   CHARACTERS: 'dnd_v3_characters',
@@ -14,34 +16,24 @@ const KEYS = {
   CAMPAIGN: 'dnd_v3_campaign',
 } as const;
 
-// --- Yardımcı Fonksiyonlar ---
+let storageAdapter: IStorageAdapter = new LocalStorageAdapter();
 
-function safeGet<T>(key: string, fallback: T): T {
-  try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return fallback;
-    return JSON.parse(raw) as T;
-  } catch {
-    return fallback;
-  }
+export function setStorageAdapter(adapter: IStorageAdapter): void {
+  storageAdapter = adapter;
 }
 
-function safeSet(key: string, value: unknown): void {
-  try {
-    localStorage.setItem(key, JSON.stringify(value));
-  } catch (err) {
-    console.warn('[persistence] localStorage yazma hatası:', err);
-  }
+export function getStorageAdapter(): IStorageAdapter {
+  return storageAdapter;
 }
 
 // --- Karakter İşlemleri ---
 
 export function loadCharacters(): FullCharacter[] {
-  return safeGet<FullCharacter[]>(KEYS.CHARACTERS, []);
+  return storageAdapter.getItem<FullCharacter[]>(KEYS.CHARACTERS, []);
 }
 
 export function saveCharacters(characters: FullCharacter[]): void {
-  safeSet(KEYS.CHARACTERS, characters);
+  storageAdapter.setItem(KEYS.CHARACTERS, characters);
 }
 
 export function saveCharacter(character: FullCharacter): FullCharacter[] {
@@ -70,13 +62,13 @@ export function getCharacterById(id: string): FullCharacter | null {
 // --- Tercihler ---
 
 export function loadPreferences(): AppPreferences {
-  return safeGet<AppPreferences>(KEYS.PREFERENCES, DEFAULT_PREFERENCES);
+  return storageAdapter.getItem<AppPreferences>(KEYS.PREFERENCES, DEFAULT_PREFERENCES);
 }
 
 export function savePreferences(prefs: Partial<AppPreferences>): AppPreferences {
   const current = loadPreferences();
   const merged = { ...current, ...prefs };
-  safeSet(KEYS.PREFERENCES, merged);
+  storageAdapter.setItem(KEYS.PREFERENCES, merged);
   return merged;
 }
 
