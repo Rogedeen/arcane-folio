@@ -78,7 +78,7 @@ export const HomeHub: React.FC<HomeHubProps> = ({ onNavigate }) => {
           <h3 className="font-cinzel hub-card-title">Karakter Kağıdı</h3>
           <p className="hub-card-desc">
             {activeCharacter
-              ? `${activeCharacter.name} — Sekmeli, az kaydırmalı, D&D Beyond tarzı kağıt.`
+              ? `${activeCharacter.name} — Sekmeli, az kaydırmalı, modern Bento Grid kağıt.`
               : 'Önce bir karakter seçmeli veya oluşturmalısın.'}
           </p>
           <span className="hub-card-btn font-cinzel">

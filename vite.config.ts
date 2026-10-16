@@ -10,9 +10,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'robots.txt', 'icons/*.svg'],
       manifest: {
-        name: 'D&D 5e Kampanya Takip',
-        short_name: 'D&D Takip',
-        description: 'D&D 5e Kampanya ve Karakter Takip Sistemi',
+        name: 'ArcaneFolio 5e - TTRPG Karakter & DM Portali',
+        short_name: 'ArcaneFolio',
+        description: '5e SRD 5.1 Uyumlu Karakter ve Kampanya Takip Portali',
         theme_color: '#0f172a',
         background_color: '#020617',
         display: 'standalone',

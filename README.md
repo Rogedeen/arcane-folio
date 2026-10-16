@@ -1,6 +1,14 @@
-# 🐉 DnD Beyond Killer (D&D 5e Kampanya & Karakter Portalı)
+# 📜 ArcaneFolio 5e
 
-Yeni nesil, 2014 PHB / SRD 5.1 uyumlu, zengin zar animasyonlu ve Bento Grid arayüzlü D&D 5e karakter ve kampanya yönetim uygulaması.
+> **5e SRD 5.1 Uyumlu Yeni Nesil Karakter & DM Kampanya Portalı**  
+> Modern Bento Grid arayüzü, 3D fiziksel zar motoru ve tam 2014 kural setiyle donatılmış açık kaynaklı masaüstü rol yapma oyunları yol arkadaşı.
+
+---
+
+### ⚖️ Yasal Uyarı & Lisans
+- Bu proje, Wizards of the Coast LLC'nin **Creative Commons Attribution 4.0 International (CC-BY-4.0)** lisansı ile yayınladığı **System Reference Document 5.1 ("SRD 5.1")** içeriğini kullanır.
+- *Dungeons & Dragons*, *D&D* ve *D&D Beyond*, Wizards of the Coast LLC'nin tescilli ticari markalarıdır.
+- Bu yazılım bağımsız bir açık kaynak projesidir; Wizards of the Coast ile herhangi bir resmi bağı, sponsorluğu veya ortaklığı bulunmamaktadır. Kod tabanı **MIT Lisansı** ile lisanslanmıştır. Detaylar için [`LICENSE`](LICENSE) dosyasına göz atabilirsiniz.
 
 ---
 

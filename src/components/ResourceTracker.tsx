@@ -173,7 +173,7 @@ export const ResourceTracker: React.FC<ResourceTrackerProps> = ({
           🛡️ Kaynak Takibi & Can Bari
         </h3>
         <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-          D&D Beyond tarzı HP kalkanı, hasar/iyileşme kontrolü ve büyü slotları
+          Gelişmiş HP kalkanı, hasar/iyileşme kontrolü ve büyü slotları
         </p>
       </div>
 
