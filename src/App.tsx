@@ -9,9 +9,17 @@ import { CampaignView } from './components/CampaignView';
 import { FloatingDice } from './components/FloatingDice';
 import { Physical3DDiceOverlay } from './components/Physical3DDiceOverlay';
 import { ReferenceDrawer } from './components/ReferenceDrawer';
+import { getTranslation } from './utils/i18n';
 
 function AppInner() {
-  const { setActiveCharacter } = useCharacter();
+  const { setActiveCharacter, state, updatePreferences } = useCharacter();
+  const currentLang = state.preferences.language || 'tr';
+  const t = getTranslation(currentLang);
+
+  const toggleLanguage = () => {
+    const nextLang = currentLang === 'tr' ? 'en' : 'tr';
+    updatePreferences({ language: nextLang });
+  };
 
   const parseHash = (): AppView => {
     if (typeof window === 'undefined') return 'home';
@@ -74,20 +82,20 @@ function AppInner() {
           <img src="/icons/icon-192.svg" alt="ArcaneFolio Logo" className="logo-icon" id="header-logo" />
           <div>
             <h1 className="logo-title font-cinzel" lang="en" style={{ textTransform: 'none', letterSpacing: '0.04em' }}>
-              ARCANEFOLIO 5E
+              {t.appTitle}
             </h1>
           </div>
         </div>
 
         {/* Rol Odaklı Sade Üst Gezinme: Ana sayfada temiz logo & tema, alt ekranlarda sadece '← Ana Sayfa' ve mod etiketi */}
-        <div className="top-nav-bar" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        <div className="top-nav-bar" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           {currentView !== 'home' && (
             <>
               <button
                 id="nav-btn-home"
                 className="nav-tab-btn"
                 onClick={() => handleNavigate('home')}
-                aria-label="Ana Sayfaya Dön"
+                aria-label={t.returnHome}
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
@@ -98,7 +106,7 @@ function AppInner() {
                   color: 'var(--accent-gold)'
                 }}
               >
-                ← Ana Sayfa
+                {t.returnHome}
               </button>
               <span
                 id="current-role-badge"
@@ -115,22 +123,41 @@ function AppInner() {
                   whiteSpace: 'nowrap'
                 }}
               >
-                {currentView === 'sheet' && '🛡️ Oyuncu Masası'}
-                {currentView === 'dm' && '👑 Zindan Efendisi (DM)'}
-                {currentView === 'creator' && '🧙 Karakter Yaratım'}
-                {currentView === 'gallery' && '🧝 Karakter Koleksiyonu'}
+                {currentView === 'sheet' && t.roleSheet}
+                {currentView === 'dm' && t.roleDm}
+                {currentView === 'creator' && t.roleCreator}
+                {currentView === 'gallery' && t.roleGallery}
               </span>
             </>
           )}
 
+          {/* Dil Değiştirici Buton (TR / EN Switch) */}
+          <button
+            id="lang-toggle-btn"
+            className="theme-toggle-btn"
+            onClick={toggleLanguage}
+            title={currentLang === 'tr' ? 'Switch to English' : 'Türkçe Diline Geç'}
+            aria-label={t.langSwitchAria}
+            style={{
+              fontWeight: 800,
+              fontSize: '0.82rem',
+              letterSpacing: '0.04em',
+              border: '1px solid var(--border-gold)',
+              background: 'rgba(212, 175, 53, 0.1)'
+            }}
+          >
+            {currentLang === 'tr' ? '🌐 TR' : '🌐 EN'}
+          </button>
+
+          {/* Tema Butonu */}
           <button
             id="theme-toggle-btn"
             className="theme-toggle-btn"
             onClick={() => setTheme((t) => (t === 'dark' ? 'parchment' : 'dark'))}
             title={theme === 'dark' ? 'Parşömen Moduna Geç (Aydınlık)' : 'Zindan Moduna Geç (Koyu)'}
-            aria-label="Tema Değiştir"
+            aria-label={t.themeAria}
           >
-            {theme === 'dark' ? '📜 Parşömen' : '🌘 Zindan'}
+            {theme === 'dark' ? t.themeParchment : t.themeDungeon}
           </button>
         </div>
       </header>
@@ -180,15 +207,10 @@ function AppInner() {
         }}
       >
         <p style={{ fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>
-          ArcaneFolio 5e • 5. Edisyon Masaüstü Rol Yapma Portali
+          {t.footerSub}
         </p>
         <p style={{ maxWidth: '800px', margin: '0 auto' }}>
-          ArcaneFolio 5e, Wizards of the Coast'un <em>Hayran İçerik Politikası (Fan Content Policy)</em> kapsamında
-          geliştirilmiş bağımsız, kâr amacı gütmeyen bir hayran içeriğidir. Kural seti ve referans verileri,
-          Wizards of the Coast LLC tarafından <em>Creative Commons Attribution 4.0 International (CC-BY-4.0)</em>{' '}
-          ile lisanslanan <strong>System Reference Document 5.1 (SRD 5.1)</strong> ve Open5e veri tabanından
-          alınmıştır. Bu site Wizards of the Coast LLC tarafından desteklenmemekte, onaylanmamakta veya finanse
-          edilmemektedir.
+          {t.footerLegal}
         </p>
       </footer>
     </div>

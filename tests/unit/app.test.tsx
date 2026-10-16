@@ -54,17 +54,27 @@ describe('Uygulama Temel İskelet ve Gezinme Birim Testleri', () => {
     expect(status.message).toBeDefined();
   });
 
-  it('Ana sayfadan Karakter Kağıdına / Oyuncu Masasına geçilebilir', async () => {
+  it('Dil anahtarı (TR/EN Switch) arayüz metinlerini dinamik olarak günceller', async () => {
     render(<App />);
-    const sheetNavBtn = document.getElementById('nav-btn-sheet');
-    expect(sheetNavBtn).toBeInTheDocument();
-    fireEvent.click(sheetNavBtn!);
+    const langBtn = document.getElementById('lang-toggle-btn');
+    expect(langBtn).toBeInTheDocument();
+    expect(langBtn?.textContent).toContain('TR');
 
+    // Başlangıçta Türkçe metin
+    expect(document.getElementById('hub-card-sheet')?.textContent).toContain('Oyuncu Masası');
+
+    // Dili EN yap
+    fireEvent.click(langBtn!);
     await waitFor(() => {
-      expect(
-        document.getElementById('modern-character-sheet-container') ||
-        document.getElementById('character-gallery-container')
-      ).toBeInTheDocument();
+      expect(langBtn?.textContent).toContain('EN');
+      expect(document.getElementById('hub-card-sheet')?.textContent).toContain('Player Sheet');
+    });
+
+    // Tekrar tıkla -> TR'ye geri dön
+    fireEvent.click(langBtn!);
+    await waitFor(() => {
+      expect(langBtn?.textContent).toContain('TR');
+      expect(document.getElementById('hub-card-sheet')?.textContent).toContain('Oyuncu Masası');
     });
   });
 });

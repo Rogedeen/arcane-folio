@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import type { FullCharacter } from '../../types/character';
 import { SKILLS, calculateSkillModifier } from '../../rules/skills';
+import { useCharacter } from '../../context/CharacterContext';
+import { getTranslation } from '../../utils/i18n';
 
 interface SkillsListCardProps {
   character: FullCharacter;
@@ -25,6 +27,9 @@ export const SkillsListCard: React.FC<SkillsListCardProps> = ({
   profBonus,
   onRollCheck,
 }) => {
+  const { state } = useCharacter();
+  const lang = state.preferences.language || 'tr';
+  const t = getTranslation(lang);
   const [skillFilter, setSkillFilter] = useState<string>('');
 
   const filteredSkills = SKILLS.filter(
@@ -38,11 +43,11 @@ export const SkillsListCard: React.FC<SkillsListCardProps> = ({
       <div className="dndbeyond-card" id="skills-list-container">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div className="dndbeyond-card-header" style={{ border: 'none', padding: 0, margin: 0 }}>
-            SKILLS (Beceriler)
+            {t.skillsHeader}
           </div>
           <input
             type="text"
-            placeholder="Ara..."
+            placeholder={t.searchSkillPlaceholder}
             value={skillFilter}
             onChange={(e) => setSkillFilter(e.target.value)}
             style={{
@@ -74,17 +79,18 @@ export const SkillsListCard: React.FC<SkillsListCardProps> = ({
                 : chaMod;
 
             const totalMod = calculateSkillModifier(modVal, isProf, profBonus);
+            const displayName = lang === 'tr' ? sk.nameTr : sk.name;
 
             return (
               <div
                 key={sk.id}
                 className={`skill-bento-row ${isProf ? 'proficient' : ''}`}
-                onClick={() => onRollCheck(`${sk.nameTr} (${sk.name}) Kontrolü`, totalMod)}
-                title={`${sk.nameTr} Zarı At (1d20 ${totalMod >= 0 ? `+${totalMod}` : totalMod})`}
+                onClick={() => onRollCheck(lang === 'tr' ? `${displayName} Kontrolü` : `${displayName} Check`, totalMod)}
+                title={`${displayName} (1d20 ${totalMod >= 0 ? `+${totalMod}` : totalMod})`}
               >
                 <span className="skill-bento-dot">{isProf ? '●' : '○'}</span>
                 <span className="skill-bento-mod-tag">{sk.ability.toUpperCase()}</span>
-                <span className="skill-bento-name">{sk.nameTr}</span>
+                <span className="skill-bento-name">{displayName}</span>
                 <span className="skill-bento-bonus">
                   {totalMod >= 0 ? `+${totalMod}` : totalMod}
                 </span>

@@ -1,5 +1,7 @@
 import React from 'react';
 import type { FullCharacter } from '../../types/character';
+import { useCharacter } from '../../context/CharacterContext';
+import { getTranslation } from '../../utils/i18n';
 
 interface SheetHeaderProps {
   character: FullCharacter;
@@ -24,6 +26,8 @@ export const SheetHeader: React.FC<SheetHeaderProps> = ({
   onJoinCampaign,
   joinedCampaignCode,
 }) => {
+  const { state } = useCharacter();
+  const t = getTranslation(state.preferences.language || 'tr');
   const [showJoinModal, setShowJoinModal] = React.useState<boolean>(false);
   const [inviteInput, setInviteInput] = React.useState<string>('');
   const [joinMsg, setJoinMsg] = React.useState<string>('');
@@ -31,13 +35,13 @@ export const SheetHeader: React.FC<SheetHeaderProps> = ({
   const handleJoin = () => {
     const code = inviteInput.trim().toUpperCase();
     if (code.length !== 6) {
-      setJoinMsg('Lütfen 6 haneli geçerli davet kodu girin (örn: DRG924).');
+      setJoinMsg(t.joinModalInvalid);
       return;
     }
     if (onJoinCampaign) {
       onJoinCampaign(code);
     }
-    setJoinMsg(`Sefere bağlandı: ${code}`);
+    setJoinMsg(`${t.joinModalSuccess}: ${code}`);
     setTimeout(() => {
       setShowJoinModal(false);
       setJoinMsg('');
@@ -82,12 +86,12 @@ export const SheetHeader: React.FC<SheetHeaderProps> = ({
                   fontWeight: 700
                 }}
               >
-                🏰 Sefer: {joinedCampaignCode}
+                🏰 {t.joinedCampaign}: {joinedCampaignCode}
               </span>
             )}
           </div>
           <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
-            {character.race} • {character.class.toUpperCase()} Seviye {character.level} • {character.background}
+            {character.race} • {character.class.toUpperCase()} {t.levelShort} {character.level} • {character.background}
             {character.playerName && ` • 👤 ${character.playerName}`}
           </div>
         </div>
@@ -106,7 +110,7 @@ export const SheetHeader: React.FC<SheetHeaderProps> = ({
             background: 'rgba(212, 175, 53, 0.08)'
           }}
         >
-          🏰 {joinedCampaignCode ? `Sefer: ${joinedCampaignCode}` : 'Sefere Katıl'}
+          🏰 {joinedCampaignCode ? `${t.joinedCampaign}: ${joinedCampaignCode}` : t.joinCampaign}
         </button>
         <button
           id="btn-toggle-combat-mode"
@@ -114,7 +118,7 @@ export const SheetHeader: React.FC<SheetHeaderProps> = ({
           onClick={onToggleCombatMode}
           title="Savaş Modu (Action / Bonus / Movement Takibi)"
         >
-          ⚔️ {combatMode ? 'SAVAŞ MODU (AÇIK)' : 'SAVAŞ MODU'}
+          ⚔️ {combatMode ? t.combatModeOn : t.combatModeOff}
         </button>
         <button
           id="btn-short-rest"
@@ -122,7 +126,7 @@ export const SheetHeader: React.FC<SheetHeaderProps> = ({
           onClick={onShortRest}
           title="Kısa Dinlenme (Can zarı harca)"
         >
-          ⛺ SHORT REST
+          ⛺ {t.shortRest}
         </button>
         <button
           id="btn-long-rest"
@@ -130,7 +134,7 @@ export const SheetHeader: React.FC<SheetHeaderProps> = ({
           onClick={onLongRest}
           title="Uzun Dinlenme (Tüm canı yenile)"
         >
-          🌙 LONG REST
+          🌙 {t.longRest}
         </button>
         <button
           id="btn-toggle-stat-lock"
@@ -138,7 +142,7 @@ export const SheetHeader: React.FC<SheetHeaderProps> = ({
           onClick={onToggleLock}
           title={isLocked ? 'Statlar kilitli' : 'Stat düzenleme modu açık'}
         >
-          {isLocked ? '🔒 Kilitli' : '🔓 Duzenle'}
+          {isLocked ? t.locked : t.unlocked}
         </button>
       </div>
 
@@ -172,17 +176,17 @@ export const SheetHeader: React.FC<SheetHeaderProps> = ({
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="font-cinzel" style={{ color: 'var(--accent-gold)', margin: '0 0 0.5rem 0' }}>
-              🏰 DM Seferine Katıl
+              {t.joinModalTitle}
             </h3>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', marginBottom: '1.2rem', lineHeight: 1.5 }}>
-              DM'inizin size verdiği 6 haneli davet kodunu girerek karakterinizin canını ve durumunu DM ekranına canlı bağlayın.
+              {t.joinModalDesc}
             </p>
             <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem' }}>
               <input
                 id="input-sheet-campaign-code"
                 type="text"
                 maxLength={6}
-                placeholder="Örn: DRG924"
+                placeholder={t.joinModalPlaceholder}
                 value={inviteInput}
                 onChange={(e) => setInviteInput(e.target.value.toUpperCase())}
                 style={{
@@ -205,7 +209,7 @@ export const SheetHeader: React.FC<SheetHeaderProps> = ({
                 onClick={handleJoin}
                 style={{ padding: '0.65rem 1.25rem' }}
               >
-                Katıl 🚀
+                {t.joinModalBtn}
               </button>
             </div>
             {joinMsg && (
@@ -219,7 +223,7 @@ export const SheetHeader: React.FC<SheetHeaderProps> = ({
                 onClick={() => setShowJoinModal(false)}
                 style={{ padding: '0.4rem 0.9rem', fontSize: '0.85rem' }}
               >
-                Kapat
+                {t.joinModalClose}
               </button>
             </div>
           </div>

@@ -29,6 +29,7 @@ import { useReference } from '../context/ReferenceContext';
 import { soundEffects } from '../utils/soundEffects';
 import { syncService } from '../data/syncService';
 import { isCasterSubclass } from '../rules/subclasses';
+import { getTranslation } from '../utils/i18n';
 import type { FullCharacter, AbilityName, ArmorItem, WeaponItem } from '../types/character';
 import type { ItemData } from '../types/content';
 
@@ -129,7 +130,10 @@ export const ModernCharacterSheet: React.FC = () => {
     updateDeathSaves,
     updateInspiration,
     saveCharacter,
+    state,
   } = useCharacter();
+
+  const t = getTranslation(state.preferences.language || 'tr');
 
   const character = activeCharacter ?? DEMO_CHARACTER;
   const isDemo = !activeCharacter;
@@ -700,49 +704,49 @@ export const ModernCharacterSheet: React.FC = () => {
               className={`dndbeyond-pill-tab ${activeTab === 'actions' ? 'active' : ''}`}
               onClick={() => setActiveTab('actions')}
             >
-              ⚔️ ACTIONS
+              {t.tabActions}
             </button>
             <button
               id="tab-btn-inventory"
               className={`dndbeyond-pill-tab ${activeTab === 'inventory' ? 'active' : ''}`}
               onClick={() => setActiveTab('inventory')}
             >
-              🎒 INVENTORY ({character.inventory?.length ?? 0})
+              {t.tabInventory} ({character.inventory?.length ?? 0})
             </button>
             <button
               id="tab-btn-spells"
               className={`dndbeyond-pill-tab ${activeTab === 'spells' ? 'active' : ''}`}
               onClick={() => setActiveTab('spells')}
             >
-              {isSpellcaster ? '📜 SPELLS' : '⚡ FEATURES'}
+              {isSpellcaster ? t.tabSpells : t.tabFeatures}
             </button>
             <button
               id="tab-btn-features"
               className={`dndbeyond-pill-tab ${activeTab === 'features' ? 'active' : ''}`}
               onClick={() => setActiveTab('features')}
             >
-              🏆 LEVEL UP
+              {t.tabLevelUp}
             </button>
             <button
               id="tab-btn-background"
               className={`dndbeyond-pill-tab ${activeTab === 'background' ? 'active' : ''}`}
               onClick={() => setActiveTab('background')}
             >
-              📜 BACKGROUND
+              {t.tabBackground}
             </button>
             <button
               id="tab-btn-notes"
               className={`dndbeyond-pill-tab ${activeTab === 'notes' ? 'active' : ''}`}
               onClick={() => setActiveTab('notes')}
             >
-              📝 NOTES
+              {t.tabNotes}
             </button>
             <button
               id="tab-btn-conditions"
               className={`dndbeyond-pill-tab ${activeTab === 'conditions' ? 'active' : ''}`}
               onClick={() => setActiveTab('conditions')}
             >
-              ⚡ DURUMLAR
+              {t.tabConditions}
             </button>
           </nav>
 

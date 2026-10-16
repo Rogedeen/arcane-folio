@@ -1,4 +1,6 @@
 import React from 'react';
+import { useCharacter } from '../../context/CharacterContext';
+import { getTranslation } from '../../utils/i18n';
 
 export interface MonsterTargetFog {
   id: string;
@@ -37,6 +39,9 @@ export const CombatModePanel: React.FC<CombatModePanelProps> = ({
   onEndTurn,
   monsterTargets = [],
 }) => {
+  const { state } = useCharacter();
+  const t = getTranslation(state.preferences.language || 'tr');
+
   if (!combatMode) return null;
 
   return (
@@ -44,14 +49,14 @@ export const CombatModePanel: React.FC<CombatModePanelProps> = ({
       <div className="combat-panel-top">
         <div className="combat-turn-indicator">
           <span className="combat-live-indicator"></span>
-          <span className="font-cinzel combat-heading">SAVAŞ MODU • SENİN TURUN</span>
+          <span className="font-cinzel combat-heading">{t.combatModeOn}</span>
         </div>
         <button
           id="btn-combat-end-turn"
           className="combat-end-turn-btn"
           onClick={onEndTurn}
         >
-          🔄 Sırayı / Turu Bitir (Eylemleri Tazele)
+          🔄 {t.endTurnBtn}
         </button>
       </div>
 
@@ -62,11 +67,11 @@ export const CombatModePanel: React.FC<CombatModePanelProps> = ({
           onClick={onToggleAction}
           role="button"
           tabIndex={0}
-          title="Tıklayarak harca veya geri al"
+          title={actionUsed ? t.actionUsed : t.actionReady}
         >
-          <div className="slot-type">ANA EYLEM (ACTION)</div>
-          <div className="slot-state">{actionUsed ? '✓ Harcandı' : '⚡ 1/1 Hazır'}</div>
-          <div className="slot-desc">Saldırı, Büyü Yapma, Dash, Dodge vb.</div>
+          <div className="slot-type">{t.actionTitle}</div>
+          <div className="slot-state">{actionUsed ? `✓ ${t.actionUsed}` : `⚡ 1/1 ${t.actionReady}`}</div>
+          <div className="slot-desc">Attack, Cast a Spell, Dash, Dodge...</div>
         </div>
 
         {/* Bonus Action */}
@@ -75,11 +80,11 @@ export const CombatModePanel: React.FC<CombatModePanelProps> = ({
           onClick={onToggleBonusAction}
           role="button"
           tabIndex={0}
-          title="Tıklayarak harca veya geri al"
+          title={bonusActionUsed ? t.bonusActionUsed : t.bonusActionReady}
         >
-          <div className="slot-type">BONUS ACTION</div>
-          <div className="slot-state">{bonusActionUsed ? '✓ Harcandı' : '✨ 1/1 Hazır'}</div>
-          <div className="slot-desc">Hızlı büyüler, İkinci Nefes vb.</div>
+          <div className="slot-type">{t.bonusActionTitle}</div>
+          <div className="slot-state">{bonusActionUsed ? `✓ ${t.bonusActionUsed}` : `✨ 1/1 ${t.bonusActionReady}`}</div>
+          <div className="slot-desc">Spells, Second Wind, Cunning Action...</div>
         </div>
 
         {/* Reaction */}
@@ -88,16 +93,16 @@ export const CombatModePanel: React.FC<CombatModePanelProps> = ({
           onClick={onToggleReaction}
           role="button"
           tabIndex={0}
-          title="Tıklayarak harca veya geri al"
+          title={reactionUsed ? t.reactionUsed : t.reactionReady}
         >
-          <div className="slot-type">TEPKİ (REACTION)</div>
-          <div className="slot-state">{reactionUsed ? '✓ Harcandı' : '🛡️ 1/1 Hazır'}</div>
-          <div className="slot-desc">Fırsat saldırısı, Kalkan büyüsü vb.</div>
+          <div className="slot-type">{t.reactionTitle}</div>
+          <div className="slot-state">{reactionUsed ? `✓ ${t.reactionUsed}` : `🛡️ 1/1 ${t.reactionReady}`}</div>
+          <div className="slot-desc">Opportunity Attack, Shield spell...</div>
         </div>
 
         {/* Movement Speed */}
         <div className="combat-slot-card movement-tracker">
-          <div className="slot-type">HAREKET (SPEED)</div>
+          <div className="slot-type">{t.movementTitle}</div>
           <div className="movement-display">
             <span className="movement-current" id="val-remaining-speed">
               {remainingSpeed}

@@ -1,9 +1,6 @@
-// =============================================================================
-// HOME HUB V3 — Ana Sayfa Karşılama ve Hızlı Navigasyon
-// =============================================================================
-
 import React from 'react';
 import { useCharacter } from '../context/CharacterContext';
+import { getTranslation } from '../utils/i18n';
 
 export type AppView = 'home' | 'gallery' | 'sheet' | 'creator' | 'dm' | 'dice';
 
@@ -14,21 +11,22 @@ interface HomeHubProps {
 export const HomeHub: React.FC<HomeHubProps> = ({ onNavigate }) => {
   const { activeCharacter, state } = useCharacter();
   const charCount = state.characters.length;
+  const t = getTranslation(state.preferences.language || 'tr');
 
   return (
     <div id="home-hub-container" className="home-hub-root">
       {/* Karşılama Kartı */}
       <section className="hub-welcome-banner">
         <h2 className="font-cinzel hub-title" lang="en" style={{ textTransform: 'none', letterSpacing: '0.04em', margin: '0 0 1rem 0' }}>
-          ARCANEFOLIO 5E
+          {t.hubTitle}
         </h2>
         {activeCharacter && (
           <div className="hub-active-char-card" id="hub-active-character-banner">
             <div className="hub-active-char-info">
-              <span className="hub-active-badge">AKTİF KARAKTER</span>
+              <span className="hub-active-badge">{t.activeCharacter}</span>
               <span className="hub-active-name font-cinzel">{activeCharacter.name}</span>
               <span className="hub-active-details">
-                Svye {activeCharacter.level} {activeCharacter.class} • {activeCharacter.currentHp}/{activeCharacter.maxHp} HP
+                {t.levelShort} {activeCharacter.level} {activeCharacter.class} • {activeCharacter.currentHp}/{activeCharacter.maxHp} HP
               </span>
             </div>
             <button
@@ -36,7 +34,7 @@ export const HomeHub: React.FC<HomeHubProps> = ({ onNavigate }) => {
               className="hub-active-open-btn font-cinzel"
               onClick={() => onNavigate('sheet')}
             >
-              📜 Kâğıdı Aç →
+              {t.openActiveSheet}
             </button>
           </div>
         )}
@@ -54,11 +52,11 @@ export const HomeHub: React.FC<HomeHubProps> = ({ onNavigate }) => {
           onKeyDown={(e) => e.key === 'Enter' && (activeCharacter ? onNavigate('sheet') : onNavigate('gallery'))}
         >
           <div className="hub-card-icon">🛡️</div>
-          <h3 className="font-cinzel hub-card-title">Oyuncu Masası &amp; Karakter Kağıdı</h3>
+          <h3 className="font-cinzel hub-card-title">{t.hubCardSheetTitle}</h3>
           <p className="hub-card-desc">
             {activeCharacter
-              ? `${activeCharacter.name} — Canlı zar atımı, envanter, büyüler ve sefere katılım.`
-              : 'Aktif bir karakter kağıdını açıp oyuna katılın veya koleksiyondan bir kahraman seçin.'}
+              ? `${activeCharacter.name} ${t.hubCardSheetDescActive}`
+              : t.hubCardSheetDescEmpty}
           </p>
           <button
             id="nav-btn-sheet"
@@ -69,7 +67,7 @@ export const HomeHub: React.FC<HomeHubProps> = ({ onNavigate }) => {
               activeCharacter ? onNavigate('sheet') : onNavigate('gallery');
             }}
           >
-            {activeCharacter ? 'Karakter Masasına Gir →' : 'Karakter Seç →'}
+            {activeCharacter ? t.hubCardSheetBtnActive : t.hubCardSheetBtnEmpty}
           </button>
         </div>
 
@@ -83,9 +81,9 @@ export const HomeHub: React.FC<HomeHubProps> = ({ onNavigate }) => {
           onKeyDown={(e) => e.key === 'Enter' && onNavigate('dm')}
         >
           <div className="hub-card-icon">👑</div>
-          <h3 className="font-cinzel hub-card-title">Zindan Efendisi (DM Kokpiti)</h3>
+          <h3 className="font-cinzel hub-card-title">{t.hubCardDmTitle}</h3>
           <p className="hub-card-desc">
-            Sefer oluştur, davet kodu ile oyuncularını masana topla, canlı parti can barlarını ve canavar karşılaşmalarını yönet.
+            {t.hubCardDmDesc}
           </p>
           <button
             id="nav-btn-dm"
@@ -96,7 +94,7 @@ export const HomeHub: React.FC<HomeHubProps> = ({ onNavigate }) => {
               onNavigate('dm');
             }}
           >
-            DM Masasını Aç →
+            {t.hubCardDmBtn}
           </button>
         </div>
 
@@ -110,9 +108,9 @@ export const HomeHub: React.FC<HomeHubProps> = ({ onNavigate }) => {
           onKeyDown={(e) => e.key === 'Enter' && onNavigate('creator')}
         >
           <div className="hub-card-icon">🧙</div>
-          <h3 className="font-cinzel hub-card-title">Karakter Yarat (Sihirbaz)</h3>
+          <h3 className="font-cinzel hub-card-title">{t.hubCardCreatorTitle}</h3>
           <p className="hub-card-desc">
-            SRD 5.1 kural motoruyla ırk, sınıf, statlar ve başlangıç eşyalarıyla sıfırdan yeni bir kahraman inşa et.
+            {t.hubCardCreatorDesc}
           </p>
           <button
             id="nav-btn-creator"
@@ -123,7 +121,7 @@ export const HomeHub: React.FC<HomeHubProps> = ({ onNavigate }) => {
               onNavigate('creator');
             }}
           >
-            Yeni Kahraman Yarat →
+            {t.hubCardCreatorBtn}
           </button>
         </div>
 
@@ -137,11 +135,11 @@ export const HomeHub: React.FC<HomeHubProps> = ({ onNavigate }) => {
           onKeyDown={(e) => e.key === 'Enter' && onNavigate('gallery')}
         >
           <div className="hub-card-icon">🧝</div>
-          <h3 className="font-cinzel hub-card-title">Karakterlerim &amp; Koleksiyon</h3>
+          <h3 className="font-cinzel hub-card-title">{t.hubCardGalleryTitle}</h3>
           <p className="hub-card-desc">
             {charCount > 0
-              ? `${charCount} kayıtlı karakter. Seç, düzenle, sil veya yedekle.`
-              : 'Kayıtlı karakterlerinizi burada listeleyin ve yönetin.'}
+              ? `${charCount} ${t.hubCardGalleryDescCount}`
+              : t.hubCardGalleryDescEmpty}
           </p>
           <button
             id="nav-btn-gallery"
@@ -152,7 +150,7 @@ export const HomeHub: React.FC<HomeHubProps> = ({ onNavigate }) => {
               onNavigate('gallery');
             }}
           >
-            {charCount > 0 ? `${charCount} Karakteri Gör →` : 'Koleksiyonu Aç →'}
+            {charCount > 0 ? `${charCount} ${t.hubCardGalleryBtnCount}` : t.hubCardGalleryBtnEmpty}
           </button>
         </div>
       </div>
