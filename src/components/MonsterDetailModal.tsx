@@ -20,6 +20,37 @@ export const MonsterDetailModal: React.FC<MonsterDetailModalProps> = ({
     return mod >= 0 ? `+${mod}` : `${mod}`;
   };
 
+  const renderSpeed = (speed: unknown) => {
+    if (!speed) return '30 ft.';
+    if (typeof speed === 'string') return speed;
+    if (typeof speed === 'object' && speed !== null) {
+      const s = speed as Record<string, unknown>;
+      const parts: string[] = [];
+      const unit = String(s.unit ?? 'ft.');
+      if (s.walk !== undefined) parts.push(`${s.walk} ${unit}`);
+      if (s.swim !== undefined) parts.push(`swim ${s.swim} ${unit}`);
+      if (s.fly !== undefined) parts.push(`fly ${s.fly} ${unit}`);
+      if (s.burrow !== undefined) parts.push(`burrow ${s.burrow} ${unit}`);
+      if (s.climb !== undefined) parts.push(`climb ${s.climb} ${unit}`);
+      return parts.length > 0 ? parts.join(', ') : '30 ft.';
+    }
+    return String(speed);
+  };
+
+  const renderLanguages = (languages: unknown) => {
+    if (!languages) return null;
+    if (typeof languages === 'string') return languages;
+    if (typeof languages === 'object' && languages !== null) {
+      const l = languages as Record<string, unknown>;
+      if (l.as_string) return String(l.as_string);
+      if (Array.isArray(l.data)) {
+        const names = l.data.map((d: any) => d?.name || d?.key).filter(Boolean);
+        if (names.length > 0) return names.join(', ');
+      }
+    }
+    return String(languages);
+  };
+
   return (
     <div
       className="modal-backdrop"
@@ -99,7 +130,7 @@ export const MonsterDetailModal: React.FC<MonsterDetailModalProps> = ({
           </div>
           <div>
             <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Hız (Speed):</span>
-            <div style={{ fontWeight: 600, fontSize: '0.95rem', color: '#e2e8f0' }}>{monster.speed}</div>
+            <div style={{ fontWeight: 600, fontSize: '0.95rem', color: '#e2e8f0' }}>{renderSpeed(monster.speed)}</div>
           </div>
         </div>
 
@@ -128,9 +159,9 @@ export const MonsterDetailModal: React.FC<MonsterDetailModalProps> = ({
               <strong style={{ color: '#fbbf24' }}>Duyular (Senses):</strong> {monster.senses}
             </div>
           )}
-          {monster.languages && (
+          {renderLanguages(monster.languages) && (
             <div>
-              <strong style={{ color: '#fbbf24' }}>Diller (Languages):</strong> {monster.languages}
+              <strong style={{ color: '#fbbf24' }}>Diller (Languages):</strong> {renderLanguages(monster.languages)}
             </div>
           )}
           <div>

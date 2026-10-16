@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ItemData } from '../types/content';
 import { localDatabase } from '../data/localDatabase';
+import { open5eClient } from '../data/open5eClient';
 import { calculateCarryingCapacity, calculateTotalWeight, isEncumbered } from '../rules/inventory';
 import { useReference } from '../context/ReferenceContext';
 import { calculatePotionHealing, isPotionItem } from '../rules/potions';
@@ -196,11 +197,44 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
     }, 3500);
   };
 
-  // Katalogda Anında "Tak Tak" Arama ve Filtreleme (Sıfır gecikmeli senkron arama)
+  const [isSearchingApi, setIsSearchingApi] = useState<boolean>(false);
+
+  // Katalog açıldığında eşyaları yükle ve Open5e'den senkronize et
+  useEffect(() => {
+    const local = localDatabase.getAllItems();
+    setCatalogResults(local);
+
+    // Eğer sadece başlangıç eşyaları varsa arka planda Open5e kataloğunu çek
+    if (local.length <= 10) {
+      open5eClient.searchItems('', 100).then((res) => {
+        if (res.data && res.data.length > 0) {
+          localDatabase.saveItems(res.data);
+          setCatalogResults(localDatabase.getAllItems());
+        }
+      });
+    }
+  }, []);
+
+  // Katalogda Anında "Tak Tak" Arama ve Filtreleme (Yerel DB + Open5e API Entegrasyonu)
   const handleCatalogInputChange = (query: string, typeFilt = catalogTypeFilter) => {
     setCatalogSearch(query);
     const local = localDatabase.searchItems(query, typeFilt);
     setCatalogResults(local);
+
+    // Yerel sonuç az ise veya query varsa API'den de asenkron çek
+    if (query.trim().length >= 2) {
+      setIsSearchingApi(true);
+      open5eClient.searchItems(query.trim(), 25).then((res) => {
+        setIsSearchingApi(false);
+        if (res.data && res.data.length > 0) {
+          localDatabase.saveItems(res.data);
+          const merged = localDatabase.searchItems(query, typeFilt);
+          setCatalogResults(merged);
+        }
+      }).catch(() => {
+        setIsSearchingApi(false);
+      });
+    }
   };
 
   const handleCatalogFilterChange = (type: string) => {
@@ -616,7 +650,12 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
 
           {/* Sonuçlar Listesi */}
           <div className="catalog-results-list" style={{ marginTop: '0.8rem' }}>
-            {catalogResults.length === 0 && (
+            {isSearchingApi && (
+              <div style={{ textAlign: 'center', padding: '0.4rem', color: 'var(--accent-gold)', fontSize: '0.85rem' }}>
+                ⏳ Open5e veritabanında aranıyor...
+              </div>
+            )}
+            {catalogResults.length === 0 && !isSearchingApi && (
               <div className="catalog-empty-prompt">
                 <p>🔍 Aradığınız kriterlere uygun eşya bulunamadı.</p>
               </div>

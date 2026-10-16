@@ -652,7 +652,7 @@ class LocalDatabase {
       }
 
       // 2. Eşyaları çek
-      const itemRes = await open5eClient.searchItems('a', 50);
+      const itemRes = await open5eClient.searchItems('', 100);
       if (itemRes.data && itemRes.data.length > 0) {
         this.saveItems(itemRes.data);
       }

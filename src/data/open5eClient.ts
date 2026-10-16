@@ -207,35 +207,108 @@ class Open5eClientV3 {
     };
   }
 
+  private formatSpeed(speed: unknown): string {
+    if (!speed) return '30 ft.';
+    if (typeof speed === 'string') return speed;
+    if (typeof speed === 'object' && speed !== null) {
+      const s = speed as Record<string, unknown>;
+      const parts: string[] = [];
+      const unit = String(s['unit'] ?? 'ft.');
+      if (s['walk'] !== undefined) parts.push(`${s['walk']} ${unit}`);
+      if (s['swim'] !== undefined) parts.push(`swim ${s['swim']} ${unit}`);
+      if (s['fly'] !== undefined) parts.push(`fly ${s['fly']} ${unit}`);
+      if (s['burrow'] !== undefined) parts.push(`burrow ${s['burrow']} ${unit}`);
+      if (s['climb'] !== undefined) parts.push(`climb ${s['climb']} ${unit}`);
+      for (const [k, v] of Object.entries(s)) {
+        if (!['walk', 'swim', 'fly', 'burrow', 'climb', 'unit'].includes(k) && typeof v === 'number') {
+          parts.push(`${k} ${v} ${unit}`);
+        }
+      }
+      return parts.length > 0 ? parts.join(', ') : '30 ft.';
+    }
+    return String(speed);
+  }
+
+  private formatLanguages(languages: unknown): string | undefined {
+    if (!languages) return undefined;
+    if (typeof languages === 'string') return languages;
+    if (typeof languages === 'object' && languages !== null) {
+      const l = languages as Record<string, unknown>;
+      if (l['as_string']) return String(l['as_string']);
+      if (Array.isArray(l['data'])) {
+        const names = l['data']
+          .map((d: unknown) => (d as Record<string, unknown>)?.['name'] || (d as Record<string, unknown>)?.['key'])
+          .filter(Boolean);
+        if (names.length > 0) return names.join(', ');
+      }
+    }
+    return String(languages);
+  }
+
+  private formatSenses(r: Record<string, unknown>): string | undefined {
+    if (r['senses'] && typeof r['senses'] === 'string') return r['senses'];
+    const parts: string[] = [];
+    if (r['darkvision_range']) parts.push(`Darkvision ${r['darkvision_range']} ft.`);
+    if (r['blindsight_range']) parts.push(`Blindsight ${r['blindsight_range']} ft.`);
+    if (r['tremorsense_range']) parts.push(`Tremorsense ${r['tremorsense_range']} ft.`);
+    if (r['truesight_range']) parts.push(`Truesight ${r['truesight_range']} ft.`);
+    if (r['passive_perception']) parts.push(`Passive Perception ${r['passive_perception']}`);
+    return parts.length > 0 ? parts.join(', ') : undefined;
+  }
+
   private toItemData(r: Record<string, unknown>): ItemData {
-    const rawType = String(r['type'] ?? r['category'] ?? '').toLowerCase();
-    const mappedType: ItemData['type'] = rawType.includes('armor')
-      ? 'armor'
-      : rawType.includes('shield')
-      ? 'shield'
-      : rawType.includes('weapon')
+    const rawCat = r['category'];
+    const categoryName = typeof rawCat === 'object' && rawCat !== null
+      ? String((rawCat as Record<string, unknown>)['name'] ?? (rawCat as Record<string, unknown>)['key'] ?? '')
+      : String(rawCat ?? r['type'] ?? '');
+    const catLower = categoryName.toLowerCase();
+    const nameLower = String(r['name'] ?? '').toLowerCase();
+
+    const isWeapon = Boolean(r['weapon']) || catLower.includes('weapon');
+    const isShield = catLower.includes('shield') || nameLower.includes('shield');
+    const isArmor = !isShield && (Boolean(r['armor']) || catLower.includes('armor'));
+    const isPotion = catLower.includes('potion') || nameLower.includes('potion');
+    const isScroll = catLower.includes('scroll') || nameLower.includes('scroll');
+
+    const mappedType: ItemData['type'] = isWeapon
       ? 'weapon'
-      : rawType.includes('scroll')
-      ? 'scroll'
-      : rawType.includes('potion')
+      : isShield
+      ? 'shield'
+      : isArmor
+      ? 'armor'
+      : isPotion
       ? 'potion'
+      : isScroll
+      ? 'scroll'
       : 'gear';
 
     const propertiesRaw = r['properties'];
     const properties: string[] = Array.isArray(propertiesRaw)
-      ? propertiesRaw.map((p: unknown) =>
-          typeof p === 'string'
-            ? p
-            : String((p as Record<string, unknown>)?.['name'] ?? p)
-        )
+      ? propertiesRaw.map((p: unknown) => {
+          if (typeof p === 'string') return p;
+          const obj = p as Record<string, unknown>;
+          return String((obj['property'] as Record<string, unknown>)?.['name'] ?? obj['name'] ?? p);
+        })
       : [];
+
+    let rawCost = r['cost'] ?? r['rarity'] ?? '—';
+    if (typeof rawCost === 'number' || (!isNaN(Number(rawCost)) && rawCost !== '—')) {
+      rawCost = `${rawCost} gp`;
+    }
+
+    const rawWeight = r['weight'];
+    const weightNum = typeof rawWeight === 'number'
+      ? rawWeight
+      : typeof rawWeight === 'string'
+      ? parseFloat(rawWeight) || 0
+      : 0;
 
     return {
       slug: String(r['slug'] ?? r['key'] ?? ''),
       name: String(r['name'] ?? 'Unknown Item'),
       type: mappedType,
-      weight: typeof r['weight'] === 'number' ? r['weight'] : 1,
-      cost: String(r['cost'] ?? r['rarity'] ?? '—'),
+      weight: weightNum,
+      cost: String(rawCost),
       description: String(r['desc'] ?? r['description'] ?? ''),
       properties,
       quantity: 1,
@@ -260,8 +333,12 @@ class Open5eClientV3 {
       damage_dice: a['damage_dice'] ? String(a['damage_dice']) : undefined,
     }));
 
-    // Special abilities parsing
-    const rawAbilities = Array.isArray(r['special_abilities']) ? (r['special_abilities'] as Record<string, unknown>[]) : [];
+    // Special abilities parsing (traits or special_abilities)
+    const rawAbilities = Array.isArray(r['special_abilities'])
+      ? (r['special_abilities'] as Record<string, unknown>[])
+      : Array.isArray(r['traits'])
+      ? (r['traits'] as Record<string, unknown>[])
+      : [];
     const specialAbilities: MonsterSpecialAbility[] = rawAbilities.map((a) => ({
       name: String(a['name'] ?? 'Ability'),
       desc: String(a['desc'] ?? ''),
@@ -281,6 +358,17 @@ class Open5eClientV3 {
       desc: String(a['desc'] ?? ''),
     }));
 
+    // Resistances and immunities
+    const resAndImm = r['resistances_and_immunities'] as Record<string, unknown> | undefined;
+    const damageVulnerabilities = (r['damage_vulnerabilities'] ? String(r['damage_vulnerabilities']) : undefined)
+      ?? (resAndImm?.['damage_vulnerabilities_display'] ? String(resAndImm['damage_vulnerabilities_display']) : undefined);
+    const damageResistances = (r['damage_resistances'] ? String(r['damage_resistances']) : undefined)
+      ?? (resAndImm?.['damage_resistances_display'] ? String(resAndImm['damage_resistances_display']) : undefined);
+    const damageImmunities = (r['damage_immunities'] ? String(r['damage_immunities']) : undefined)
+      ?? (resAndImm?.['damage_immunities_display'] ? String(resAndImm['damage_immunities_display']) : undefined);
+    const conditionImmunities = (r['condition_immunities'] ? String(r['condition_immunities']) : undefined)
+      ?? (resAndImm?.['condition_immunities_display'] ? String(resAndImm['condition_immunities_display']) : undefined);
+
     return {
       slug: String(r['slug'] ?? r['key'] ?? ''),
       name: String(r['name'] ?? 'Unknown Creature'),
@@ -290,7 +378,7 @@ class Open5eClientV3 {
       challengeRating: String(r['challenge_rating'] ?? r['cr'] ?? '0'),
       armorClass: Number(r['armor_class'] ?? r['ac'] ?? 10),
       hitPoints: Number(r['hit_points'] ?? r['hp'] ?? 1),
-      speed: String(r['speed'] ?? '30 ft.'),
+      speed: this.formatSpeed(r['speed']),
       str: Number(abilityScores['strength'] ?? abilityScores['str'] ?? 10),
       dex: Number(abilityScores['dexterity'] ?? abilityScores['dex'] ?? 10),
       con: Number(abilityScores['constitution'] ?? abilityScores['con'] ?? 10),
@@ -301,12 +389,12 @@ class Open5eClientV3 {
       source: String(
         (r['document'] as Record<string, unknown>)?.['name'] ?? 'Open5e API'
       ),
-      damageVulnerabilities: r['damage_vulnerabilities'] ? String(r['damage_vulnerabilities']) : undefined,
-      damageResistances: r['damage_resistances'] ? String(r['damage_resistances']) : undefined,
-      damageImmunities: r['damage_immunities'] ? String(r['damage_immunities']) : undefined,
-      conditionImmunities: r['condition_immunities'] ? String(r['condition_immunities']) : undefined,
-      senses: r['senses'] ? String(r['senses']) : undefined,
-      languages: r['languages'] ? String(r['languages']) : undefined,
+      damageVulnerabilities: damageVulnerabilities || undefined,
+      damageResistances: damageResistances || undefined,
+      damageImmunities: damageImmunities || undefined,
+      conditionImmunities: conditionImmunities || undefined,
+      senses: this.formatSenses(r),
+      languages: this.formatLanguages(r['languages']),
       actions: actions.length > 0 ? actions : undefined,
       specialAbilities: specialAbilities.length > 0 ? specialAbilities : undefined,
       legendaryActions: legendaryActions.length > 0 ? legendaryActions : undefined,
@@ -394,12 +482,46 @@ class Open5eClientV3 {
   // -------------------------------------------------------------------------
 
   async searchItems(query: string, limit = 25): Promise<Open5eResult<ItemData[]>> {
-    if (!query.trim()) {
-      return { data: [], status: 'ok', fromCache: true };
-    }
+    const rawTrimmed = query.trim();
+    // Parantez içi Türkçe çevirileri veya ekleri temizle (örn. "Longsword (Uzun Kılıç)" -> "Longsword")
+    const cleaned = rawTrimmed.replace(/\s*\([^)]*\)/g, '').trim();
 
-    // Önce normal eşyalar
-    const itemPath = `/items/?name__icontains=${encodeURIComponent(query)}&limit=${limit}`;
+    // Türkçe yaygın terimleri İngilizce karşılığına çevir
+    const trMap: Record<string, string> = {
+      'kılıç': 'sword',
+      'uzun kılıç': 'longsword',
+      'kısa kılıç': 'shortsword',
+      'büyük kılıç': 'greatsword',
+      'kalkan': 'shield',
+      'zırh': 'armor',
+      'zincir zırh': 'chain mail',
+      'deri zırh': 'leather armor',
+      'plaka zırh': 'plate',
+      'iksir': 'potion',
+      'şifa iksiri': 'potion of healing',
+      'şifa': 'healing',
+      'yay': 'bow',
+      'kısa yay': 'shortbow',
+      'uzun yay': 'longbow',
+      'arbalet': 'crossbow',
+      'balta': 'axe',
+      'savaş baltası': 'battleaxe',
+      'büyük balta': 'greataxe',
+      'hançer': 'dagger',
+      'mızrak': 'spear',
+      'asa': 'staff',
+      'meşale': 'torch',
+      'halat': 'rope',
+      'ip': 'rope',
+      'sırt çantası': 'backpack',
+      'kumanya': 'rations',
+    };
+
+    const effectiveQuery = trMap[cleaned.toLowerCase()] || cleaned;
+
+    const itemPath = effectiveQuery
+      ? `/items/?name__icontains=${encodeURIComponent(effectiveQuery)}&limit=${limit}`
+      : `/items/?limit=${limit}`;
     const itemRaw = await this.fetchResults(itemPath);
 
     if (itemRaw.length > 0) {
@@ -410,7 +532,9 @@ class Open5eClientV3 {
     }
 
     // Bulunamazsa sihirli eşyalara bak
-    const magicPath = `/magic-items/?name__icontains=${encodeURIComponent(query)}&limit=${limit}`;
+    const magicPath = effectiveQuery
+      ? `/magic-items/?name__icontains=${encodeURIComponent(effectiveQuery)}&limit=${limit}`
+      : `/magic-items/?limit=${limit}`;
     const magicRaw = await this.fetchResults(magicPath);
 
     const data = (magicRaw as Record<string, unknown>[]).map((r) =>
