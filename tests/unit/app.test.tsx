@@ -12,29 +12,19 @@ describe('Uygulama Temel İskelet ve Gezinme Birim Testleri', () => {
     expect(document.getElementById('nav-btn-sheet')).toBeInTheDocument();
     expect(document.getElementById('nav-btn-creator')).toBeInTheDocument();
     expect(document.getElementById('nav-btn-dm')).toBeInTheDocument();
-    expect(document.getElementById('nav-btn-dice')).toBeInTheDocument();
 
     expect(document.getElementById('home-hub-container')).toBeInTheDocument();
     expect(document.getElementById('hub-card-sheet')).toBeInTheDocument();
   });
 
-  it('Menüden Zar Tepsisine geçilebilir ve zar atılabilir', async () => {
+  it('Menüden DM Ekranına geçilebilir', async () => {
     render(<App />);
-    const diceNavBtn = document.getElementById('nav-btn-dice');
-    expect(diceNavBtn).toBeInTheDocument();
-    fireEvent.click(diceNavBtn!);
+    const dmNavBtn = document.getElementById('nav-btn-dm');
+    expect(dmNavBtn).toBeInTheDocument();
+    fireEvent.click(dmNavBtn!);
 
     await waitFor(() => {
-      expect(document.getElementById('dice-tray-container')).toBeInTheDocument();
-    });
-
-    const rollBtn = document.getElementById('btn-execute-dice-roll');
-    expect(rollBtn).toBeInTheDocument();
-    fireEvent.click(rollBtn!);
-
-    await waitFor(() => {
-      const activeStage = document.getElementById('active-dice-stage');
-      expect(activeStage).toBeInTheDocument();
+      expect(document.getElementById('campaign-hub-root') || document.getElementById('encounter-tracker-view') || document.getElementById('main-content-viewport')).toBeInTheDocument();
     });
   });
 

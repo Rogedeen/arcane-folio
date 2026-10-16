@@ -6,7 +6,6 @@ import { CharacterGallery } from './components/CharacterGallery';
 import { ModernCharacterSheet } from './components/ModernCharacterSheet';
 import { CharacterCreator } from './components/CharacterCreator';
 import { CampaignView } from './components/CampaignView';
-import { DiceTray } from './components/DiceTray';
 import { FloatingDice } from './components/FloatingDice';
 import { Physical3DDiceOverlay } from './components/Physical3DDiceOverlay';
 import { ReferenceDrawer } from './components/ReferenceDrawer';
@@ -122,14 +121,6 @@ function AppInner() {
             👑 DM
           </button>
           <button
-            id="nav-btn-dice"
-            className={`nav-tab-btn ${currentView === 'dice' ? 'active' : ''}`}
-            onClick={() => handleNavigate('dice')}
-            aria-label="Zar Tepsisi"
-          >
-            🎲 Zarlar
-          </button>
-          <button
             id="theme-toggle-btn"
             className="theme-toggle-btn"
             onClick={() => setTheme((t) => (t === 'dark' ? 'parchment' : 'dark'))}
@@ -165,14 +156,10 @@ function AppInner() {
         {currentView === 'dm' && (
           <CampaignView />
         )}
-
-        {currentView === 'dice' && (
-          <DiceTray />
-        )}
       </main>
 
       {/* 3. Global Yüzen Zar Masası & Kural Referans Çekmecesi & Fiziksel 3D Zar */}
-      <FloatingDice onOpenFullTray={() => handleNavigate('dice')} />
+      <FloatingDice />
       <Physical3DDiceOverlay />
       <ReferenceDrawer />
 

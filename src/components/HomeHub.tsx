@@ -118,23 +118,6 @@ export const HomeHub: React.FC<HomeHubProps> = ({ onNavigate }) => {
           </p>
           <span className="hub-card-btn font-cinzel">DM Ekranını Aç →</span>
         </div>
-
-        {/* 5. Polhedral Zar Tepsisi */}
-        <div
-          id="hub-card-dice"
-          className="hub-action-card"
-          onClick={() => onNavigate('dice')}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => e.key === 'Enter' && onNavigate('dice')}
-        >
-          <div className="hub-card-icon">🎲</div>
-          <h3 className="font-cinzel hub-card-title">Polhedral Zar Tepsisi</h3>
-          <p className="hub-card-desc">
-            Çoklu zar havuzu (6d8, 4d6, 2d20), ses efektleri, kritik/ıska bildirimleri ve atış geçmişi.
-          </p>
-          <span className="hub-card-btn font-cinzel">Zar Tepsisini Aç →</span>
-        </div>
       </div>
     </div>
   );
