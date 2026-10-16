@@ -12,6 +12,8 @@ import { syncService } from '../data/syncService';
 import { soundEffects } from '../utils/soundEffects';
 import { loadCharacters } from '../data/persistenceService';
 import { calculateArmorClass } from '../rules/armorClass';
+import { localDatabase } from '../data/localDatabase';
+import { MonsterDetailModal } from './MonsterDetailModal';
 
 export interface Combatant {
   id: string;
@@ -147,6 +149,41 @@ export const EncounterTracker: React.FC<EncounterTrackerProps> = ({ partyMembers
   // Hasar girişi için state
   const [damageInput, setDamageInput] = useState<Record<string, number>>({});
 
+  // Seçilen Canavar Stat Blok İnceleme Modalı
+  const [selectedMonsterForDetail, setSelectedMonsterForDetail] = useState<CreatureData | null>(null);
+
+  // İlk yüklemede yerel veritabanındaki tüm canavarları çek ve arka planda Open5e ile senkronize et
+  useEffect(() => {
+    setSearchResults(localDatabase.getAllMonsters());
+    localDatabase.syncFromOpen5e().then(() => {
+      setSearchResults(localDatabase.getAllMonsters());
+    });
+  }, []);
+
+  // Canavar Arama (Anında yerel DB + arka planda Open5e)
+  const handleSearchCreatures = async (query: string) => {
+    setSearchQuery(query);
+    // 1. Anında yerel aramayı çalıştır (b ile başlayanlar en başta)
+    const local = localDatabase.searchMonsters(query);
+    setSearchResults(local);
+
+    if (query.trim().length >= 1) {
+      setIsSearching(true);
+      try {
+        const apiRes = await open5eClient.searchCreatures(query, undefined, 30);
+        if (apiRes.data && apiRes.data.length > 0) {
+          localDatabase.saveMonsters(apiRes.data);
+          const updated = localDatabase.searchMonsters(query);
+          setSearchResults(updated);
+        }
+      } catch (err) {
+        console.warn('Open5e canavar arama hatası:', err);
+      } finally {
+        setIsSearching(false);
+      }
+    }
+  };
+
   // 1. SAVAŞ SİSİ (Fog of War) ile Senkronizasyon Yayıncısı
   const broadcastEncounterState = (
     cList: Combatant[],
@@ -274,29 +311,6 @@ export const EncounterTracker: React.FC<EncounterTrackerProps> = ({ partyMembers
     return unsub;
   }, []);
 
-  // Open5e Canavar Arama (50 canavar ve tüm SRD desteği)
-  const handleSearchCreatures = async (q: string) => {
-    setSearchQuery(q);
-    setIsSearching(true);
-    try {
-      const res = await open5eClient.searchCreatures(q, undefined, 50);
-      if (res.data && res.data.length > 0) {
-        setSearchResults(res.data);
-      } else {
-        const filtered = DEFAULT_MONSTERS.filter((m) =>
-          m.name.toLowerCase().includes(q.toLowerCase())
-        );
-        setSearchResults(filtered);
-      }
-    } catch {
-      const filtered = DEFAULT_MONSTERS.filter((m) =>
-        m.name.toLowerCase().includes(q.toLowerCase())
-      );
-      setSearchResults(filtered);
-    } finally {
-      setIsSearching(false);
-    }
-  };
 
   // Partiyi Karşılaşmaya Aktar (Manuel buton desteği de korunur)
   const handleAddParty = () => {
@@ -618,6 +632,27 @@ export const EncounterTracker: React.FC<EncounterTrackerProps> = ({ partyMembers
                           <span style={{ fontSize: '0.72rem', background: c.type === 'player' ? 'rgba(59, 130, 246, 0.2)' : 'rgba(239, 68, 68, 0.2)', color: c.type === 'player' ? '#93c5fd' : '#fca5a5', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>
                             {c.type === 'player' ? 'Oyuncu' : `Canavar (CR ${c.cr ?? '?'})`}
                           </span>
+                          {c.type === 'monster' && (
+                            <button
+                              onClick={() => {
+                                const baseName = c.name.split('#')[0].trim();
+                                const found = c.sourceData ?? localDatabase.getAllMonsters().find((m) => m.name.toLowerCase().startsWith(baseName.toLowerCase()));
+                                if (found) setSelectedMonsterForDetail(found);
+                              }}
+                              style={{
+                                padding: '0.15rem 0.45rem',
+                                fontSize: '0.72rem',
+                                background: 'rgba(217, 119, 6, 0.2)',
+                                border: '1px solid var(--accent-gold)',
+                                color: 'var(--accent-gold)',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                              }}
+                              title="Tüm Aksiyonları, Hasarları ve Yetenekleri Gör"
+                            >
+                              📜 Stat Blok
+                            </button>
+                          )}
                           {isActive && (
                             <span style={{ fontSize: '0.72rem', background: 'var(--accent-gold)', color: '#000', padding: '0.1rem 0.4rem', borderRadius: '4px', fontWeight: 700 }}>
                               SIRA SENDE
@@ -817,6 +852,14 @@ export const EncounterTracker: React.FC<EncounterTrackerProps> = ({ partyMembers
 
                 <div style={{ display: 'flex', gap: '0.4rem' }}>
                   <button
+                    className="action-button secondary"
+                    onClick={() => setSelectedMonsterForDetail(monster)}
+                    style={{ padding: '0.35rem 0.6rem', fontSize: '0.8rem' }}
+                    title="Stat Blok, Aksiyon ve Yetenekleri İncele"
+                  >
+                    📜 İncele
+                  </button>
+                  <button
                     className="action-button"
                     onClick={() => handleAddMonster(monster)}
                     style={{ padding: '0.35rem 0.7rem', fontSize: '0.8rem', background: 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)' }}
@@ -831,6 +874,13 @@ export const EncounterTracker: React.FC<EncounterTrackerProps> = ({ partyMembers
         </div>
 
       </div>
+
+      {/* 3. Canavar Detay & Stat Blok Modalı */}
+      <MonsterDetailModal
+        monster={selectedMonsterForDetail}
+        onClose={() => setSelectedMonsterForDetail(null)}
+        onAddToEncounter={handleAddMonster}
+      />
 
     </div>
   );

@@ -41,8 +41,11 @@ describe('EncounterTracker (DM Karşılaşma & İnisiyatif Takipçisi)', () => {
   it('canavar ekleme butonu karşılaşmaya canavar ekler', async () => {
     render(<EncounterTracker partyMembers={MOCK_PARTY} />);
     
-    // İlk canavarın (+ Ekle) butonuna tıkla (Goblin)
-    const addBtns = screen.getAllByRole('button', { name: /\+ Ekle/i });
+    // Canavar ara ve ekle (Goblin)
+    const searchInput = screen.getByPlaceholderText(/canavar ara/i);
+    fireEvent.change(searchInput, { target: { value: 'Goblin' } });
+
+    const addBtns = await screen.findAllByRole('button', { name: /\+ Ekle/i });
     fireEvent.click(addBtns[0]);
 
     await waitFor(() => {

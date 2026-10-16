@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ItemData } from '../types/content';
-import { contentService } from '../data/contentService';
+import { localDatabase } from '../data/localDatabase';
+import { open5eClient } from '../data/open5eClient';
 import { calculateCarryingCapacity, calculateTotalWeight, isEncumbered } from '../rules/inventory';
 import { useReference } from '../context/ReferenceContext';
 import { calculatePotionHealing, isPotionItem } from '../rules/potions';
@@ -20,14 +21,22 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
   onUsePotion,
 }) => {
   const { openReference } = useReference();
-  const [internalItems, setInternalItems] = useState<ItemData[]>(() => externalInventory ?? contentService.getInitialItems());
-  const items = externalInventory ?? internalItems;
+  const [internalItems, setInternalItems] = useState<ItemData[]>(() =>
+    externalInventory !== undefined ? externalInventory : localDatabase.getAllItems()
+  );
+  const items = externalInventory !== undefined ? externalInventory : internalItems;
 
   const [activeTab, setActiveTab] = useState<'bag' | 'add'>('bag');
   const [filterType, setFilterType] = useState<string>('all');
   const [catalogSearch, setCatalogSearch] = useState<string>('');
-  const [catalogResults, setCatalogResults] = useState<ItemData[]>([]);
+  const [catalogTypeFilter, setCatalogTypeFilter] = useState<string>('all');
+  const [catalogResults, setCatalogResults] = useState<ItemData[]>(() => localDatabase.getAllItems());
   const [isSearchingCatalog, setIsSearchingCatalog] = useState<boolean>(false);
+
+  // Sekme açıldığında veya ilk yüklemede eşyaları veritabanından çek
+  useEffect(() => {
+    setCatalogResults(localDatabase.getAllItems());
+  }, []);
 
   const updateItems = (newItems: ItemData[]) => {
     setInternalItems(newItems);
@@ -109,18 +118,40 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
     }
   };
 
-  // Katalogda Ara
-  const handleCatalogSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!catalogSearch.trim()) return;
+  // Katalogda Anında Arama ve Filtreleme
+  const handleCatalogInputChange = async (query: string, typeFilt = catalogTypeFilter) => {
+    setCatalogSearch(query);
+    // 1. Anında yerel aramayı çalıştır
+    const local = localDatabase.searchItems(query, typeFilt);
+    setCatalogResults(local);
 
-    setIsSearchingCatalog(true);
-    try {
-      const results = await contentService.getItems(catalogSearch.trim());
-      setCatalogResults(results);
-    } finally {
-      setIsSearchingCatalog(false);
+    // 2. 2 harften uzunsa arka planda Open5e'den sorgula
+    if (query.trim().length >= 2) {
+      setIsSearchingCatalog(true);
+      try {
+        const apiRes = await open5eClient.searchItems(query.trim(), 25);
+        if (apiRes.data && apiRes.data.length > 0) {
+          localDatabase.saveItems(apiRes.data);
+          const updated = localDatabase.searchItems(query, typeFilt);
+          setCatalogResults(updated);
+        }
+      } catch (err) {
+        console.warn('Open5e eşya arama hatası:', err);
+      } finally {
+        setIsSearchingCatalog(false);
+      }
     }
+  };
+
+  const handleCatalogFilterChange = (type: string) => {
+    setCatalogTypeFilter(type);
+    const updated = localDatabase.searchItems(catalogSearch, type);
+    setCatalogResults(updated);
+  };
+
+  const handleCatalogSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    handleCatalogInputChange(catalogSearch);
   };
 
   const filteredBagItems = items.filter((it) => (filterType === 'all' ? true : it.type === filterType));
@@ -282,25 +313,39 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
       {/* 3. EŞYA EKLE (KATALOG / MAĞAZA) SEKMESİ */}
       {activeTab === 'add' && (
         <div className="inv-catalog-view">
+          {/* Katalog Arama Çubuğu */}
           <form onSubmit={handleCatalogSearch} className="catalog-search-bar">
             <input
               id="input-catalog-search"
               type="text"
               className="catalog-input"
-              placeholder="Eşya adı ara (örn: Greatsword, Potion, Plate Armor, Bow)..."
+              placeholder="Eşya ara (örn: Greatsword, Potion, Plate Armor, Bow)..."
               value={catalogSearch}
-              onChange={(e) => setCatalogSearch(e.target.value)}
+              onChange={(e) => handleCatalogInputChange(e.target.value)}
             />
             <button id="btn-catalog-search" type="submit" className="action-button catalog-search-btn" disabled={isSearchingCatalog}>
               {isSearchingCatalog ? 'Aranıyor...' : '🔍 Eşya Ara'}
             </button>
           </form>
 
+          {/* Katalog Kategori Filtresi */}
+          <div className="inventory-filter-bar" style={{ marginTop: '0.6rem' }}>
+            {['all', 'weapon', 'armor', 'shield', 'potion', 'gear'].map((type) => (
+              <button
+                key={type}
+                className={`inv-filter-btn ${catalogTypeFilter === type ? 'active' : ''}`}
+                onClick={() => handleCatalogFilterChange(type)}
+              >
+                {type === 'all' ? 'Tümü' : type === 'weapon' ? 'Silahlar' : type === 'armor' ? 'Zırhlar' : type === 'shield' ? 'Kalkanlar' : type === 'potion' ? 'İksirler' : 'Ekipman'}
+              </button>
+            ))}
+          </div>
+
           {/* Sonuçlar Listesi */}
-          <div className="catalog-results-list">
+          <div className="catalog-results-list" style={{ marginTop: '0.8rem' }}>
             {catalogResults.length === 0 && !isSearchingCatalog && (
               <div className="catalog-empty-prompt">
-                <p>🔍 Yukarıdaki kutudan D&D 5e SRD kütüphanesindeki tüm silah, zırh, iksir ve teçhizatları arayabilirsin.</p>
+                <p>🔍 Aradığınız kriterlere uygun eşya bulunamadı.</p>
               </div>
             )}
 
@@ -332,7 +377,10 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
                 <button
                   id={`btn-add-item-${item.slug}`}
                   className="catalog-add-btn"
-                  onClick={() => addItemToBag(item)}
+                  onClick={() => {
+                    addItemToBag(item);
+                    soundEffects.playDiceRollSound();
+                  }}
                   title="Çantama Ekle"
                 >
                   ➕ Çantaya Ekle

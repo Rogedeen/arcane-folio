@@ -23,9 +23,12 @@ dist-ssr
 *.sln
 *.sw?
 
-# Environment
+# Environment & Secrets
 .env
 .env.*
+.env.local
+*.pem
+*.key
 !.env.example
 .agents/plugins/**/mcp_config.json
 

@@ -14,7 +14,20 @@
 
 import type { SpellData, ItemData } from '../types/content';
 
-// --- Canavar tipi (V3'te eklendi) ---
+export interface MonsterAction {
+  name: string;
+  desc: string;
+  attack_bonus?: number;
+  damage_dice?: string;
+  damage_bonus?: number;
+}
+
+export interface MonsterSpecialAbility {
+  name: string;
+  desc: string;
+}
+
+// --- Canavar tipi (V3'te genişletildi: tüm aksiyonlar, hasarlar, alanlar, skill'ler) ---
 export interface CreatureData {
   slug: string;
   name: string;
@@ -33,6 +46,17 @@ export interface CreatureData {
   cha: number;
   description?: string;
   source: string;
+  damageVulnerabilities?: string;
+  damageResistances?: string;
+  damageImmunities?: string;
+  conditionImmunities?: string;
+  senses?: string;
+  languages?: string;
+  skills?: Record<string, number> | string;
+  specialAbilities?: MonsterSpecialAbility[];
+  actions?: MonsterAction[];
+  legendaryActions?: MonsterAction[];
+  reactions?: MonsterAction[];
 }
 
 // --- Global arama sonucu ---
@@ -226,6 +250,37 @@ class Open5eClientV3 {
 
   private toCreatureData(r: Record<string, unknown>): CreatureData {
     const abilityScores = (r['ability_scores'] as Record<string, unknown>) ?? r;
+
+    // Actions parsing
+    const rawActions = Array.isArray(r['actions']) ? (r['actions'] as Record<string, unknown>[]) : [];
+    const actions: MonsterAction[] = rawActions.map((a) => ({
+      name: String(a['name'] ?? 'Action'),
+      desc: String(a['desc'] ?? ''),
+      attack_bonus: typeof a['attack_bonus'] === 'number' ? a['attack_bonus'] : undefined,
+      damage_dice: a['damage_dice'] ? String(a['damage_dice']) : undefined,
+    }));
+
+    // Special abilities parsing
+    const rawAbilities = Array.isArray(r['special_abilities']) ? (r['special_abilities'] as Record<string, unknown>[]) : [];
+    const specialAbilities: MonsterSpecialAbility[] = rawAbilities.map((a) => ({
+      name: String(a['name'] ?? 'Ability'),
+      desc: String(a['desc'] ?? ''),
+    }));
+
+    // Legendary actions
+    const rawLeg = Array.isArray(r['legendary_actions']) ? (r['legendary_actions'] as Record<string, unknown>[]) : [];
+    const legendaryActions: MonsterAction[] = rawLeg.map((a) => ({
+      name: String(a['name'] ?? 'Legendary Action'),
+      desc: String(a['desc'] ?? ''),
+    }));
+
+    // Reactions
+    const rawReactions = Array.isArray(r['reactions']) ? (r['reactions'] as Record<string, unknown>[]) : [];
+    const reactions: MonsterAction[] = rawReactions.map((a) => ({
+      name: String(a['name'] ?? 'Reaction'),
+      desc: String(a['desc'] ?? ''),
+    }));
+
     return {
       slug: String(r['slug'] ?? r['key'] ?? ''),
       name: String(r['name'] ?? 'Unknown Creature'),
@@ -246,6 +301,16 @@ class Open5eClientV3 {
       source: String(
         (r['document'] as Record<string, unknown>)?.['name'] ?? 'Open5e API'
       ),
+      damageVulnerabilities: r['damage_vulnerabilities'] ? String(r['damage_vulnerabilities']) : undefined,
+      damageResistances: r['damage_resistances'] ? String(r['damage_resistances']) : undefined,
+      damageImmunities: r['damage_immunities'] ? String(r['damage_immunities']) : undefined,
+      conditionImmunities: r['condition_immunities'] ? String(r['condition_immunities']) : undefined,
+      senses: r['senses'] ? String(r['senses']) : undefined,
+      languages: r['languages'] ? String(r['languages']) : undefined,
+      actions: actions.length > 0 ? actions : undefined,
+      specialAbilities: specialAbilities.length > 0 ? specialAbilities : undefined,
+      legendaryActions: legendaryActions.length > 0 ? legendaryActions : undefined,
+      reactions: reactions.length > 0 ? reactions : undefined,
     };
   }
 

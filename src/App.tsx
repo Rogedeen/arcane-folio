@@ -8,6 +8,7 @@ import { CharacterCreator } from './components/CharacterCreator';
 import { CampaignView } from './components/CampaignView';
 import { DiceTray } from './components/DiceTray';
 import { FloatingDice } from './components/FloatingDice';
+import { Physical3DDiceOverlay } from './components/Physical3DDiceOverlay';
 import { ReferenceDrawer } from './components/ReferenceDrawer';
 
 function AppInner() {
@@ -170,8 +171,9 @@ function AppInner() {
         )}
       </main>
 
-      {/* 3. Global Yüzen Zar Masası & Kural Referans Çekmecesi */}
+      {/* 3. Global Yüzen Zar Masası & Kural Referans Çekmecesi & Fiziksel 3D Zar */}
       <FloatingDice onOpenFullTray={() => handleNavigate('dice')} />
+      <Physical3DDiceOverlay />
       <ReferenceDrawer />
 
       {/* 4. Footer & Yasal Feragatname (Fan Content Policy & CC-BY-4.0) */}
