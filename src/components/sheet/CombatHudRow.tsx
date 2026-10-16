@@ -66,10 +66,12 @@ export const CombatHudRow: React.FC<CombatHudRowProps> = ({
             title={`${st.name} (1d20+${st.mod})`}
           >
             <span className="dndbeyond-stat-label">{st.label}</span>
-            <span className="dndbeyond-stat-mod">
+            <span className="dndbeyond-stat-score" id={`stat-val-${st.id}`}>
+              {st.val}
+            </span>
+            <span className="dndbeyond-stat-mod-pill" id={`stat-mod-${st.id}`}>
               {st.mod >= 0 ? `+${st.mod}` : st.mod}
             </span>
-            <span className="dndbeyond-stat-score-pill">{st.val}</span>
             {!isLocked && (
               <div className="unlocked-stat-stepper" onClick={(e) => e.stopPropagation()}>
                 <button onClick={() => onStatChange(st.id, -1)}>-</button>

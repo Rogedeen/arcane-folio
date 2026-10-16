@@ -711,7 +711,8 @@
   color: var(--accent-gold);
 }
 
-.dndbeyond-stat-mod {
+.dndbeyond-stat-mod,
+.dndbeyond-stat-score {
   font-family: var(--font-serif);
   font-size: 1.6rem;
   font-weight: 900;
@@ -721,15 +722,17 @@
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
 }
 
-.dndbeyond-stat-score-pill {
+.dndbeyond-stat-score-pill,
+.dndbeyond-stat-mod-pill {
   font-family: var(--font-sans);
-  font-size: 0.75rem;
-  font-weight: 700;
+  font-size: 0.78rem;
+  font-weight: 800;
   background: var(--bg-inset);
-  border: 1px solid var(--border-subtle);
-  padding: 0.05rem 0.45rem;
+  border: 1px solid var(--border-bronze);
+  padding: 0.08rem 0.5rem;
   border-radius: var(--radius-xs);
-  color: var(--text-secondary);
+  color: var(--accent-gold);
+  letter-spacing: 0.02em;
 }
 
 .dndbeyond-combat-hud-group {
