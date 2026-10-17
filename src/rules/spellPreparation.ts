@@ -34,8 +34,23 @@ export interface SpellCapacityInfo {
   labelEn: string;
 }
 
+function normalizeClassKey(cls: string): string {
+  const lower = (cls || '').toLowerCase();
+  if (lower.includes('wizard') || lower.includes('büyücü')) return 'wizard';
+  if (lower.includes('cleric') || lower.includes('rahip') || lower.includes('ruhban')) return 'cleric';
+  if (lower.includes('druid')) return 'druid';
+  if (lower.includes('sorcerer') || lower.includes('sihirbaz')) return 'sorcerer';
+  if (lower.includes('bard') || lower.includes('ozan')) return 'bard';
+  if (lower.includes('warlock') || lower.includes('efsun')) return 'warlock';
+  if (lower.includes('paladin')) return 'paladin';
+  if (lower.includes('ranger') || lower.includes('kolcu')) return 'ranger';
+  if (lower.includes('fighter') || lower.includes('savaşçı')) return 'fighter';
+  if (lower.includes('rogue') || lower.includes('hırsız')) return 'rogue';
+  return lower;
+}
+
 export function getSpellcastingModel(charClass: string, subclass?: string): SpellcastingModel {
-  const c = charClass.toLowerCase();
+  const c = normalizeClassKey(charClass);
   const sc = (subclass || '').toLowerCase().replace(/[-_]/g, ' ');
 
   if (['wizard', 'cleric', 'druid', 'paladin'].includes(c)) {
@@ -69,7 +84,7 @@ export function calculateSpellCapacity(
   castingModifier: number,
   subclass?: string
 ): SpellCapacityInfo {
-  const c = charClass.toLowerCase();
+  const c = normalizeClassKey(charClass);
   const sc = (subclass || '').toLowerCase().replace(/[-_]/g, ' ');
   const clampedLevel = Math.max(1, Math.min(20, level));
   const model = getSpellcastingModel(charClass, subclass);

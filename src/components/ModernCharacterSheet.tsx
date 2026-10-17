@@ -201,6 +201,14 @@ export const ModernCharacterSheet: React.FC = () => {
 
   const passiveInsight = 10 + wisMod + (character.proficientSkills.includes('insight') ? profBonus : 0);
 
+  // Sınıfa duyarlı büyü yeteneği modifikasyonu (SRD 5.1 kuralı)
+  const spellcastingModifier = (() => {
+    const cls = character.class.toLowerCase();
+    if (['cleric', 'druid', 'ranger'].includes(cls)) return wisMod;
+    if (['bard', 'sorcerer', 'warlock', 'paladin'].includes(cls)) return chaMod;
+    return intMod; // wizard, eldritch knight, arcane trickster
+  })();
+
   const ac = calculateArmorClass({
     charClass: character.class,
     dexModifier: dexMod,
@@ -223,10 +231,12 @@ export const ModernCharacterSheet: React.FC = () => {
     getSpellSlotsForLevel(character.class, character.level, character.subclass)
   );
 
-  // Sefer Kodu State'i (DM'in Seferine Katılma)
+  // Sefer Kodu State'i (DM'in Seferine Katılma - Sekme Başına İzole sessionStorage)
   const [joinedCampaignCode, setJoinedCampaignCode] = useState<string | null>(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('arcane_player_campaign') || null;
+      // Eski sekmeler arası kirliliği önlemek için localStorage'daki kalıntıyı temizle
+      localStorage.removeItem('arcane_player_campaign');
+      return sessionStorage.getItem('arcane_player_campaign') || null;
     }
     return null;
   });
@@ -234,7 +244,7 @@ export const ModernCharacterSheet: React.FC = () => {
   const handlePlayerJoinCampaign = (inviteCode: string) => {
     setJoinedCampaignCode(inviteCode);
     if (typeof window !== 'undefined') {
-      localStorage.setItem('arcane_player_campaign', inviteCode);
+      sessionStorage.setItem('arcane_player_campaign', inviteCode);
     }
     const memberPayload = characterToPartyMember(character, ac);
     // DM'in ekranına canlı üye olarak yayınla
@@ -245,6 +255,25 @@ export const ModernCharacterSheet: React.FC = () => {
       payload: memberPayload,
       timestamp: new Date().toISOString(),
     });
+  };
+
+  const handlePlayerLeaveCampaign = () => {
+    if (joinedCampaignCode) {
+      syncService.broadcast({
+        type: 'MEMBER_REMOVE',
+        campaignId: joinedCampaignCode,
+        senderRole: 'player',
+        payload: { memberId: character.id },
+        timestamp: new Date().toISOString(),
+      });
+    }
+    setJoinedCampaignCode(null);
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('arcane_player_campaign');
+      localStorage.removeItem('arcane_player_campaign');
+    }
+    setQuickToast({ text: '🏰 Seferden ayrıldınız.' });
+    setTimeout(() => setQuickToast(null), 4000);
   };
 
   // Oyuncu bir sefere katılmışsa ve statlarında/seviyesinde/canında değişiklik olursa DM ekranına otomatik senkronize et
@@ -272,9 +301,60 @@ export const ModernCharacterSheet: React.FC = () => {
     ac,
   ]);
 
-  // DM Encounter senkronizasyonu dinleyicisi
+  // DM Senkronizasyon dinleyicisi (HP, Durum, Seferden Çıkarılma ve Karşılaşma)
   useEffect(() => {
     const unsub = syncService.subscribe((event) => {
+      if (event.type === 'HP_UPDATE' && event.payload) {
+        const { memberId, delta, isHealing } = event.payload;
+        if (memberId === character.id) {
+          const nextHp = isHealing
+            ? Math.min(character.maxHp, character.currentHp + Math.abs(delta))
+            : Math.max(0, character.currentHp - Math.abs(delta));
+          if (!isDemo) updateHp(nextHp);
+          setQuickToast({
+            text: isHealing
+              ? `💚 Zindan Efendisi seni +${delta} HP iyileştirdi! (${nextHp}/${character.maxHp} HP)`
+              : `⚔️ Zindan Efendisi sana -${delta} HP hasar verdi! (${nextHp}/${character.maxHp} HP)`,
+          });
+          setTimeout(() => setQuickToast(null), 6000);
+        }
+      }
+
+      if (event.type === 'CONDITION_UPDATE' && event.payload) {
+        const { memberId, condId, action } = event.payload;
+        if (memberId === character.id) {
+          const currentConds = character.activeConditions || [];
+          let updatedConds: string[];
+          if (action === 'remove') {
+            updatedConds = currentConds.filter((c) => c !== condId);
+          } else {
+            updatedConds = currentConds.includes(condId) ? currentConds : [...currentConds, condId];
+          }
+          if (!isDemo) updateConditions(updatedConds);
+          setQuickToast({
+            text: action === 'remove'
+              ? `✨ ${condId} durumu üzerinden kalktı.`
+              : `⚠️ Zindan Efendisi sana durum ekledi: ${condId}`,
+          });
+          setTimeout(() => setQuickToast(null), 6000);
+        }
+      }
+
+      if (event.type === 'MEMBER_REMOVE' && event.payload) {
+        const { memberId } = event.payload;
+        if (memberId === character.id) {
+          setJoinedCampaignCode(null);
+          if (typeof window !== 'undefined') {
+            sessionStorage.removeItem('arcane_player_campaign');
+            localStorage.removeItem('arcane_player_campaign');
+          }
+          setQuickToast({
+            text: '🏰 Zindan Efendisi (DM) sizi partiden çıkardı.',
+          });
+          setTimeout(() => setQuickToast(null), 6000);
+        }
+      }
+
       if (event.type === 'ENCOUNTER_UPDATE' && event.payload) {
         if (event.payload.combatActive !== undefined) {
           setCombatMode(Boolean(event.payload.combatActive));
@@ -299,7 +379,7 @@ export const ModernCharacterSheet: React.FC = () => {
       }
     });
     return unsub;
-  }, [character.name]);
+  }, [character.id, character.name, character.currentHp, character.maxHp, character.activeConditions, isDemo, baseSpeed]);
 
   const isSpellcaster =
     ['cleric', 'druid', 'wizard', 'sorcerer', 'warlock', 'bard', 'paladin', 'ranger'].includes(
@@ -627,6 +707,7 @@ export const ModernCharacterSheet: React.FC = () => {
         isLocked={isLocked}
         onToggleLock={() => setIsLocked(!isLocked)}
         onJoinCampaign={handlePlayerJoinCampaign}
+        onLeaveCampaign={handlePlayerLeaveCampaign}
         joinedCampaignCode={joinedCampaignCode}
       />
 
@@ -822,7 +903,7 @@ export const ModernCharacterSheet: React.FC = () => {
               {isSpellcaster ? (
                 <Spellbook
                   level={character.level}
-                  castingModifier={intMod}
+                  castingModifier={spellcastingModifier}
                   charClass={character.class}
                   subclass={character.subclass}
                   initialSpellSlots={spellSlots}

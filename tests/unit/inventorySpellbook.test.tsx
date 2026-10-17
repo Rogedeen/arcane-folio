@@ -108,5 +108,33 @@ describe('Spellbook Component', () => {
     expect(screen.getByText(/sınırı doldu/i)).toBeInTheDocument();
     expect(shieldBtn.textContent).not.toContain('✓ Hazırlandı');
   });
+
+  it('allows casting spells with available spell slot and expends the slot', () => {
+    let latestSlots: Record<number, { tier: number; total: number; expended: number }> = {};
+    render(
+      <Spellbook
+        level={3}
+        castingModifier={3}
+        charClass="wizard"
+        onSpellSlotsChange={(updated) => {
+          latestSlots = updated;
+        }}
+      />
+    );
+
+    // Level 3 wizard has tier 1 and tier 2 slots
+    // Magic Missile (1st level spell) has both 1. Kademe Kullan and 2. Kademe Upcast buttons
+    const castTier1Btn = document.getElementById('btn-cast-magic-missile-tier-1') as HTMLButtonElement;
+    expect(castTier1Btn).toBeInTheDocument();
+
+    const castTier2Btn = document.getElementById('btn-cast-magic-missile-tier-2') as HTMLButtonElement;
+    expect(castTier2Btn).toBeInTheDocument();
+
+    // Cast using tier 1
+    fireEvent.click(castTier1Btn);
+    expect(latestSlots[1].expended).toBe(1);
+    expect(screen.getByText(/Magic Missile yapıldı/i)).toBeInTheDocument();
+  });
 });
+
 

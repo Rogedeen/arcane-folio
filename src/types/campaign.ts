@@ -40,6 +40,7 @@ export type SyncEventType =
   | 'CONDITION_UPDATE'
   | 'MEMBER_JOIN'
   | 'MEMBER_UPDATE'
+  | 'MEMBER_REMOVE'
   | 'PING'
   | 'DICE_ROLLED'
   | 'ENCOUNTER_UPDATE'

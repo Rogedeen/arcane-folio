@@ -92,6 +92,9 @@ export const CampaignView: React.FC = () => {
     const unsubscribe = syncService.subscribe((event: SyncEvent) => {
       if (event.type === 'HP_UPDATE') {
         const { memberId, delta, isHealing } = event.payload;
+        // Eğer DM bu sekmede ise ve olayı gönderen DM ise, local state zaten güncellendi
+        if (userRole === 'dm' && event.senderRole === 'dm') return;
+
         setCampaign((prev) => ({
           ...prev,
           members: prev.members.map((m) => {
@@ -105,19 +108,33 @@ export const CampaignView: React.FC = () => {
           })
         }));
       } else if (event.type === 'CONDITION_UPDATE') {
-        const { memberId, condId } = event.payload;
+        const { memberId, condId, action } = event.payload;
+        // Eğer DM bu sekmede ise ve olayı gönderen DM ise, local state zaten güncellendi
+        if (userRole === 'dm' && event.senderRole === 'dm') return;
+
         setCampaign((prev) => ({
           ...prev,
           members: prev.members.map((m) => {
             if (m.id === memberId) {
-              const exists = m.activeConditions.includes(condId);
-              const next = exists
-                ? m.activeConditions.filter((c) => c !== condId)
-                : [...m.activeConditions, condId];
-              return { ...m, activeConditions: next };
+              let nextConds: string[];
+              if (action === 'add') {
+                nextConds = m.activeConditions.includes(condId) ? m.activeConditions : [...m.activeConditions, condId];
+              } else if (action === 'remove') {
+                nextConds = m.activeConditions.filter((c) => c !== condId);
+              } else {
+                const exists = m.activeConditions.includes(condId);
+                nextConds = exists ? m.activeConditions.filter((c) => c !== condId) : [...m.activeConditions, condId];
+              }
+              return { ...m, activeConditions: nextConds };
             }
             return m;
           })
+        }));
+      } else if (event.type === 'MEMBER_REMOVE' && event.payload?.memberId) {
+        const targetId = event.payload.memberId;
+        setCampaign((prev) => ({
+          ...prev,
+          members: prev.members.filter((m) => m.id !== targetId)
         }));
       } else if ((event.type === 'MEMBER_JOIN' || event.type === 'MEMBER_UPDATE') && event.payload) {
         const memberData = event.payload as PartyMember;
@@ -145,7 +162,7 @@ export const CampaignView: React.FC = () => {
     return () => {
       unsubscribe();
     };
-  }, []);
+  }, [userRole]);
 
   const handleCopyCode = () => {
     navigator.clipboard?.writeText(campaign.inviteCode);
@@ -396,7 +413,14 @@ export const CampaignView: React.FC = () => {
         <DmDashboard
           members={campaign.members}
           userRole={userRole}
+          campaignInviteCode={campaign.inviteCode}
           onUpdateMembers={(next) => setCampaign((prev) => ({ ...prev, members: next }))}
+          onRemoveMember={(removedId) =>
+            setCampaign((prev) => ({
+              ...prev,
+              members: prev.members.filter((m) => m.id !== removedId)
+            }))
+          }
         />
       ) : (
         <EncounterTracker partyMembers={campaign.members} />

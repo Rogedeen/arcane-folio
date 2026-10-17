@@ -10,13 +10,17 @@ import { useCharacter } from '../context/CharacterContext';
 interface DmDashboardProps {
   members: PartyMember[];
   userRole: UserRole;
+  campaignInviteCode?: string;
   onUpdateMembers: (newMembers: PartyMember[]) => void;
+  onRemoveMember?: (memberId: string) => void;
 }
 
 export const DmDashboard: React.FC<DmDashboardProps> = ({
   members,
   userRole,
-  onUpdateMembers
+  campaignInviteCode = 'DRG924',
+  onUpdateMembers,
+  onRemoveMember
 }) => {
   const { state } = useCharacter();
   const lang = state.preferences?.language || 'tr';
@@ -25,8 +29,8 @@ export const DmDashboard: React.FC<DmDashboardProps> = ({
 
   // Her üye için görünüm modu: 'stats' (Ana Statlar) veya 'skills' (Beceriler)
   const [memberViewMode, setMemberViewMode] = useState<Record<string, 'stats' | 'skills'>>({});
-  // Her üye için özel girilen HP miktarı
-  const [customHpAmounts, setCustomHpAmounts] = useState<Record<string, number>>({});
+  // Her üye için özel girilen HP miktarı (Serbest string girişi — silip boş bırakılabilir)
+  const [customHpAmounts, setCustomHpAmounts] = useState<Record<string, string>>({});
   // Seçilen debuff
   const [selectedDebuff, setSelectedDebuff] = useState<Record<string, string>>({});
 
@@ -51,7 +55,7 @@ export const DmDashboard: React.FC<DmDashboardProps> = ({
 
     syncService.broadcast({
       type: 'HP_UPDATE',
-      campaignId: 'camp-default',
+      campaignId: campaignInviteCode,
       senderRole: 'dm',
       payload: { memberId, delta, isHealing },
       timestamp: new Date().toISOString()
@@ -73,9 +77,9 @@ export const DmDashboard: React.FC<DmDashboardProps> = ({
 
     syncService.broadcast({
       type: 'CONDITION_UPDATE',
-      campaignId: 'camp-default',
+      campaignId: campaignInviteCode,
       senderRole: 'dm',
-      payload: { memberId, condId: condName },
+      payload: { memberId, condId: condName, action: 'add' },
       timestamp: new Date().toISOString()
     });
   };
@@ -83,8 +87,10 @@ export const DmDashboard: React.FC<DmDashboardProps> = ({
   const handleRemoveCondition = (memberId: string, indexToRemove: number) => {
     if (!isDm) return;
 
+    let removedCondName = '';
     const nextMembers = members.map((m) => {
       if (m.id === memberId) {
+        removedCondName = m.activeConditions[indexToRemove] || '';
         const nextConds = m.activeConditions.filter((_, idx) => idx !== indexToRemove);
         return { ...m, activeConditions: nextConds };
       }
@@ -92,6 +98,35 @@ export const DmDashboard: React.FC<DmDashboardProps> = ({
     });
 
     onUpdateMembers(nextMembers);
+
+    if (removedCondName) {
+      syncService.broadcast({
+        type: 'CONDITION_UPDATE',
+        campaignId: campaignInviteCode,
+        senderRole: 'dm',
+        payload: { memberId, condId: removedCondName, action: 'remove' },
+        timestamp: new Date().toISOString()
+      });
+    }
+  };
+
+  const handleRemoveMember = (memberId: string) => {
+    if (!isDm) return;
+
+    if (onRemoveMember) {
+      onRemoveMember(memberId);
+    } else {
+      const nextMembers = members.filter((m) => m.id !== memberId);
+      onUpdateMembers(nextMembers);
+    }
+
+    syncService.broadcast({
+      type: 'MEMBER_REMOVE',
+      campaignId: campaignInviteCode,
+      senderRole: 'dm',
+      payload: { memberId },
+      timestamp: new Date().toISOString()
+    });
   };
 
   return (
@@ -126,7 +161,8 @@ export const DmDashboard: React.FC<DmDashboardProps> = ({
           const isBloodied = member.currentHp <= member.maxHp / 2;
           const isDown = member.currentHp === 0;
           const currentMode = memberViewMode[member.id] || 'stats';
-          const customHp = customHpAmounts[member.id] || 5;
+          const rawHpInput = customHpAmounts[member.id] !== undefined ? customHpAmounts[member.id] : '5';
+          const customHpNumber = Math.max(1, parseInt(rawHpInput, 10) || 5);
 
           const strMod = calculateModifier(member.stats?.str || 10);
           const dexMod = calculateModifier(member.stats?.dex || 10);
@@ -149,8 +185,32 @@ export const DmDashboard: React.FC<DmDashboardProps> = ({
                     Seviye {member.level} {member.charClass} • Oyuncu: {member.playerName}
                   </span>
                 </div>
-                <div className="member-ac-badge" title="Zırh Sınıfı (AC)">
-                  🛡️ {member.ac} AC
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div className="member-ac-badge" title="Zırh Sınıfı (AC)">
+                    🛡️ {member.ac} AC
+                  </div>
+                  {isDm && (
+                    <button
+                      id={`btn-remove-member-${member.id}`}
+                      className="dm-remove-member-btn"
+                      onClick={() => handleRemoveMember(member.id)}
+                      title="Karakteri Partiden Çıkar"
+                      aria-label="Karakteri Partiden Çıkar"
+                      style={{
+                        background: 'rgba(239, 68, 68, 0.15)',
+                        border: '1px solid rgba(239, 68, 68, 0.4)',
+                        color: '#f87171',
+                        borderRadius: '6px',
+                        padding: '4px 8px',
+                        fontSize: '0.75rem',
+                        cursor: 'pointer',
+                        fontWeight: 700,
+                        transition: 'all 0.2s ease',
+                      }}
+                    >
+                      🗑️ Çıkar
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -262,42 +322,51 @@ export const DmDashboard: React.FC<DmDashboardProps> = ({
               {/* DM Kontrolleri (Özel HP ve Stacklenebilir Durum Ekleme) */}
               {isDm && (
                 <div className="dm-controls-wrapper">
-                  {/* Özel HP Girişi & Hızlı Butonlar (Madde 9) */}
+                  {/* Özel HP Girişi & Hızlı Butonlar */}
                   <div className="custom-hp-row">
                     <input
                       id={`input-custom-hp-${member.id}`}
                       type="number"
                       min={1}
                       max={999}
-                      value={customHp}
-                      onChange={(e) => setCustomHpAmounts((prev) => ({ ...prev, [member.id]: Math.max(1, Number(e.target.value)) }))}
+                      value={rawHpInput}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setCustomHpAmounts((prev) => ({ ...prev, [member.id]: val }));
+                      }}
+                      onBlur={(e) => {
+                        if (!e.target.value || parseInt(e.target.value, 10) <= 0) {
+                          setCustomHpAmounts((prev) => ({ ...prev, [member.id]: '5' }));
+                        }
+                      }}
                       className="custom-hp-input"
                       aria-label="Özel Can Miktarı"
+                      placeholder="5"
                     />
                     <button
                       id={`btn-dm-damage-${member.id}`}
                       className="dm-action-btn dm-btn-damage"
-                      onClick={() => handleAdjustHp(member.id, customHp, false)}
-                      aria-label={`${member.name} ${customHp} hasar ver`}
+                      onClick={() => handleAdjustHp(member.id, customHpNumber, false)}
+                      aria-label={`${member.name} ${customHpNumber} hasar ver`}
                     >
-                      ⚔️ -{customHp} HP
+                      ⚔️ -{customHpNumber} HP
                     </button>
                     <button
                       id={`btn-dm-heal-${member.id}`}
                       className="dm-action-btn dm-btn-heal"
-                      onClick={() => handleAdjustHp(member.id, customHp, true)}
-                      aria-label={`${member.name} ${customHp} iyileştir`}
+                      onClick={() => handleAdjustHp(member.id, customHpNumber, true)}
+                      aria-label={`${member.name} ${customHpNumber} iyileştir`}
                     >
-                      💚 +{customHp} HP
+                      💚 +{customHpNumber} HP
                     </button>
                   </div>
 
-                  {/* Debuff Seçici (Madde 9) */}
+                  {/* Debuff Seçici */}
                   <div className="debuff-picker-row">
                     <select
                       id={`select-debuff-${member.id}`}
                       className="debuff-select"
-                      value={selectedDebuff[member.id] || 'Zehirli'}
+                      value={selectedDebuff[member.id] || (allConditions[0]?.nameTr || 'Zehirlenmiş')}
                       onChange={(e) => setSelectedDebuff((prev) => ({ ...prev, [member.id]: e.target.value }))}
                       aria-label="Eklenecek Durumu Seç"
                     >
@@ -310,7 +379,7 @@ export const DmDashboard: React.FC<DmDashboardProps> = ({
                     <button
                       id={`btn-dm-cond-${member.id}`}
                       className="dm-action-btn dm-btn-cond"
-                      onClick={() => handleAddCondition(member.id, selectedDebuff[member.id] || 'Zehirli')}
+                      onClick={() => handleAddCondition(member.id, selectedDebuff[member.id] || (allConditions[0]?.nameTr || 'Zehirlenmiş'))}
                       aria-label={`${member.name} durum ekle`}
                     >
                       + Durum Ekle

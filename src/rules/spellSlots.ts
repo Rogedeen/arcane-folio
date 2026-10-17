@@ -99,6 +99,21 @@ const ONE_THIRD_CASTER_TABLE: number[][] = [
   [4, 3, 3, 1], // 20
 ];
 
+function normalizeClassKey(cls: string): string {
+  const lower = (cls || '').toLowerCase();
+  if (lower.includes('wizard') || lower.includes('büyücü')) return 'wizard';
+  if (lower.includes('cleric') || lower.includes('rahip') || lower.includes('ruhban')) return 'cleric';
+  if (lower.includes('druid')) return 'druid';
+  if (lower.includes('sorcerer') || lower.includes('sihirbaz')) return 'sorcerer';
+  if (lower.includes('bard') || lower.includes('ozan')) return 'bard';
+  if (lower.includes('warlock') || lower.includes('efsun')) return 'warlock';
+  if (lower.includes('paladin')) return 'paladin';
+  if (lower.includes('ranger') || lower.includes('kolcu')) return 'ranger';
+  if (lower.includes('fighter') || lower.includes('savaşçı')) return 'fighter';
+  if (lower.includes('rogue') || lower.includes('hırsız')) return 'rogue';
+  return lower;
+}
+
 export function getSpellSlotsForLevel(
   charClass: CharacterClass | string,
   level: number,
@@ -106,7 +121,7 @@ export function getSpellSlotsForLevel(
 ): Record<number, SpellSlotTier> {
   const result: Record<number, SpellSlotTier> = {};
   const clampedLevel = Math.max(1, Math.min(20, level));
-  const c = charClass.toLowerCase();
+  const c = normalizeClassKey(charClass);
   const sc = (subclass || '').toLowerCase().replace(/[-_]/g, ' ');
 
   const isFullCaster = ['wizard', 'sorcerer', 'cleric', 'druid', 'bard'].includes(c);
@@ -157,7 +172,7 @@ export function getMaxSpellLevelForCharacter(
   subclass?: string,
   level: number = 1
 ): number {
-  const c = charClass.toLowerCase();
+  const c = normalizeClassKey(charClass);
   const sc = (subclass || '').toLowerCase();
   const clampedLevel = Math.max(1, Math.min(20, level));
 

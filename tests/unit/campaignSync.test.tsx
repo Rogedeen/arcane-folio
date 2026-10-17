@@ -92,4 +92,74 @@ describe('DmDashboard Component', () => {
     expect(screen.queryByRole('button', { name: /5 hasar ver/i })).not.toBeInTheDocument();
     expect(screen.getByText(/Oyuncu Modu \(Salt-Okunur\)/i)).toBeInTheDocument();
   });
+
+  it('allows clearing HP input freely to type new values and applies custom damage', () => {
+    let updatedMembers: PartyMember[] = [];
+    render(
+      <DmDashboard
+        members={mockMembers}
+        userRole="dm"
+        onUpdateMembers={(next) => {
+          updatedMembers = next;
+        }}
+      />
+    );
+
+    const input = screen.getByLabelText(/Özel Can Miktarı/i) as HTMLInputElement;
+    expect(input.value).toBe('5');
+
+    // User can backspace / clear input to empty string without it forcing '1'
+    fireEvent.change(input, { target: { value: '' } });
+    expect(input.value).toBe('');
+
+    // User types '12'
+    fireEvent.change(input, { target: { value: '12' } });
+    expect(input.value).toBe('12');
+
+    const damageBtn = screen.getByRole('button', { name: /Kaelen Karaçekiç 12 hasar ver/i });
+    expect(damageBtn).toHaveTextContent('⚔️ -12 HP');
+
+    fireEvent.click(damageBtn);
+    expect(updatedMembers[0].currentHp).toBe(16); // 28 - 12 = 16
+  });
+
+  it('allows DM to remove a member from the party', () => {
+    let removedId = '';
+    render(
+      <DmDashboard
+        members={mockMembers}
+        userRole="dm"
+        onUpdateMembers={() => {}}
+        onRemoveMember={(id) => {
+          removedId = id;
+        }}
+      />
+    );
+
+    const removeBtn = screen.getByRole('button', { name: /Karakteri Partiden Çıkar/i });
+    expect(removeBtn).toBeInTheDocument();
+
+    fireEvent.click(removeBtn);
+    expect(removedId).toBe('char-1');
+  });
+
+  it('allows DM to add a condition to a member', () => {
+    let updatedMembers: PartyMember[] = [];
+    render(
+      <DmDashboard
+        members={mockMembers}
+        userRole="dm"
+        onUpdateMembers={(next) => {
+          updatedMembers = next;
+        }}
+      />
+    );
+
+    const addCondBtn = screen.getByRole('button', { name: /Kaelen Karaçekiç durum ekle/i });
+    expect(addCondBtn).toBeInTheDocument();
+
+    fireEvent.click(addCondBtn);
+    expect(updatedMembers[0].activeConditions.length).toBe(1);
+    expect(updatedMembers[0].activeConditions[0]).toBe('Kör');
+  });
 });

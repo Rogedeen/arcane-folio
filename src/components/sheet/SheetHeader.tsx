@@ -12,6 +12,7 @@ interface SheetHeaderProps {
   isLocked: boolean;
   onToggleLock: () => void;
   onJoinCampaign?: (inviteCode: string) => void;
+  onLeaveCampaign?: () => void;
   joinedCampaignCode?: string | null;
 }
 
@@ -24,6 +25,7 @@ export const SheetHeader: React.FC<SheetHeaderProps> = ({
   isLocked,
   onToggleLock,
   onJoinCampaign,
+  onLeaveCampaign,
   joinedCampaignCode,
 }) => {
   const { state } = useCharacter();
@@ -215,6 +217,31 @@ export const SheetHeader: React.FC<SheetHeaderProps> = ({
             {joinMsg && (
               <div style={{ fontSize: '0.85rem', color: '#34d399', fontWeight: 600, marginTop: '0.5rem' }}>
                 {joinMsg}
+              </div>
+            )}
+            {joinedCampaignCode && onLeaveCampaign && (
+              <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '0.6rem' }}>
+                  Şu an <strong>{joinedCampaignCode}</strong> seferine bağlısınız.
+                </p>
+                <button
+                  id="btn-leave-campaign"
+                  className="action-button-secondary"
+                  onClick={() => {
+                    onLeaveCampaign();
+                    setShowJoinModal(false);
+                  }}
+                  style={{
+                    color: '#f87171',
+                    borderColor: 'rgba(239, 68, 68, 0.4)',
+                    background: 'rgba(239, 68, 68, 0.1)',
+                    width: '100%',
+                    padding: '0.55rem',
+                    fontWeight: 700,
+                  }}
+                >
+                  🚪 Seferden Ayrıl
+                </button>
               </div>
             )}
             <div style={{ textAlign: 'right', marginTop: '1rem' }}>

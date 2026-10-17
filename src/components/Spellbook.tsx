@@ -5,6 +5,7 @@ import { calculateSpellCapacity } from '../rules/spellPreparation';
 import { getMaxSpellLevelForCharacter, getSpellSlotsForLevel } from '../rules/spellSlots';
 import { useReference } from '../context/ReferenceContext';
 import { RpgIcon } from './common/RpgIcon';
+import { soundEffects } from '../utils/soundEffects';
 
 interface SpellbookProps {
   level: number;
@@ -29,6 +30,7 @@ export const Spellbook: React.FC<SpellbookProps> = ({
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [isSearching, setIsSearching] = useState<boolean>(false);
   const [prepLimitMessage, setPrepLimitMessage] = useState<string | null>(null);
+  const [castFeedback, setCastFeedback] = useState<string | null>(null);
 
   // Spell slots state
   const baseSlots = getSpellSlotsForLevel(charClass, level, subclass);
@@ -56,6 +58,38 @@ export const Spellbook: React.FC<SpellbookProps> = ({
     };
     setSpellSlotsState(updated);
     onSpellSlotsChange?.(updated);
+  };
+
+  const handleCastSpell = (spell: SpellData, slotTier: number) => {
+    if (slotTier === 0) {
+      soundEffects.playDiceRollSound();
+      setCastFeedback(`✨ ${spell.name} (Cantrip) yapıldı! Büyü yuvası harcanmaz.`);
+      setTimeout(() => setCastFeedback(null), 3500);
+      return;
+    }
+
+    const currentTierSlot = spellSlotsState[slotTier];
+    if (!currentTierSlot || currentTierSlot.expended >= currentTierSlot.total) {
+      setCastFeedback(`⚠️ ${slotTier}. Kademe büyü yuvanız kalmadı!`);
+      setTimeout(() => setCastFeedback(null), 3500);
+      return;
+    }
+
+    const nextExpended = currentTierSlot.expended + 1;
+    const updated = {
+      ...spellSlotsState,
+      [slotTier]: { ...currentTierSlot, expended: nextExpended }
+    };
+    setSpellSlotsState(updated);
+    onSpellSlotsChange?.(updated);
+
+    soundEffects.playDiceRollSound();
+    const isUpcast = slotTier > spell.level;
+    const remaining = currentTierSlot.total - nextExpended;
+    setCastFeedback(
+      `🔮 ${spell.name} yapıldı! ${slotTier}. Kademe Büyü Yuvası harcandı${isUpcast ? ' (▲ Üst Kademe / Upcast)' : ''}. (Kalan yuva: ${remaining}/${currentTierSlot.total})`
+    );
+    setTimeout(() => setCastFeedback(null), 4000);
   };
 
   useEffect(() => {
@@ -177,17 +211,17 @@ export const Spellbook: React.FC<SpellbookProps> = ({
             </h3>
             <span
               style={{
-                fontSize: '0.7rem',
+                fontSize: '0.75rem',
                 padding: '2px 8px',
                 borderRadius: '4px',
                 background: 'rgba(217, 119, 6, 0.2)',
                 color: 'var(--accent-gold)',
                 border: '1px solid rgba(217, 119, 6, 0.4)',
-                fontWeight: 600
+                fontWeight: 700
               }}
-              title={`Sınıf: ${charClass}, Seviye: ${level} -> Maksimum Kullanılabilir Büyü Seviyesi: ${maxSpellLevel}`}
+              title={`Sınıf: ${charClass}, Seviye: ${level} -> Kullanılabilir En Yüksek Büyü Yuvası: ${maxSpellLevel}. Kademe`}
             >
-              Maks Seviye: {maxSpellLevel === 0 ? 'Cantrip' : `${maxSpellLevel}. Kademe`}
+              En Yüksek Yuva: {maxSpellLevel === 0 ? 'Cantrip' : `${maxSpellLevel}. Kademe`}
             </span>
           </div>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '4px' }}>
@@ -196,15 +230,50 @@ export const Spellbook: React.FC<SpellbookProps> = ({
         </div>
 
         {/* Büyü Sayacı (Hazırlanan vs Bilinen) */}
-        <div className="prepared-counter-box" id="prepared-counter-box">
-          <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>
-            {capacityInfo.labelTr}
+        <div className="prepared-counter-box" id="prepared-counter-box" style={{ minWidth: '190px', textAlign: 'right' }}>
+          <span style={{ fontSize: '0.72rem', textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block' }}>
+            {isPreparedModel ? 'GÜNLÜK HAZIRLANABİLİR BÜYÜ ADEDİ' : 'BİLİNEN BÜYÜ SAYISI'}
           </span>
-          <span className="prepared-numbers">
-            <strong id="display-prepared-count">{currentPreparedCount}</strong> / <span id="display-max-prepared">{maxCapacity}</span>
-          </span>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'flex-end', gap: '6px' }}>
+            <span className="prepared-numbers">
+              <strong id="display-prepared-count">{currentPreparedCount}</strong> / <span id="display-max-prepared">{maxCapacity}</span>
+            </span>
+            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+              ({isPreparedModel ? `${level}. Svy + ${castingModifier >= 0 ? `+${castingModifier}` : castingModifier} Nitelik` : 'Kural Tablosu'})
+            </span>
+          </div>
         </div>
       </div>
+
+      {/* Büyü Kullanım Bildirimi (Cast Feedback) */}
+      {castFeedback && (
+        <div
+          id="spellbook-cast-feedback-alert"
+          style={{
+            background: 'rgba(56, 189, 248, 0.15)',
+            border: '1px solid #38bdf8',
+            color: '#7dd3fc',
+            padding: '0.5rem 0.8rem',
+            borderRadius: '6px',
+            marginBottom: '0.75rem',
+            fontSize: '0.85rem',
+            fontWeight: 700,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            boxShadow: '0 4px 12px rgba(56, 189, 248, 0.2)'
+          }}
+        >
+          <span>{castFeedback}</span>
+          <button
+            type="button"
+            onClick={() => setCastFeedback(null)}
+            style={{ background: 'none', border: 'none', color: '#7dd3fc', cursor: 'pointer', fontWeight: 800 }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* Hazırlama Sınırı Uyarı Mesajı */}
       {prepLimitMessage && (
@@ -396,19 +465,105 @@ export const Spellbook: React.FC<SpellbookProps> = ({
 
             <p className="spell-snippet">{spell.description}</p>
 
-            <div className="spell-card-footer" onClick={(e) => e.stopPropagation()}>
-              {spell.level > 0 ? (
-                <button
-                  id={`btn-prepare-${spell.slug}`}
-                  className={`prepare-toggle-btn ${spell.prepared ? 'active' : ''}`}
-                  onClick={() => togglePrepare(spell.slug)}
-                  aria-label={`${spell.name} ${isPreparedModel ? 'hazırla' : 'öğren'}`}
-                >
-                  {actionButtonText(Boolean(spell.prepared))}
-                </button>
-              ) : (
-                <span className="cantrip-tag">Sürekli Hazır</span>
-              )}
+            <div
+              className="spell-card-footer"
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '8px',
+                marginTop: '0.75rem',
+                paddingTop: '0.5rem',
+                borderTop: '1px solid rgba(255, 255, 255, 0.08)'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                {spell.level === 0 ? (
+                  <button
+                    id={`btn-cast-${spell.slug}`}
+                    className="cast-spell-btn"
+                    onClick={() => handleCastSpell(spell, 0)}
+                    style={{
+                      background: 'rgba(56, 189, 248, 0.15)',
+                      border: '1px solid rgba(56, 189, 248, 0.4)',
+                      color: '#38bdf8',
+                      borderRadius: '4px',
+                      padding: '0.28rem 0.65rem',
+                      fontSize: '0.75rem',
+                      cursor: 'pointer',
+                      fontWeight: 700
+                    }}
+                    title="Cantrip fırlat (Büyü yuvası harcamaz)"
+                  >
+                    ⚡ Büyüyü Yap
+                  </button>
+                ) : (
+                  (() => {
+                    const availableSlots = Object.values(spellSlotsState).filter(
+                      (s) => s.tier >= spell.level && s.expended < s.total
+                    );
+
+                    if (availableSlots.length === 0) {
+                      return (
+                        <span
+                          style={{
+                            fontSize: '0.72rem',
+                            color: 'var(--text-muted)',
+                            background: 'rgba(255, 255, 255, 0.05)',
+                            padding: '0.25rem 0.5rem',
+                            borderRadius: '4px'
+                          }}
+                        >
+                          ⛔ Boş Yuva Yok
+                        </span>
+                      );
+                    }
+
+                    return availableSlots.map((slot) => {
+                      const isUpcast = slot.tier > spell.level;
+                      return (
+                        <button
+                          key={slot.tier}
+                          id={`btn-cast-${spell.slug}-tier-${slot.tier}`}
+                          className="cast-spell-btn"
+                          onClick={() => handleCastSpell(spell, slot.tier)}
+                          style={{
+                            background: isUpcast ? 'rgba(168, 85, 247, 0.18)' : 'rgba(56, 189, 248, 0.18)',
+                            border: `1px solid ${isUpcast ? 'rgba(168, 85, 247, 0.45)' : 'rgba(56, 189, 248, 0.45)'}`,
+                            color: isUpcast ? '#c084fc' : '#38bdf8',
+                            borderRadius: '4px',
+                            padding: '0.25rem 0.5rem',
+                            fontSize: '0.72rem',
+                            cursor: 'pointer',
+                            fontWeight: 700,
+                            transition: 'all 0.15s ease'
+                          }}
+                          title={`${slot.tier}. Kademe Büyü Yuvası Harca (${slot.total - slot.expended} adet kaldı)${isUpcast ? ' - Üst Kademeden Fırlat (Upcast)' : ''}`}
+                        >
+                          ⚡ {slot.tier}. Kademe {isUpcast ? '▲ Upcast' : 'Yuva'}
+                        </button>
+                      );
+                    });
+                  })()
+                )}
+              </div>
+
+              <div>
+                {spell.level > 0 ? (
+                  <button
+                    id={`btn-prepare-${spell.slug}`}
+                    className={`prepare-toggle-btn ${spell.prepared ? 'active' : ''}`}
+                    onClick={() => togglePrepare(spell.slug)}
+                    aria-label={`${spell.name} ${isPreparedModel ? 'hazırla' : 'öğren'}`}
+                  >
+                    {actionButtonText(Boolean(spell.prepared))}
+                  </button>
+                ) : (
+                  <span className="cantrip-tag">Sürekli Hazır</span>
+                )}
+              </div>
             </div>
           </div>
         ))}
