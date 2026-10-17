@@ -4,6 +4,7 @@ import { contentService } from '../data/contentService';
 import { calculateSpellCapacity } from '../rules/spellPreparation';
 import { getMaxSpellLevelForCharacter } from '../rules/spellSlots';
 import { useReference } from '../context/ReferenceContext';
+import { RpgIcon } from './common/RpgIcon';
 
 interface SpellbookProps {
   level: number;
@@ -210,8 +211,17 @@ export const Spellbook: React.FC<SpellbookProps> = ({ level, castingModifier, ch
             onClick={() => openReference({ type: 'spell', data: spell })}
             style={{ cursor: 'pointer' }}
           >
-            <div className="spell-card-top">
-              <span className="spell-name font-cinzel">{spell.name}</span>
+            <div className="spell-card-top" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <RpgIcon
+                  category="spell"
+                  schoolOrType={spell.school}
+                  slug={spell.slug}
+                  size={36}
+                  alt={spell.name}
+                />
+                <span className="spell-name font-cinzel">{spell.name}</span>
+              </div>
               <span className="spell-level-badge">
                 {spell.level === 0 ? 'Cantrip' : `${spell.level}. Seviye`}
               </span>

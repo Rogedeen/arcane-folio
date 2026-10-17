@@ -6,6 +6,7 @@ import { calculateCarryingCapacity, calculateTotalWeight, isEncumbered } from '.
 import { useReference } from '../context/ReferenceContext';
 import { calculatePotionHealing, isPotionItem } from '../rules/potions';
 import { soundEffects } from '../utils/soundEffects';
+import { RpgIcon } from './common/RpgIcon';
 
 interface InventoryManagerProps {
   strScore: number;
@@ -536,15 +537,24 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
                   <div
                     className="item-main-col"
                     onClick={() => openReference({ type: 'item', data: item })}
-                    style={{ cursor: 'pointer' }}
+                    style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.75rem' }}
                     title="Detayları İncele"
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <span className="item-name font-cinzel">{item.name}</span>
-                      {item.equipped && <span className="equipped-badge">✓ Kuşanıldı</span>}
-                    </div>
-                    <div className="item-meta">
-                      <span>{item.cost}</span> • <span>{item.weight} lbs/adet</span> • <span style={{ textTransform: 'capitalize' }}>{item.type}</span>
+                    <RpgIcon
+                      category="item"
+                      schoolOrType={item.type}
+                      slug={item.slug}
+                      size={36}
+                      alt={item.name}
+                    />
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <span className="item-name font-cinzel">{item.name}</span>
+                        {item.equipped && <span className="equipped-badge">✓ Kuşanıldı</span>}
+                      </div>
+                      <div className="item-meta">
+                        <span>{item.cost}</span> • <span>{item.weight} lbs/adet</span> • <span style={{ textTransform: 'capitalize' }}>{item.type}</span>
+                      </div>
                     </div>
                   </div>
 
@@ -666,24 +676,33 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
                 <div
                   className="catalog-item-info"
                   onClick={() => openReference({ type: 'item', data: item })}
-                  style={{ cursor: 'pointer' }}
+                  style={{ cursor: 'pointer', display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                    <span className="font-cinzel" style={{ color: '#fff', fontSize: '1rem', fontWeight: 700 }}>
-                      {item.name}
-                    </span>
-                    <span className="ref-property-tag" style={{ textTransform: 'uppercase', fontSize: '0.65rem' }}>
-                      {item.type}
-                    </span>
+                  <RpgIcon
+                    category="item"
+                    schoolOrType={item.type}
+                    slug={item.slug}
+                    size={36}
+                    alt={item.name}
+                  />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                      <span className="font-cinzel" style={{ color: '#fff', fontSize: '1rem', fontWeight: 700 }}>
+                        {item.name}
+                      </span>
+                      <span className="ref-property-tag" style={{ textTransform: 'uppercase', fontSize: '0.65rem' }}>
+                        {item.type}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                      Fiyat: {item.cost} • Ağırlık: {item.weight} lbs
+                    </div>
+                    {item.description && (
+                      <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px', lineBreak: 'anywhere' }}>
+                        {item.description.slice(0, 120)}...
+                      </p>
+                    )}
                   </div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                    Fiyat: {item.cost} • Ağırlık: {item.weight} lbs
-                  </div>
-                  {item.description && (
-                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px', lineBreak: 'anywhere' }}>
-                      {item.description.slice(0, 120)}...
-                    </p>
-                  )}
                 </div>
 
                 <button

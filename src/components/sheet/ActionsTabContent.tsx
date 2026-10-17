@@ -1,5 +1,6 @@
 import React from 'react';
 import type { WeaponItem } from '../../types/character';
+import { RpgIcon } from '../common/RpgIcon';
 
 export type ActionSubPill = 'all' | 'attack' | 'action' | 'bonus' | 'reaction';
 
@@ -75,32 +76,43 @@ export const ActionsTabContent: React.FC<ActionsTabContentProps> = ({
               return (
                 <tr key={w.id}>
                   <td>
-                    <strong
-                      style={{ color: 'var(--text-primary)', display: 'block', cursor: 'pointer' }}
-                      onClick={() =>
-                        onOpenReference({
-                          type: 'item',
-                          data: {
-                            slug: w.id,
-                            name: w.name,
-                            type: 'weapon',
-                            cost: '15 gp',
-                            weight: 3,
-                            description: `${w.damage} ${w.damageType}. Özellikler: ${w.properties?.join(', ') || 'Standard'}. Menzil: ${w.range ?? '5 ft'}.`,
-                            quantity: 1,
-                            source: 'PHB',
-                            source_ref: 'PHB',
-                            license: 'OGL',
-                          },
-                        })
-                      }
-                      title="Detayları İncele (Reference Drawer)"
-                    >
-                      {w.name}
-                    </strong>
-                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                      Melee Weapon • Mastery
-                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                      <RpgIcon
+                        category="item"
+                        schoolOrType="weapon"
+                        slug={w.id}
+                        size={32}
+                        alt={w.name}
+                      />
+                      <div>
+                        <strong
+                          style={{ color: 'var(--text-primary)', display: 'block', cursor: 'pointer' }}
+                          onClick={() =>
+                            onOpenReference({
+                              type: 'item',
+                              data: {
+                                slug: w.id,
+                                name: w.name,
+                                type: 'weapon',
+                                cost: '15 gp',
+                                weight: 3,
+                                description: `${w.damage} ${w.damageType}. Özellikler: ${w.properties?.join(', ') || 'Standard'}. Menzil: ${w.range ?? '5 ft'}.`,
+                                quantity: 1,
+                                source: 'PHB',
+                                source_ref: 'PHB',
+                                license: 'OGL',
+                              },
+                            })
+                          }
+                          title="Detayları İncele (Reference Drawer)"
+                        >
+                          {w.name}
+                        </strong>
+                        <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                          Melee Weapon • Mastery
+                        </span>
+                      </div>
+                    </div>
                   </td>
                   <td style={{ color: 'var(--text-secondary)' }}>{w.range ?? '5 ft'}</td>
                   <td>
