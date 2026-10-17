@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { SpellData } from '../types/content';
 import { contentService } from '../data/contentService';
-import { calculateMaxPreparedSpells } from '../rules/spellPreparation';
+import { calculateSpellCapacity } from '../rules/spellPreparation';
 import { getMaxSpellLevelForCharacter } from '../rules/spellSlots';
 import { useReference } from '../context/ReferenceContext';
 
@@ -21,6 +21,9 @@ export const Spellbook: React.FC<SpellbookProps> = ({ level, castingModifier, ch
 
   // Character legal max spell level calculation
   const maxSpellLevel = getMaxSpellLevelForCharacter(charClass, subclass, level);
+
+  // Spellcasting model & capacity calculation (Prepared vs Known vs Pact Magic)
+  const capacityInfo = calculateSpellCapacity(charClass, level, castingModifier, subclass);
 
   useEffect(() => {
     let active = true;
@@ -66,7 +69,7 @@ export const Spellbook: React.FC<SpellbookProps> = ({ level, castingModifier, ch
     };
   }, [searchTerm]);
 
-  const maxPrepared = calculateMaxPreparedSpells(level, castingModifier);
+  const maxCapacity = capacityInfo.maxCount;
   const currentPreparedCount = spells.filter((s) => s.level > 0 && s.prepared).length;
 
   const togglePrepare = (slug: string) => {
@@ -100,13 +103,21 @@ export const Spellbook: React.FC<SpellbookProps> = ({ level, castingModifier, ch
     ...Array.from({ length: maxSpellLevel + 1 }, (_, i) => i)
   ];
 
+  const isPreparedModel = capacityInfo.model === 'prepared';
+  const actionButtonText = (isPrepared: boolean) => {
+    if (isPreparedModel) {
+      return isPrepared ? '✓ Hazırlandı' : '+ Hazırla';
+    }
+    return isPrepared ? '✓ Biliniyor' : '+ Öğren';
+  };
+
   return (
     <div id="spellbook-container" className="spellbook-card">
       <div className="spellbook-header">
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <h3 className="font-cinzel" style={{ color: 'var(--accent-gold)', fontSize: '1.4rem', margin: 0 }}>
-              📜 Büyü Kitabı & Hazırlanan Büyüler
+              📜 {isPreparedModel ? 'Büyü Kitabı & Hazırlanan Büyüler' : 'Büyü Kütüphanesi & Bilinen Büyüler'}
             </h3>
             <span
               style={{
@@ -124,17 +135,17 @@ export const Spellbook: React.FC<SpellbookProps> = ({ level, castingModifier, ch
             </span>
           </div>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '4px' }}>
-            D&D 5e kurallarına uygun seviye kısıtlamalı büyü kütüphanesi ve hazırlık yönetimi
+            D&D 5e kurallarına uygun {capacityInfo.labelTr} kütüphanesi ({capacityInfo.model.toUpperCase()} modeli)
           </p>
         </div>
 
-        {/* Hazırlanan Büyü Sayacı */}
+        {/* Büyü Sayacı (Hazırlanan vs Bilinen) */}
         <div className="prepared-counter-box" id="prepared-counter-box">
           <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>
-            Hazırlanan Büyüler
+            {capacityInfo.labelTr}
           </span>
           <span className="prepared-numbers">
-            <strong id="display-prepared-count">{currentPreparedCount}</strong> / <span id="display-max-prepared">{maxPrepared}</span>
+            <strong id="display-prepared-count">{currentPreparedCount}</strong> / <span id="display-max-prepared">{maxCapacity}</span>
           </span>
         </div>
       </div>
@@ -218,9 +229,9 @@ export const Spellbook: React.FC<SpellbookProps> = ({ level, castingModifier, ch
                   id={`btn-prepare-${spell.slug}`}
                   className={`prepare-toggle-btn ${spell.prepared ? 'active' : ''}`}
                   onClick={() => togglePrepare(spell.slug)}
-                  aria-label={`${spell.name} hazırla`}
+                  aria-label={`${spell.name} ${isPreparedModel ? 'hazırla' : 'öğren'}`}
                 >
-                  {spell.prepared ? '✓ Hazırlandı' : '+ Hazırla'}
+                  {actionButtonText(Boolean(spell.prepared))}
                 </button>
               ) : (
                 <span className="cantrip-tag">Sürekli Hazır</span>

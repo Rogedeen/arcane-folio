@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { calculateCarryingCapacity, calculateTotalWeight, isEncumbered } from '../../src/rules/inventory';
+import {
+  calculateCarryingCapacity,
+  calculateTotalWeight,
+  isEncumbered,
+  getDetailedEncumbranceStatus,
+  checkArmorStrengthRequirement
+} from '../../src/rules/inventory';
 import { ItemData } from '../../src/types/content';
 
 describe('Envanter ve Taşıma Kapasitesi Kuralları [SRD 5.1 sf. 60 Lifting and Carrying]', () => {
@@ -26,5 +32,51 @@ describe('Envanter ve Taşıma Kapasitesi Kuralları [SRD 5.1 sf. 60 Lifting and
     expect(isEncumbered(10, 140)).toBe(false);
     expect(isEncumbered(10, 150)).toBe(false);
     expect(isEncumbered(10, 151)).toBe(true);
+  });
+
+  describe('Variant Encumbrance Kuralları [PHB sf. 176]', () => {
+    it('STR 10 karakter için 50 lb üzeri Encumbered (-10 ft), 100 lb üzeri Heavily Encumbered (-20 ft + dezavantaj), 150 üzeri Over Capacity', () => {
+      // Unencumbered
+      const unenc = getDetailedEncumbranceStatus(10, 45);
+      expect(unenc.tier).toBe('unencumbered');
+      expect(unenc.speedPenalty).toBe(0);
+
+      // Encumbered (> 50 lb)
+      const enc = getDetailedEncumbranceStatus(10, 60);
+      expect(enc.tier).toBe('encumbered');
+      expect(enc.speedPenalty).toBe(10);
+      expect(enc.hasDisadvantageOnChecks).toBe(false);
+
+      // Heavily Encumbered (> 100 lb)
+      const heavy = getDetailedEncumbranceStatus(10, 110);
+      expect(heavy.tier).toBe('heavily-encumbered');
+      expect(heavy.speedPenalty).toBe(20);
+      expect(heavy.hasDisadvantageOnChecks).toBe(true);
+
+      // Over capacity (> 150 lb)
+      const over = getDetailedEncumbranceStatus(10, 155);
+      expect(over.tier).toBe('over-capacity');
+      expect(over.speedPenalty).toBe(30);
+    });
+  });
+
+  describe('Zırh Güç Gereksinimi [SRD 5.1 sf. 62]', () => {
+    it('Plate Armor için STR 15 gerekir, STR 14 olan karakterin hızı 10 ft düşer', () => {
+      const plateCheck = checkArmorStrengthRequirement(14, 'Plate Armor');
+      expect(plateCheck.meetsRequirement).toBe(false);
+      expect(plateCheck.speedPenalty).toBe(10);
+      expect(plateCheck.requiredStr).toBe(15);
+
+      const plateMet = checkArmorStrengthRequirement(16, 'Plate Armor');
+      expect(plateMet.meetsRequirement).toBe(true);
+      expect(plateMet.speedPenalty).toBe(0);
+    });
+
+    it('Chain Mail için STR 13 gerekir, STR 10 olan karakterin hızı 10 ft düşer', () => {
+      const chainCheck = checkArmorStrengthRequirement(10, 'Chain Mail');
+      expect(chainCheck.meetsRequirement).toBe(false);
+      expect(chainCheck.speedPenalty).toBe(10);
+      expect(chainCheck.requiredStr).toBe(13);
+    });
   });
 });
