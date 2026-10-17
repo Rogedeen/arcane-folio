@@ -21,6 +21,9 @@ export interface PartyMember {
   };
   activeConditions: string[];
   playerName: string;
+  skillModifiers?: Record<string, number>;
+  proficientSkills?: string[];
+  expertSkills?: string[];
 }
 
 export interface Campaign {
@@ -36,6 +39,7 @@ export type SyncEventType =
   | 'HP_UPDATE'
   | 'CONDITION_UPDATE'
   | 'MEMBER_JOIN'
+  | 'MEMBER_UPDATE'
   | 'PING'
   | 'DICE_ROLLED'
   | 'ENCOUNTER_UPDATE'

@@ -5,6 +5,7 @@ import { getAllConditions } from '../rules/conditions';
 import { calculateModifier } from '../rules/abilityScores';
 import { SKILLS } from '../rules/skills';
 import { syncService } from '../data/syncService';
+import { useCharacter } from '../context/CharacterContext';
 
 interface DmDashboardProps {
   members: PartyMember[];
@@ -17,6 +18,8 @@ export const DmDashboard: React.FC<DmDashboardProps> = ({
   userRole,
   onUpdateMembers
 }) => {
+  const { state } = useCharacter();
+  const lang = state.preferences?.language || 'tr';
   const isDm = userRole === 'dm';
   const allConditions = getAllConditions();
 
@@ -206,14 +209,25 @@ export const DmDashboard: React.FC<DmDashboardProps> = ({
               ) : (
                 <div className="dm-skills-list-grid" id={`dm-skills-${member.id}`}>
                   {SKILLS.map((sk) => {
-                    const mod = sk.ability === 'str' ? strMod
+                    const explicitMod = member.skillModifiers?.[sk.id];
+                    const fallbackMod = sk.ability === 'str' ? strMod
                       : sk.ability === 'dex' ? dexMod
                       : sk.ability === 'con' ? conMod
                       : sk.ability === 'int' ? intMod
                       : sk.ability === 'wis' ? wisMod : chaMod;
+                    const finalMod = explicitMod !== undefined ? explicitMod : fallbackMod;
+                    const isExpert = member.expertSkills?.includes(sk.id);
+                    const isProf = member.proficientSkills?.includes(sk.id);
+
+                    const displayName = lang === 'en' ? sk.name : sk.nameTr;
+
                     return (
-                      <span key={sk.id} className="dm-skill-chip">
-                        {sk.nameTr}: <strong>{mod >= 0 ? `+${mod}` : mod}</strong>
+                      <span
+                        key={sk.id}
+                        className={`dm-skill-chip ${isExpert ? 'expert' : isProf ? 'proficient' : ''}`}
+                        title={isExpert ? `${displayName} (Expertise)` : isProf ? `${displayName} (Proficient)` : displayName}
+                      >
+                        {isExpert ? '★ ' : isProf ? '● ' : ''}{displayName}: <strong>{finalMod >= 0 ? `+${finalMod}` : finalMod}</strong>
                       </span>
                     );
                   })}

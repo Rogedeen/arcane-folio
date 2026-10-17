@@ -6,6 +6,7 @@
 
 import type { FullCharacter } from '../types/character';
 import type { AppPreferences } from '../types/app';
+import type { Campaign } from '../types/campaign';
 import { DEFAULT_PREFERENCES } from '../types/app';
 import type { IStorageAdapter } from '../services/storage/IStorageAdapter';
 import { LocalStorageAdapter } from '../services/storage/LocalStorageAdapter';
@@ -112,6 +113,17 @@ export function savePreferences(prefs: Partial<AppPreferences>): AppPreferences 
   const merged = { ...current, ...prefs };
   storageAdapter.setItem(KEYS.PREFERENCES, merged);
   return merged;
+}
+
+// --- Kampanya / Sefer Kalıcılığı ---
+
+export function loadCampaign(): Campaign | null {
+  return storageAdapter.getItem<Campaign | null>(KEYS.CAMPAIGN, null);
+}
+
+export function saveCampaign(campaign: Campaign): Campaign {
+  storageAdapter.setItem(KEYS.CAMPAIGN, campaign);
+  return campaign;
 }
 
 // --- Export / Import ---

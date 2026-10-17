@@ -18,6 +18,7 @@ import { calculateModifier } from '../rules/abilityScores';
 import { calculateProficiencyBonus } from '../rules/proficiency';
 import { calculatePassivePerception, calculatePassiveInvestigation } from '../rules/skills';
 import { calculateArmorClass } from '../rules/armorClass';
+import { characterToPartyMember } from '../rules/campaignRules';
 import { InventoryManager } from './InventoryManager';
 import { Spellbook } from './Spellbook';
 import { ConditionsTracker } from './ConditionsTracker';
@@ -174,79 +175,6 @@ export const ModernCharacterSheet: React.FC = () => {
     }
   }, [character.currentHp]);
 
-  // Sefer Kodu State'i (DM'in Seferine Katılma)
-  const [joinedCampaignCode, setJoinedCampaignCode] = useState<string | null>(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('arcane_player_campaign') || null;
-    }
-    return null;
-  });
-
-  const handlePlayerJoinCampaign = (inviteCode: string) => {
-    setJoinedCampaignCode(inviteCode);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('arcane_player_campaign', inviteCode);
-    }
-    // DM'in ekranına canlı üye olarak yayınla
-    syncService.broadcast({
-      type: 'MEMBER_JOIN',
-      campaignId: inviteCode,
-      senderRole: 'player',
-      payload: {
-        id: character.id,
-        name: character.name,
-        charClass: `${character.class}${character.subclass ? ` (${character.subclass})` : ''}`,
-        level: character.level,
-        currentHp: character.currentHp,
-        maxHp: character.maxHp,
-        tempHp: character.tempHp ?? 0,
-        ac: ac,
-        passivePerception: passivePerception,
-        passiveInvestigation: passiveInvestigation,
-        stats: {
-          str: character.baseAbilities.str,
-          dex: character.baseAbilities.dex,
-          con: character.baseAbilities.con,
-          int: character.baseAbilities.int,
-          wis: character.baseAbilities.wis,
-          cha: character.baseAbilities.cha,
-        },
-        activeConditions: character.activeConditions ?? [],
-        playerName: character.playerName || 'Oyuncu',
-      },
-      timestamp: new Date().toISOString(),
-    });
-  };
-
-  // DM Encounter senkronizasyonu dinleyicisi
-  useEffect(() => {
-    const unsub = syncService.subscribe((event) => {
-      if (event.type === 'ENCOUNTER_UPDATE' && event.payload) {
-        if (event.payload.combatActive !== undefined) {
-          setCombatMode(Boolean(event.payload.combatActive));
-        }
-        if (Array.isArray(event.payload.monsterTargets)) {
-          setMonsterTargets(event.payload.monsterTargets);
-        }
-        if (
-          event.payload.currentTurnName &&
-          event.payload.currentTurnName.toLowerCase() === character.name.toLowerCase()
-        ) {
-          setActionUsed(false);
-          setBonusActionUsed(false);
-          setReactionUsed(false);
-          setRemainingSpeed(baseSpeed);
-          soundEffects.playCritSound();
-          setQuickToast({
-            text: `⚔️ Sıra Sende (${character.name})! Eylemlerini ve hareketini kullanabilirsin.`,
-          });
-          setTimeout(() => setQuickToast(null), 8000);
-        }
-      }
-    });
-    return unsub;
-  }, [character.name]);
-
   const profBonus = calculateProficiencyBonus(character.level);
 
   const strMod = calculateModifier(character.baseAbilities.str);
@@ -278,6 +206,84 @@ export const ModernCharacterSheet: React.FC = () => {
     armor: character.equippedArmor,
     hasShield: character.hasShield,
   });
+
+  // Sefer Kodu State'i (DM'in Seferine Katılma)
+  const [joinedCampaignCode, setJoinedCampaignCode] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('arcane_player_campaign') || null;
+    }
+    return null;
+  });
+
+  const handlePlayerJoinCampaign = (inviteCode: string) => {
+    setJoinedCampaignCode(inviteCode);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('arcane_player_campaign', inviteCode);
+    }
+    const memberPayload = characterToPartyMember(character, ac);
+    // DM'in ekranına canlı üye olarak yayınla
+    syncService.broadcast({
+      type: 'MEMBER_JOIN',
+      campaignId: inviteCode,
+      senderRole: 'player',
+      payload: memberPayload,
+      timestamp: new Date().toISOString(),
+    });
+  };
+
+  // Oyuncu bir sefere katılmışsa ve statlarında/seviyesinde/canında değişiklik olursa DM ekranına otomatik senkronize et
+  useEffect(() => {
+    if (!joinedCampaignCode) return;
+    const memberPayload = characterToPartyMember(character, ac);
+    syncService.broadcast({
+      type: 'MEMBER_UPDATE',
+      campaignId: joinedCampaignCode,
+      senderRole: 'player',
+      payload: memberPayload,
+      timestamp: new Date().toISOString(),
+    });
+  }, [
+    joinedCampaignCode,
+    character.level,
+    character.class,
+    character.subclass,
+    character.currentHp,
+    character.maxHp,
+    character.tempHp,
+    character.baseAbilities,
+    character.proficientSkills,
+    character.activeConditions,
+    ac,
+  ]);
+
+  // DM Encounter senkronizasyonu dinleyicisi
+  useEffect(() => {
+    const unsub = syncService.subscribe((event) => {
+      if (event.type === 'ENCOUNTER_UPDATE' && event.payload) {
+        if (event.payload.combatActive !== undefined) {
+          setCombatMode(Boolean(event.payload.combatActive));
+        }
+        if (Array.isArray(event.payload.monsterTargets)) {
+          setMonsterTargets(event.payload.monsterTargets);
+        }
+        if (
+          event.payload.currentTurnName &&
+          event.payload.currentTurnName.toLowerCase() === character.name.toLowerCase()
+        ) {
+          setActionUsed(false);
+          setBonusActionUsed(false);
+          setReactionUsed(false);
+          setRemainingSpeed(baseSpeed);
+          soundEffects.playCritSound();
+          setQuickToast({
+            text: `⚔️ Sıra Sende (${character.name})! Eylemlerini ve hareketini kullanabilirsin.`,
+          });
+          setTimeout(() => setQuickToast(null), 8000);
+        }
+      }
+    });
+    return unsub;
+  }, [character.name]);
 
   const isSpellcaster =
     ['cleric', 'druid', 'wizard', 'sorcerer', 'warlock', 'bard', 'paladin', 'ranger'].includes(

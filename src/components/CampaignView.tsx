@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Campaign, PartyMember, UserRole, SyncEvent } from '../types/campaign';
 import { isValidInviteCode, generateInviteCode } from '../rules/campaignRules';
 import { syncService } from '../data/syncService';
+import { loadCampaign, saveCampaign } from '../data/persistenceService';
+import { useCharacter } from '../context/CharacterContext';
+import { getTranslation } from '../utils/i18n';
 import { DmDashboard } from './DmDashboard';
 import { EncounterTracker } from './EncounterTracker';
 
@@ -54,13 +57,23 @@ const INITIAL_MEMBERS: PartyMember[] = [
 ];
 
 export const CampaignView: React.FC = () => {
-  const [campaign, setCampaign] = useState<Campaign>({
-    id: 'camp-default',
-    title: 'Ejderha Mızrağı Seferi',
-    dmName: 'Zindan Efendisi (DM)',
-    inviteCode: 'DRG924',
-    members: INITIAL_MEMBERS,
-    createdAt: new Date().toISOString()
+  const { state } = useCharacter();
+  const lang = state.preferences?.language || 'tr';
+  const t = getTranslation(lang);
+
+  const [campaign, setCampaign] = useState<Campaign>(() => {
+    const saved = loadCampaign();
+    if (saved && saved.inviteCode) {
+      return saved;
+    }
+    return {
+      id: 'camp-default',
+      title: lang === 'en' ? 'Dragonlance Campaign' : 'Ejderha Mızrağı Seferi',
+      dmName: 'Zindan Efendisi (DM)',
+      inviteCode: 'DRG924',
+      members: INITIAL_MEMBERS,
+      createdAt: new Date().toISOString()
+    };
   });
 
   const [userRole, setUserRole] = useState<UserRole>('dm');
@@ -68,6 +81,11 @@ export const CampaignView: React.FC = () => {
   const [joinCodeInput, setJoinCodeInput] = useState<string>('');
   const [copyFeedback, setCopyFeedback] = useState<string>('');
   const [joinError, setJoinError] = useState<string>('');
+
+  // Kampanya verisini her değişiklikte kalıcı belleğe kaydet
+  useEffect(() => {
+    saveCampaign(campaign);
+  }, [campaign]);
 
   // Canlı Senkronizasyon Dinleyicisi
   useEffect(() => {
@@ -101,19 +119,24 @@ export const CampaignView: React.FC = () => {
             return m;
           })
         }));
-      } else if (event.type === 'MEMBER_JOIN' && event.payload) {
-        const newMember = event.payload as PartyMember;
+      } else if ((event.type === 'MEMBER_JOIN' || event.type === 'MEMBER_UPDATE') && event.payload) {
+        const memberData = event.payload as PartyMember;
         setCampaign((prev) => {
-          const exists = prev.members.some((m) => m.id === newMember.id);
+          // Eğer önceden sadece demo üyeler varsa ve ilk gerçek oyuncu katılıyorsa demo üyeleri temizle
+          const isInitialDemo = prev.members.length === 3 &&
+            prev.members.every((m) => ['char-1', 'char-2', 'char-3'].includes(m.id));
+          const baseList = isInitialDemo ? [] : prev.members;
+
+          const exists = baseList.some((m) => m.id === memberData.id);
           if (exists) {
             return {
               ...prev,
-              members: prev.members.map((m) => (m.id === newMember.id ? newMember : m))
+              members: baseList.map((m) => (m.id === memberData.id ? { ...m, ...memberData } : m))
             };
           }
           return {
             ...prev,
-            members: [...prev.members, newMember]
+            members: [...baseList, memberData]
           };
         });
       }
@@ -126,13 +149,13 @@ export const CampaignView: React.FC = () => {
 
   const handleCopyCode = () => {
     navigator.clipboard?.writeText(campaign.inviteCode);
-    setCopyFeedback('Kopyalandı!');
+    setCopyFeedback(t.dmCopied || '✓ Kopyalandı!');
     setTimeout(() => setCopyFeedback(''), 2000);
   };
 
   const handleJoinCampaign = () => {
     if (!isValidInviteCode(joinCodeInput)) {
-      setJoinError('Geçersiz davet kodu! 6 haneli alfasayısal kod giriniz.');
+      setJoinError(t.dmInvalidCode || 'Geçersiz davet kodu! 6 haneli alfasayısal kod giriniz.');
       return;
     }
 
@@ -154,13 +177,13 @@ export const CampaignView: React.FC = () => {
       <div className="campaign-top-bar">
         <div>
           <span className="live-sync-pill" id="live-sync-indicator">
-            <span className="live-pulse">●</span> Canlı Senkronize (Realtime Aktif)
+            <span className="live-pulse">●</span> {t.dmSyncLive || 'Canlı Senkronize (Realtime Aktif)'}
           </span>
-          <h3 className="font-cinzel" style={{ color: 'var(--accent-gold)', fontSize: '1.5rem', marginTop: '0.4rem' }}>
-            🏰 Kampanya: {campaign.title}
+          <h3 className="font-cinzel" style={{ color: 'var(--accent-gold)', fontSize: '1.6rem', marginTop: '0.4rem', letterSpacing: '0.03em' }}>
+            🏰 {campaign.title}
           </h3>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-            Yönetici: <strong>{campaign.dmName}</strong> | Davet Kodu ve Parti Takibi
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', marginTop: '0.2rem' }}>
+            {t.dmSubTitle || `Yönetici: ${campaign.dmName} | Davet Kodu ve Parti Takibi`}
           </p>
         </div>
 
@@ -172,7 +195,7 @@ export const CampaignView: React.FC = () => {
             onClick={() => setUserRole('dm')}
             aria-label="DM Moduna Geç"
           >
-            🧙‍♂️ DM Modu
+            {t.dmRoleDm || '🧙‍♂️ DM Modu'}
           </button>
           <button
             id="btn-switch-role-player"
@@ -180,7 +203,7 @@ export const CampaignView: React.FC = () => {
             onClick={() => setUserRole('player')}
             aria-label="Oyuncu Moduna Geç"
           >
-            🛡️ Oyuncu Modu
+            {t.dmRolePlayer || '🛡️ Oyuncu Modu'}
           </button>
         </div>
       </div>
@@ -188,7 +211,7 @@ export const CampaignView: React.FC = () => {
       {/* Davet Kodu & Katılım Paneli */}
       <div className="invite-panel-row">
         <div className="invite-box" id="invite-box">
-          <span className="invite-label">KAMPANYA DAVET KODU</span>
+          <span className="invite-label">{t.dmInviteCode || 'KAMPANYA DAVET KODU'}</span>
           <div className="invite-action-group">
             <span className="invite-code-display" id="display-invite-code">
               {campaign.inviteCode}
@@ -199,7 +222,7 @@ export const CampaignView: React.FC = () => {
               onClick={handleCopyCode}
               aria-label="Davet Kodunu Kopyala"
             >
-              {copyFeedback || '📋 Kopyala'}
+              {copyFeedback || t.dmCopyCode || '📋 Kopyala'}
             </button>
             {userRole === 'dm' && (
               <button
@@ -209,20 +232,20 @@ export const CampaignView: React.FC = () => {
                 aria-label="Yeni Kod Üret"
                 title="Yeni Davet Kodu Üret"
               >
-                🔄 Yenile
+                {t.dmRegenCode || '🔄 Yenile'}
               </button>
             )}
           </div>
         </div>
 
         <div className="join-box">
-          <span className="invite-label">FARKLI BİR KAMPANYAYA KATIL</span>
+          <span className="invite-label">{t.dmJoinOtherTitle || 'FARKLI BİR KAMPANYAYA KATIL'}</span>
           <div className="join-action-group">
             <input
               id="input-join-code"
               type="text"
               maxLength={6}
-              placeholder="Örn: ARC842"
+              placeholder={t.dmJoinPlaceholder || 'Örn: ARC842'}
               value={joinCodeInput}
               onChange={(e) => setJoinCodeInput(e.target.value.toUpperCase())}
               className="join-input"
@@ -235,30 +258,137 @@ export const CampaignView: React.FC = () => {
               onClick={handleJoinCampaign}
               aria-label="Kampanyaya Katıl"
             >
-              Katıl 🚀
+              {t.dmJoinBtn || 'Katıl 🚀'}
             </button>
           </div>
           {joinError && <div id="join-error-msg" className="join-error-text">{joinError}</div>}
         </div>
       </div>
 
-      {/* DM Konsolu & Karşılaşma Seçici */}
-      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.2rem', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.5rem' }}>
+      {/* DM Büyük Seçim Kartları (Genel Bakış vs Savaş Modu) */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+          gap: '1rem',
+          marginBottom: '1.8rem',
+          marginTop: '1rem',
+        }}
+      >
         <button
           id="btn-dm-tab-party"
-          className={`sheet-tab-btn ${dmSubTab === 'party' ? 'active' : ''}`}
           onClick={() => setDmSubTab('party')}
-          style={{ fontSize: '0.95rem', padding: '0.5rem 1rem' }}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '1.2rem 1.5rem',
+            borderRadius: '12px',
+            border: dmSubTab === 'party'
+              ? '2px solid var(--accent-gold)'
+              : '1px solid rgba(255, 255, 255, 0.1)',
+            background: dmSubTab === 'party'
+              ? 'linear-gradient(135deg, rgba(217, 119, 6, 0.2) 0%, rgba(15, 23, 42, 0.9) 100%)'
+              : 'var(--bg-card)',
+            boxShadow: dmSubTab === 'party'
+              ? '0 8px 24px rgba(217, 119, 6, 0.25)'
+              : 'none',
+            cursor: 'pointer',
+            textAlign: 'left',
+            transition: 'all 0.2s ease',
+          }}
         >
-          👥 Parti Genel Bakış ({campaign.members.length})
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <span style={{ fontSize: '2.2rem' }}>👥</span>
+            <div>
+              <div
+                className="font-cinzel"
+                style={{
+                  fontSize: '1.15rem',
+                  fontWeight: 800,
+                  color: dmSubTab === 'party' ? '#fbbf24' : '#f8fafc',
+                  letterSpacing: '0.02em',
+                }}
+              >
+                {t.dmPartyOverview || 'Parti Genel Bakış'}
+              </div>
+              <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
+                {lang === 'en'
+                  ? `Active Adventurers (${campaign.members.length}) • HP & Skills`
+                  : `Karakterler (${campaign.members.length}) • Can & Beceriler`}
+              </div>
+            </div>
+          </div>
+          <span
+            style={{
+              padding: '0.25rem 0.65rem',
+              borderRadius: '9999px',
+              fontSize: '0.85rem',
+              fontWeight: 800,
+              background: dmSubTab === 'party' ? 'var(--accent-gold)' : 'rgba(255,255,255,0.08)',
+              color: dmSubTab === 'party' ? '#000' : 'var(--text-secondary)',
+            }}
+          >
+            {campaign.members.length}
+          </span>
         </button>
+
         <button
           id="btn-dm-tab-encounter"
-          className={`sheet-tab-btn ${dmSubTab === 'encounter' ? 'active' : ''}`}
           onClick={() => setDmSubTab('encounter')}
-          style={{ fontSize: '0.95rem', padding: '0.5rem 1rem' }}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '1.2rem 1.5rem',
+            borderRadius: '12px',
+            border: dmSubTab === 'encounter'
+              ? '2px solid #ef4444'
+              : '1px solid rgba(255, 255, 255, 0.1)',
+            background: dmSubTab === 'encounter'
+              ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(15, 23, 42, 0.9) 100%)'
+              : 'var(--bg-card)',
+            boxShadow: dmSubTab === 'encounter'
+              ? '0 8px 24px rgba(239, 68, 68, 0.25)'
+              : 'none',
+            cursor: 'pointer',
+            textAlign: 'left',
+            transition: 'all 0.2s ease',
+          }}
         >
-          ⚔️ Karşılaşma & İnisiyatif Takipçisi
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <span style={{ fontSize: '2.2rem' }}>⚔️</span>
+            <div>
+              <div
+                className="font-cinzel"
+                style={{
+                  fontSize: '1.15rem',
+                  fontWeight: 800,
+                  color: dmSubTab === 'encounter' ? '#f87171' : '#f8fafc',
+                  letterSpacing: '0.02em',
+                }}
+              >
+                {t.dmCombatTracker || 'Savaş Modu & İnisiyatif'}
+              </div>
+              <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
+                {lang === 'en'
+                  ? 'Combat Encounters, Initiative, Monster HP'
+                  : 'Karşılaşma, Tur Sırası ve Canavar Yönetimi'}
+              </div>
+            </div>
+          </div>
+          <span
+            style={{
+              padding: '0.25rem 0.65rem',
+              borderRadius: '9999px',
+              fontSize: '0.85rem',
+              fontWeight: 800,
+              background: dmSubTab === 'encounter' ? '#ef4444' : 'rgba(255,255,255,0.08)',
+              color: dmSubTab === 'encounter' ? '#fff' : 'var(--text-secondary)',
+            }}
+          >
+            COMBAT
+          </span>
         </button>
       </div>
 

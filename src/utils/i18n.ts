@@ -134,6 +134,23 @@ export interface TranslationDictionary {
   wisdom: string;
   charisma: string;
   
+  // DM & Campaign Screen
+  dmPartyOverview: string;
+  dmCombatTracker: string;
+  dmTitle: string;
+  dmSubTitle: string;
+  dmSyncLive: string;
+  dmInviteCode: string;
+  dmCopyCode: string;
+  dmCopied: string;
+  dmRegenCode: string;
+  dmJoinOtherTitle: string;
+  dmJoinBtn: string;
+  dmJoinPlaceholder: string;
+  dmInvalidCode: string;
+  dmRoleDm: string;
+  dmRolePlayer: string;
+
   // Footer
   footerSub: string;
   footerLegal: string;
@@ -269,6 +286,23 @@ export const translations: Record<AppLanguage, TranslationDictionary> = {
     wisdom: 'Bilgelik',
     charisma: 'Karizma',
     
+    // DM & Campaign Screen
+    dmPartyOverview: 'Parti Genel Bakış',
+    dmCombatTracker: 'Savaş Modu & İnisiyatif Takipçisi',
+    dmTitle: 'Ejderha Mızrağı Seferi',
+    dmSubTitle: 'Yönetici: Zindan Efendisi (DM) | Davet Kodu ve Canlı Parti Takibi',
+    dmSyncLive: 'Canlı Senkronize (Realtime Aktif)',
+    dmInviteCode: 'KAMPANYA DAVET KODU',
+    dmCopyCode: '📋 Kopyala',
+    dmCopied: '✓ Kopyalandı!',
+    dmRegenCode: '🔄 Yenile',
+    dmJoinOtherTitle: 'FARKLI BİR KAMPANYAYA KATIL',
+    dmJoinBtn: 'Katıl 🚀',
+    dmJoinPlaceholder: 'Örn: ARC842',
+    dmInvalidCode: 'Geçersiz davet kodu! 6 haneli alfasayısal kod giriniz.',
+    dmRoleDm: '🧙‍♂️ DM Modu',
+    dmRolePlayer: '🛡️ Oyuncu Modu',
+
     // Footer
     footerSub: 'ArcaneFolio 5e • 5. Edisyon Masaüstü Rol Yapma Portali',
     footerLegal: 'ArcaneFolio 5e, Wizards of the Coast\'un Hayran İçerik Politikası kapsamında geliştirilmiş bağımsız, kâr amacı gütmeyen bir hayran içeriğidir. Kural seti ve referans verileri, System Reference Document 5.1 (SRD 5.1) ve Open5e veri tabanından alınmıştır. Wizards of the Coast LLC tarafından desteklenmemekte veya onaylanmamaktadır.',
@@ -402,6 +436,23 @@ export const translations: Record<AppLanguage, TranslationDictionary> = {
     wisdom: 'Wisdom',
     charisma: 'Charisma',
     
+    // DM & Campaign Screen
+    dmPartyOverview: 'Party Overview',
+    dmCombatTracker: 'Combat & Initiative Tracker',
+    dmTitle: 'Dragonlance Campaign',
+    dmSubTitle: 'Dungeon Master (DM) Console | Invite Code & Live Party Tracker',
+    dmSyncLive: 'Live Sync Active (Realtime)',
+    dmInviteCode: 'CAMPAIGN INVITE CODE',
+    dmCopyCode: '📋 Copy Code',
+    dmCopied: '✓ Copied!',
+    dmRegenCode: '🔄 New Code',
+    dmJoinOtherTitle: 'JOIN ANOTHER CAMPAIGN',
+    dmJoinBtn: 'Join 🚀',
+    dmJoinPlaceholder: 'e.g. ARC842',
+    dmInvalidCode: 'Invalid invite code! Please enter a 6-character code.',
+    dmRoleDm: '🧙‍♂️ DM Mode',
+    dmRolePlayer: '🛡️ Player Mode',
+
     // Footer
     footerSub: 'ArcaneFolio 5e • 5th Edition TTRPG Companion Portal',
     footerLegal: 'ArcaneFolio 5e is unofficial Fan Content permitted under the Wizards of the Coast Fan Content Policy. Rule content is derived from the System Reference Document 5.1 (SRD 5.1) licensed under CC-BY-4.0 and Open5e. Not approved or endorsed by Wizards of the Coast LLC.',
