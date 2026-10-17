@@ -164,11 +164,11 @@ export const translations: Record<AppLanguage, TranslationDictionary> = {
     themeParchment: '📜 Parşömen',
     themeDungeon: '🌘 Zindan',
     themeAria: 'Tema Değiştir',
-    langSwitchAria: 'Dili Değiştir (Language Switcher)',
+    langSwitchAria: 'Dili Değiştir',
     
     // Roles & Badges
     roleSheet: '🛡️ Oyuncu Masası',
-    roleDm: '👑 Zindan Efendisi (DM)',
+    roleDm: '👑 Zindan Efendisi',
     roleCreator: '🧙 Karakter Yaratım',
     roleGallery: '🧝 Karakter Koleksiyonu',
     
@@ -185,7 +185,7 @@ export const translations: Record<AppLanguage, TranslationDictionary> = {
     hubCardSheetBtnActive: 'Karakter Masasına Gir →',
     hubCardSheetBtnEmpty: 'Karakter Seç →',
     
-    hubCardDmTitle: 'Zindan Efendisi (DM Kokpiti)',
+    hubCardDmTitle: 'Zindan Efendisi Kokpiti',
     hubCardDmDesc: 'Sefer oluştur, davet kodu ile oyuncularını masana topla, canlı parti can barlarını ve canavar karşılaşmalarını yönet.',
     hubCardDmBtn: 'DM Masasını Aç →',
     
@@ -243,16 +243,16 @@ export const translations: Record<AppLanguage, TranslationDictionary> = {
     // Saving Throws & Senses
     savingThrowsHeader: 'KURTARMA ZARLARI',
     sensesHeader: 'DUYULAR & ALGI',
-    passivePerception: 'Pasif Algı (Perception):',
-    passiveInvestigation: 'Pasif İnceleme (Investigation):',
-    passiveInsight: 'Pasif Sezgi (Insight):',
+    passivePerception: 'Pasif Algı:',
+    passiveInvestigation: 'Pasif İnceleme:',
+    passiveInsight: 'Pasif Sezgi:',
     darkvision: '🌙 Karanlıkta Görme: 60 ft.',
     proficienciesHeader: 'EĞİTİMLER & YETKİNLİKLER',
     armorProf: 'Zırh:',
     weaponsProf: 'Silahlar:',
     toolsProf: 'Aletler:',
     languagesProf: 'Diller:',
-    skillsHeader: 'BECERİLER (SKILLS)',
+    skillsHeader: 'BECERİLER',
     searchSkillPlaceholder: 'Ara...',
     
     // Combat Mode Panel
@@ -262,7 +262,7 @@ export const translations: Record<AppLanguage, TranslationDictionary> = {
     bonusActionTitle: 'BONUS EYLEM',
     bonusActionUsed: 'Kullanıldı',
     bonusActionReady: 'Hazır',
-    reactionTitle: 'TEPKİ (REACTION)',
+    reactionTitle: 'TEPKİ',
     reactionUsed: 'Kullanıldı',
     reactionReady: 'Hazır',
     movementTitle: 'HAREKET',

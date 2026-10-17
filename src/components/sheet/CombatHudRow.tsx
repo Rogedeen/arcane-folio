@@ -2,9 +2,11 @@ import React from 'react';
 import type { FullCharacter, AbilityName } from '../../types/character';
 import { useCharacter } from '../../context/CharacterContext';
 import { getTranslation } from '../../utils/i18n';
+import { RACE_SPEED } from '../../rules/character';
 
 interface CombatHudRowProps {
   character: FullCharacter;
+  speedPenalty?: number;
   strMod: number;
   dexMod: number;
   conMod: number;
@@ -24,6 +26,7 @@ interface CombatHudRowProps {
 
 export const CombatHudRow: React.FC<CombatHudRowProps> = ({
   character,
+  speedPenalty = 0,
   strMod,
   dexMod,
   conMod,
@@ -94,13 +97,51 @@ export const CombatHudRow: React.FC<CombatHudRowProps> = ({
         </div>
 
         {/* Yürüme Hızı */}
-        <div className="dndbeyond-hud-box">
-          <span className="dndbeyond-stat-label">{t.speed}</span>
-          <span style={{ fontSize: '1.25rem', fontWeight: 900, color: 'var(--text-primary)' }}>
-            30 <span style={{ fontSize: '0.8rem' }}>ft</span>
-          </span>
-          <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{t.walking}</span>
-        </div>
+        {(() => {
+          const baseSpeed = RACE_SPEED[character.race] ?? 30;
+          const effectiveSpeed = Math.max(0, baseSpeed - (speedPenalty || 0));
+          const hasPenalty = speedPenalty > 0;
+
+          return (
+            <div
+              className="dndbeyond-hud-box"
+              style={
+                hasPenalty
+                  ? {
+                      borderColor: 'rgba(239, 68, 68, 0.6)',
+                      background: 'rgba(239, 68, 68, 0.12)',
+                      boxShadow: '0 0 8px rgba(239, 68, 68, 0.25)',
+                    }
+                  : undefined
+              }
+              title={
+                hasPenalty
+                  ? `${lang === 'tr' ? 'Taban Hız' : 'Base Speed'}: ${baseSpeed} ft (${lang === 'tr' ? 'Ceza' : 'Penalty'}: -${speedPenalty} ft)`
+                  : `${baseSpeed} ft`
+              }
+            >
+              <span className="dndbeyond-stat-label">{t.speed}</span>
+              <span
+                style={{
+                  fontSize: '1.25rem',
+                  fontWeight: 900,
+                  color: hasPenalty ? '#f87171' : 'var(--text-primary)',
+                }}
+              >
+                {effectiveSpeed} <span style={{ fontSize: '0.8rem' }}>ft</span>
+              </span>
+              <span
+                style={{
+                  fontSize: '0.65rem',
+                  color: hasPenalty ? '#fca5a5' : 'var(--text-muted)',
+                  fontWeight: hasPenalty ? 700 : 400,
+                }}
+              >
+                {hasPenalty ? `-${speedPenalty} ft` : t.walking}
+              </span>
+            </div>
+          );
+        })()}
 
         {/* İnisiyatif */}
         <div

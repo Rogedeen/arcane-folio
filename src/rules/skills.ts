@@ -18,22 +18,22 @@ export const SKILLS: SkillDefinition[] = [
   { id: 'sleight_of_hand', name: 'Sleight of Hand', nameTr: 'El Çabukluğu', ability: 'dex', description: 'Hırsızlık, gizleme ve el çabukluğu numaraları.' },
   { id: 'stealth', name: 'Stealth', nameTr: 'Gizlilik', ability: 'dex', description: 'Ses çıkarmadan ilerleme ve gölgelerde saklanma.' },
   // INT
-  { id: 'arcana', name: 'Arcana', nameTr: 'Büyü Bilgisi (Arcana)', ability: 'int', description: 'Büyüsel gelenekler, büyülü eşyalar ve düzlemler.' },
+  { id: 'arcana', name: 'Arcana', nameTr: 'Büyü Bilgisi', ability: 'int', description: 'Büyüsel gelenekler, büyülü eşyalar ve düzlemler.' },
   { id: 'history', name: 'History', nameTr: 'Tarih', ability: 'int', description: 'Tarihi olaylar, efsaneler, kadim krallıklar.' },
-  { id: 'investigation', name: 'Investigation', nameTr: 'İnceleme (Investigation)', ability: 'int', description: 'İpuçlarını birleştirme, gizli bölmeleri ve detayları bulma.' },
+  { id: 'investigation', name: 'Investigation', nameTr: 'İnceleme', ability: 'int', description: 'İpuçlarını birleştirme, gizli bölmeleri ve detayları bulma.' },
   { id: 'nature', name: 'Nature', nameTr: 'Doğa', ability: 'int', description: 'Bitkiler, hayvanlar, hava durumu ve doğal araziler.' },
   { id: 'religion', name: 'Religion', nameTr: 'Din', ability: 'int', description: 'Tanrılar, dini ritüeller, tapınaklar ve semboller.' },
   // WIS
   { id: 'animal_handling', name: 'Animal Handling', nameTr: 'Hayvan Terbiyesi', ability: 'wis', description: 'Vahşi veya evcil hayvanları sakinleştirme ve anlama.' },
-  { id: 'insight', name: 'Insight', nameTr: 'Sezgi (Insight)', ability: 'wis', description: 'Birinin yalan söylediğini veya gerçek niyetini anlama.' },
-  { id: 'medicine', name: 'Medicine', nameTr: 'Tıp (Medicine)', ability: 'wis', description: 'Yaralıyı stabilize etme, hastalıkları teşhis etme.' },
-  { id: 'perception', name: 'Perception', nameTr: 'Algı (Perception)', ability: 'wis', description: 'Çevredeki sesleri, hareketleri ve gizlenmiş tehlikeleri fark etme.' },
+  { id: 'insight', name: 'Insight', nameTr: 'Sezgi', ability: 'wis', description: 'Birinin yalan söylediğini veya gerçek niyetini anlama.' },
+  { id: 'medicine', name: 'Medicine', nameTr: 'Tıp', ability: 'wis', description: 'Yaralıyı stabilize etme, hastalıkları teşhis etme.' },
+  { id: 'perception', name: 'Perception', nameTr: 'Algı', ability: 'wis', description: 'Çevredeki sesleri, hareketleri ve gizlenmiş tehlikeleri fark etme.' },
   { id: 'survival', name: 'Survival', nameTr: 'Hayatta Kalma', ability: 'wis', description: 'İz sürme, yiyecek/su bulma, vahşi doğada yön bulma.' },
   // CHA
-  { id: 'deception', name: 'Deception', nameTr: 'Aldatma (Deception)', ability: 'cha', description: 'Yalan söyleme, kılık değiştirme ve yanıltma.' },
-  { id: 'intimidation', name: 'Intimidation', nameTr: 'Gözdağı (Intimidation)', ability: 'cha', description: 'Tehdit ve fiziksel varlıkla korkutma.' },
+  { id: 'deception', name: 'Deception', nameTr: 'Aldatma', ability: 'cha', description: 'Yalan söyleme, kılık değiştirme ve yanıltma.' },
+  { id: 'intimidation', name: 'Intimidation', nameTr: 'Gözdağı', ability: 'cha', description: 'Tehdit ve fiziksel varlıkla korkutma.' },
   { id: 'performance', name: 'Performance', nameTr: 'Performans', ability: 'cha', description: 'Müzik, dans, tiyatro ve seyirciyi eğlendirme.' },
-  { id: 'persuasion', name: 'Persuasion', nameTr: 'İkna (Persuasion)', ability: 'cha', description: 'Diplomasi, nezaket ve mantıklı argümanlarla etkileme.' }
+  { id: 'persuasion', name: 'Persuasion', nameTr: 'İkna', ability: 'cha', description: 'Diplomasi, nezaket ve mantıklı argümanlarla etkileme.' }
 ];
 
 /**

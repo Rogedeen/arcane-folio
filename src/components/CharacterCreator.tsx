@@ -13,59 +13,59 @@ import { getStarterKitForClass } from '../rules/starterEquipment';
 import { useCharacter } from '../context/CharacterContext';
 
 const RACES: { value: CharacterRace; label: string }[] = [
-  { value: 'human', label: 'İnsan (Human)' },
+  { value: 'human', label: 'İnsan' },
   { value: 'elf', label: 'Elf' },
-  { value: 'dwarf', label: 'Cüce (Dwarf)' },
-  { value: 'halfling', label: 'Buçukluk (Halfling)' },
-  { value: 'dragonborn', label: 'Ejderhadölü (Dragonborn)' },
-  { value: 'gnome', label: 'Gnom (Gnome)' },
-  { value: 'half-elf', label: 'Yarı-Elf (Half-Elf)' },
-  { value: 'half-orc', label: 'Yarı-Ork (Half-Orc)' },
+  { value: 'dwarf', label: 'Cüce' },
+  { value: 'halfling', label: 'Buçukluk' },
+  { value: 'dragonborn', label: 'Ejderhadölü' },
+  { value: 'gnome', label: 'Gnom' },
+  { value: 'half-elf', label: 'Yarı-Elf' },
+  { value: 'half-orc', label: 'Yarı-Ork' },
   { value: 'tiefling', label: 'Tiefling' }
 ];
 
 const CLASSES: { value: CharacterClass; label: string }[] = [
-  { value: 'barbarian', label: 'Barbar (Barbarian)' },
-  { value: 'bard', label: 'Ozan (Bard)' },
-  { value: 'cleric', label: 'Rahip (Cleric)' },
+  { value: 'barbarian', label: 'Barbar' },
+  { value: 'bard', label: 'Ozan' },
+  { value: 'cleric', label: 'Rahip' },
   { value: 'druid', label: 'Druid' },
-  { value: 'fighter', label: 'Savaşçı (Fighter)' },
-  { value: 'monk', label: 'Keşiş (Monk)' },
+  { value: 'fighter', label: 'Savaşçı' },
+  { value: 'monk', label: 'Keşiş' },
   { value: 'paladin', label: 'Paladin' },
-  { value: 'ranger', label: 'Kolcu (Ranger)' },
-  { value: 'rogue', label: 'Hırsız (Rogue)' },
-  { value: 'sorcerer', label: 'Büyücü (Sorcerer)' },
+  { value: 'ranger', label: 'Kolcu' },
+  { value: 'rogue', label: 'Hırsız' },
+  { value: 'sorcerer', label: 'Büyücü' },
   { value: 'warlock', label: 'Warlock' },
-  { value: 'wizard', label: 'Büyücü / İlimci (Wizard)' }
+  { value: 'wizard', label: 'İlimci' }
 ];
 
 const ARMORS: { label: string; item?: ArmorItem }[] = [
-  { label: 'Zırhsız (Unarmored)', item: undefined },
-  { label: 'Deri Zırh (Leather - Hafif, Taban 11)', item: { name: 'Leather', type: 'light', baseAc: 11 } },
-  { label: 'Pullu Zırh (Scale Mail - Orta, Taban 14, Max DEX +2)', item: { name: 'Scale Mail', type: 'medium', baseAc: 14, maxDexBonus: 2 } },
-  { label: 'Tam Plaka Zırh (Plate - Ağır, Taban 18)', item: { name: 'Plate', type: 'heavy', baseAc: 18 } }
+  { label: 'Zırhsız', item: undefined },
+  { label: 'Deri Zırh (Hafif, Taban 11)', item: { name: 'Leather', type: 'light', baseAc: 11 } },
+  { label: 'Pullu Zırh (Orta, Taban 14, Azami ÇEV +2)', item: { name: 'Scale Mail', type: 'medium', baseAc: 14, maxDexBonus: 2 } },
+  { label: 'Tam Plaka Zırh (Ağır, Taban 18)', item: { name: 'Plate', type: 'heavy', baseAc: 18 } }
 ];
 
 const ABILITY_LABELS: Record<AbilityName, string> = {
-  str: 'Güç (STR)',
-  dex: 'Çeviklik (DEX)',
-  con: 'Dayanıklılık (CON)',
-  int: 'Zeka (INT)',
-  wis: 'Bilgelik (WIS)',
-  cha: 'Karizma (CHA)'
+  str: 'Güç',
+  dex: 'Çeviklik',
+  con: 'Dayanıklılık',
+  int: 'Zeka',
+  wis: 'Bilgelik',
+  cha: 'Karizma'
 };
 
 const BACKGROUNDS = [
-  { value: 'soldier', label: 'Asker (Soldier)' },
-  { value: 'sage', label: 'Bilgin (Sage)' },
-  { value: 'criminal', label: 'Suçlu (Criminal)' },
-  { value: 'noble', label: 'Soylu (Noble)' },
-  { value: 'folk-hero', label: 'Halk Kahramanı (Folk Hero)' },
-  { value: 'acolyte', label: 'Tapınak Görevlisi (Acolyte)' },
-  { value: 'outlander', label: 'Serserisi (Outlander)' },
-  { value: 'entertainer', label: 'Eğlendirici (Entertainer)' },
-  { value: 'hermit', label: 'Münzevi (Hermit)' },
-  { value: 'urchin', label: 'Sokak Çocuğu (Urchin)' },
+  { value: 'soldier', label: 'Asker' },
+  { value: 'sage', label: 'Bilgin' },
+  { value: 'criminal', label: 'Suçlu' },
+  { value: 'noble', label: 'Soylu' },
+  { value: 'folk-hero', label: 'Halk Kahramanı' },
+  { value: 'acolyte', label: 'Tapınak Görevlisi' },
+  { value: 'outlander', label: 'Yabani' },
+  { value: 'entertainer', label: 'Eğlendirici' },
+  { value: 'hermit', label: 'Münzevi' },
+  { value: 'urchin', label: 'Sokak Çocuğu' },
 ];
 
 interface CharacterCreatorProps {

@@ -22,7 +22,7 @@ export function getStarterKitForClass(
   const commonPack: ItemData[] = [
     {
       slug: 'backpack',
-      name: 'Sırt Çantası (Backpack)',
+      name: 'Sırt Çantası',
       type: 'gear',
       weight: 5,
       cost: '2 gp',
@@ -36,7 +36,7 @@ export function getStarterKitForClass(
     },
     {
       slug: 'bedroll',
-      name: 'Uyku Tulumu (Bedroll)',
+      name: 'Uyku Tulumu',
       type: 'gear',
       weight: 7,
       cost: '1 gp',
@@ -50,7 +50,7 @@ export function getStarterKitForClass(
     },
     {
       slug: 'rations-5',
-      name: 'Yol Azığı (Rations, 5 gün)',
+      name: 'Yol Azığı (5 Günlük)',
       type: 'gear',
       weight: 10,
       cost: '2.5 gp',
@@ -64,7 +64,7 @@ export function getStarterKitForClass(
     },
     {
       slug: 'waterskin',
-      name: 'Matara (Waterskin)',
+      name: 'Matara',
       type: 'gear',
       weight: 5,
       cost: '2 sp',
@@ -78,7 +78,7 @@ export function getStarterKitForClass(
     },
     {
       slug: 'torches-3',
-      name: 'Meşale (Torch x3)',
+      name: 'Meşale (3 Adet)',
       type: 'gear',
       weight: 3,
       cost: '3 cp',
@@ -92,7 +92,7 @@ export function getStarterKitForClass(
     },
     {
       slug: 'potion-of-healing',
-      name: 'Potion of Healing',
+      name: 'Şifa İksiri',
       type: 'potion',
       weight: 0.5,
       cost: '50 gp',
@@ -106,7 +106,7 @@ export function getStarterKitForClass(
     },
     {
       slug: 'pouch-gold',
-      name: 'Para Kesesi (10 GP)',
+      name: 'Para Kesesi (10 Altın)',
       type: 'gear',
       weight: 1,
       cost: '10 gp',
@@ -129,7 +129,7 @@ export function getStarterKitForClass(
     case 'paladin': {
       inventory.push({
         slug: 'longsword',
-        name: 'Uzunkılıç (Longsword)',
+        name: 'Uzun Kılıç',
         type: 'weapon',
         weight: 3,
         cost: '15 gp',
@@ -143,7 +143,7 @@ export function getStarterKitForClass(
       });
       weapons.push({
         id: 'w-longsword',
-        name: 'Uzunkilic (Longsword)',
+        name: 'Uzun Kılıç',
         damage: '1d8',
         damageType: 'slashing',
         properties: ['versatile'],
@@ -153,7 +153,7 @@ export function getStarterKitForClass(
       if (hasShield) {
         inventory.push({
           slug: 'shield',
-          name: 'Kalkan (Shield)',
+          name: 'Kalkan',
           type: 'shield',
           weight: 6,
           cost: '10 gp',
@@ -172,7 +172,7 @@ export function getStarterKitForClass(
     case 'rogue': {
       inventory.push({
         slug: 'rapier',
-        name: 'Meç (Rapier)',
+        name: 'Meç',
         type: 'weapon',
         weight: 2,
         cost: '25 gp',
@@ -186,7 +186,7 @@ export function getStarterKitForClass(
       });
       inventory.push({
         slug: 'dagger-pair',
-        name: 'Hançer (Dagger)',
+        name: 'Hançer',
         type: 'weapon',
         weight: 1,
         cost: '2 gp',
@@ -200,7 +200,7 @@ export function getStarterKitForClass(
       });
       inventory.push({
         slug: 'thieves-tools',
-        name: 'Hırsız Aletleri (Thieves Tools)',
+        name: 'Hırsız Aletleri',
         type: 'gear',
         weight: 1,
         cost: '25 gp',
@@ -215,7 +215,7 @@ export function getStarterKitForClass(
       weapons.push(
         {
           id: 'w-rapier',
-          name: 'Mec (Rapier)',
+          name: 'Meç',
           damage: '1d8',
           damageType: 'piercing',
           properties: ['finesse'],
@@ -224,7 +224,7 @@ export function getStarterKitForClass(
         },
         {
           id: 'w-dagger',
-          name: 'Hancer (Dagger)',
+          name: 'Hançer',
           damage: '1d4',
           damageType: 'piercing',
           properties: ['finesse', 'thrown'],
@@ -240,7 +240,7 @@ export function getStarterKitForClass(
     case 'warlock': {
       inventory.push({
         slug: 'quarterstaff',
-        name: 'Asa (Quarterstaff)',
+        name: 'Asa',
         type: 'weapon',
         weight: 4,
         cost: '2 sp',
@@ -254,7 +254,7 @@ export function getStarterKitForClass(
       });
       inventory.push({
         slug: 'arcane-focus',
-        name: 'Büyü Odağı (Arcane Focus Wand)',
+        name: 'Büyü Odağı',
         type: 'gear',
         weight: 1,
         cost: '10 gp',
@@ -268,7 +268,7 @@ export function getStarterKitForClass(
       });
       weapons.push({
         id: 'w-quarterstaff',
-        name: 'Asa (Quarterstaff)',
+        name: 'Asa',
         damage: '1d6',
         damageType: 'bludgeoning',
         properties: ['versatile'],
@@ -281,7 +281,7 @@ export function getStarterKitForClass(
     case 'barbarian': {
       inventory.push({
         slug: 'greataxe',
-        name: 'Büyük Balta (Greataxe)',
+        name: 'Büyük Balta',
         type: 'weapon',
         weight: 7,
         cost: '30 gp',
@@ -295,7 +295,7 @@ export function getStarterKitForClass(
       });
       weapons.push({
         id: 'w-greataxe',
-        name: 'Buyuk Balta (Greataxe)',
+        name: 'Büyük Balta',
         damage: '1d12',
         damageType: 'slashing',
         properties: ['heavy', 'two-handed'],
@@ -308,7 +308,7 @@ export function getStarterKitForClass(
     default: {
       inventory.push({
         slug: 'mace',
-        name: 'Gürz (Mace)',
+        name: 'Gürz',
         type: 'weapon',
         weight: 4,
         cost: '5 gp',
@@ -322,7 +322,7 @@ export function getStarterKitForClass(
       });
       weapons.push({
         id: 'w-mace',
-        name: 'Gurz (Mace)',
+        name: 'Gürz',
         damage: '1d6',
         damageType: 'bludgeoning',
         properties: [],

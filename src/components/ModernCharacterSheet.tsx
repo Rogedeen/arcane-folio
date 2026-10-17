@@ -646,6 +646,7 @@ export const ModernCharacterSheet: React.FC = () => {
       {/* 2. SAVAŞ & STAT ROZETLERİ BANDI */}
       <CombatHudRow
         character={character}
+        speedPenalty={advantageStatus.speedPenalty}
         strMod={strMod}
         dexMod={dexMod}
         conMod={conMod}

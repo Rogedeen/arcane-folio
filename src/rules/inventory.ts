@@ -83,11 +83,17 @@ export function checkArmorStrengthRequirement(
   const name = armorNameOrSlug.toLowerCase();
   let requiredStr = 0;
 
-  if (name.includes('plate') && !name.includes('breastplate') && !name.includes('half plate')) {
+  if (
+    (name.includes('plate') || name.includes('plaka')) &&
+    !name.includes('breastplate') &&
+    !name.includes('half plate') &&
+    !name.includes('göğüslük') &&
+    !name.includes('yarım plaka')
+  ) {
     requiredStr = 15;
-  } else if (name.includes('splint')) {
+  } else if (name.includes('splint') || name.includes('şerit')) {
     requiredStr = 15;
-  } else if (name.includes('chain mail') || name.includes('zincir zırh')) {
+  } else if (name.includes('chain mail') || name.includes('zincir zırh') || name.includes('zincir')) {
     requiredStr = 13;
   }
 

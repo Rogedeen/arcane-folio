@@ -9,7 +9,7 @@
  */
 
 import { checkArmorProficiency } from './proficiency';
-import { getDetailedEncumbranceStatus } from './inventory';
+import { getDetailedEncumbranceStatus, checkArmorStrengthRequirement } from './inventory';
 import { CONDITIONS } from './conditions';
 import type { ItemData } from '../types/content';
 
@@ -48,7 +48,7 @@ export function computeCharacterAdvantageState(params: {
   let isSpellcastingBlocked = false;
   let speedPenalty = 0;
 
-  // 1. Kuşanılan Zırh ve Kalkan Yetkinlik Analizi
+  // 1. Kuşanılan Zırh ve Kalkan Yetkinlik & Güç Gereksinimi Analizi
   const equippedArmor = inventory.filter((i) => i.equipped && ['armor', 'shield'].includes(i.type));
   for (const item of equippedArmor) {
     const profCheck = checkArmorProficiency(charClass, item.type, item.name);
@@ -67,7 +67,24 @@ export function computeCharacterAdvantageState(params: {
       });
     }
 
-    // Stealth Disadvantage (Chain Mail, Splint, Plate, Padded vb.)
+    // Zırh Güç Gereksinimi (Armor Strength Requirement - SRD 5.1 sf. 62)
+    if (item.type === 'armor') {
+      const strCheck = checkArmorStrengthRequirement(strScore, item.name);
+      if (!strCheck.meetsRequirement) {
+        speedPenalty += strCheck.speedPenalty;
+        tags.push({
+          id: `armor-str-penalty-${item.slug}`,
+          labelTr: 'Yetersiz Güç (Zırh Hız Cezası)',
+          labelEn: 'Insufficient Strength (Armor Speed Penalty)',
+          type: 'debuff',
+          descriptionTr: `${item.name} için gereken Güç (${strCheck.requiredStr}) skoru karşılanamadığından hareket hızınız -${strCheck.speedPenalty} ft düşer.`,
+          descriptionEn: `Requires Strength ${strCheck.requiredStr} for ${item.name}. Speed reduced by -${strCheck.speedPenalty} ft.`,
+          icon: '🏃'
+        });
+      }
+    }
+
+    // Gizlilik Dezavantajı (Stealth Disadvantage)
     const nameLower = item.name.toLowerCase();
     if (
       nameLower.includes('chain mail') ||
@@ -75,15 +92,18 @@ export function computeCharacterAdvantageState(params: {
       nameLower.includes('plate') ||
       nameLower.includes('scale') ||
       nameLower.includes('ring mail') ||
-      nameLower.includes('padded')
+      nameLower.includes('padded') ||
+      nameLower.includes('zincir') ||
+      nameLower.includes('pullu') ||
+      nameLower.includes('plaka')
     ) {
       hasStealthDisadvantage = true;
       tags.push({
         id: `stealth-disadv-${item.slug}`,
-        labelTr: 'Gizlilikte Dezavantaj (Ağır Zırh)',
-        labelEn: 'Stealth Disadvantage (Armor Noise)',
+        labelTr: 'Gizlilikte Dezavantaj',
+        labelEn: 'Stealth Disadvantage',
         type: 'debuff',
-        descriptionTr: `${item.name} metal sürtünmesi ve ağırlığı sebebiyle Gizlilik (Stealth) zarlarınız dezavantajlıdır.`,
+        descriptionTr: `${item.name} metal sürtünmesi ve ağırlığı sebebiyle Gizlilik kontrolleriniz dezavantajlıdır.`,
         descriptionEn: `${item.name} imposes disadvantage on Dexterity (Stealth) checks due to noise.`,
         icon: '🛡️'
       });
@@ -100,10 +120,10 @@ export function computeCharacterAdvantageState(params: {
     }
     tags.push({
       id: `encumbrance-${encStatus.tier}`,
-      labelTr: encStatus.tier === 'over-capacity' ? 'Aşırı Yük (Kapasite Aşıldı)' : encStatus.tier === 'heavily-encumbered' ? 'Çok Ağır Yük' : 'Ağır Yük',
+      labelTr: encStatus.tier === 'over-capacity' ? 'Kapasite Aşıldı' : encStatus.tier === 'heavily-encumbered' ? 'Ağır Yük' : 'Yüklü',
       labelEn: encStatus.tier === 'over-capacity' ? 'Over Capacity' : encStatus.tier === 'heavily-encumbered' ? 'Heavily Encumbered' : 'Encumbered',
       type: 'debuff',
-      descriptionTr: `Taşınan ağırlık: ${totalWeight} lbs. Hareket hızı -${encStatus.speedPenalty} ft düşer${encStatus.hasDisadvantageOnChecks ? ' ve STR/DEX/CON kontrollerinde dezavantaj alırsınız.' : '.'}`,
+      descriptionTr: `Taşınan ağırlık: ${totalWeight} lbs. Hareket hızı -${encStatus.speedPenalty} ft düşer${encStatus.hasDisadvantageOnChecks ? ' ve Güç/Çeviklik/Dayanıklılık kontrollerinde dezavantaj alırsınız.' : '.'}`,
       descriptionEn: `Carrying ${totalWeight} lbs. Speed reduced by -${encStatus.speedPenalty} ft.`,
       icon: '🏋️'
     });
@@ -135,7 +155,7 @@ export function computeCharacterAdvantageState(params: {
     if (lower.includes('bless')) {
       tags.push({
         id: 'spell-bless',
-        labelTr: 'Bless (Kutsama)',
+        labelTr: 'Kutsama',
         labelEn: 'Bless',
         type: 'buff',
         descriptionTr: 'Saldırı zarlarınıza ve kurtarma zarlarınıza +1d4 eklenir.',
@@ -145,7 +165,7 @@ export function computeCharacterAdvantageState(params: {
     } else if (lower.includes('bane')) {
       tags.push({
         id: 'spell-bane',
-        labelTr: 'Bane (Lanet)',
+        labelTr: 'Lanet',
         labelEn: 'Bane',
         type: 'debuff',
         descriptionTr: 'Saldırı zarlarınızdan ve kurtarma zarlarınızdan 1d4 düşülür.',

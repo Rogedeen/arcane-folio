@@ -99,11 +99,40 @@ export function checkArmorProficiency(
   let targetCategory: ArmorProficiencyCategory | null = null;
   if (normType.includes('shield') || normName.includes('shield') || normName.includes('kalkan')) {
     targetCategory = 'shield';
-  } else if (normType.includes('heavy') || normName.includes('plate') || normName.includes('chain mail') || normName.includes('splint') || normName.includes('ring mail')) {
+  } else if (
+    normType.includes('heavy') ||
+    normType.includes('ağır') ||
+    normName.includes('plate') ||
+    normName.includes('chain mail') ||
+    normName.includes('splint') ||
+    normName.includes('ring mail') ||
+    normName.includes('zincir') ||
+    normName.includes('plaka') ||
+    normName.includes('şerit zırh') ||
+    normName.includes('halka zırh')
+  ) {
     targetCategory = 'heavy';
-  } else if (normType.includes('medium') || normName.includes('hide') || normName.includes('scale') || normName.includes('breastplate') || normName.includes('half plate')) {
+  } else if (
+    normType.includes('medium') ||
+    normType.includes('orta') ||
+    normName.includes('hide') ||
+    normName.includes('scale') ||
+    normName.includes('breastplate') ||
+    normName.includes('half plate') ||
+    normName.includes('pullu') ||
+    normName.includes('kösele') ||
+    normName.includes('göğüslük') ||
+    normName.includes('yarım plaka')
+  ) {
     targetCategory = 'medium';
-  } else if (normType.includes('light') || normName.includes('leather') || normName.includes('padded')) {
+  } else if (
+    normType.includes('light') ||
+    normType.includes('hafif') ||
+    normName.includes('leather') ||
+    normName.includes('padded') ||
+    normName.includes('deri') ||
+    normName.includes('dolgulu')
+  ) {
     targetCategory = 'light';
   }
 

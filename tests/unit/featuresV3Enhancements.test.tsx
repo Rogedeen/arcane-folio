@@ -176,8 +176,8 @@ describe('V3 Enhancements & Features', () => {
       const cleaned = sanitizeCharacter(legacyChar);
       expect(cleaned.inventory?.length).toBeLessThan(fullCatalog.length);
       // Equipped armor and weapons stay
-      expect(cleaned.inventory?.some((i) => i.name.toLowerCase().includes('chain mail'))).toBe(true);
-      expect(cleaned.inventory?.some((i) => i.name.toLowerCase().includes('longsword'))).toBe(true);
+      expect(cleaned.inventory?.some((i) => i.slug === 'chain-mail' || i.name.toLowerCase().includes('chain mail') || i.name.toLowerCase().includes('zincir'))).toBe(true);
+      expect(cleaned.inventory?.some((i) => i.slug === 'longsword' || i.name.toLowerCase().includes('longsword') || i.name.toLowerCase().includes('kılıç'))).toBe(true);
       // Extra unequipped armor was discarded
       expect(cleaned.inventory?.some((i) => i.name.toLowerCase().includes('plate armor extra'))).toBe(false);
       // Currency initialized

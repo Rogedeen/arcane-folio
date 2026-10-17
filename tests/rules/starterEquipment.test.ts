@@ -10,21 +10,21 @@ describe('StarterEquipment Kit Generator Testleri', () => {
     );
 
     expect(kit.weapons).toHaveLength(1);
-    expect(kit.weapons[0].name).toContain('Longsword');
+    expect(kit.weapons[0].name).toContain('Uzun Kılıç');
     expect(kit.equippedArmor?.name).toBe('Scale Mail');
     expect(kit.hasShield).toBe(true);
 
     // Envanterde tüm oyun kataloğu değil, sadece başlangıç kiti eşyaları olmalı
     const itemNames = kit.inventory.map((i) => i.name);
-    expect(itemNames).toContain('Uzunkılıç (Longsword)');
-    expect(itemNames).toContain('Kalkan (Shield)');
+    expect(itemNames).toContain('Uzun Kılıç');
+    expect(itemNames).toContain('Kalkan');
     expect(itemNames).toContain('Scale Mail');
-    expect(itemNames).toContain('Potion of Healing');
-    expect(itemNames).toContain('Sırt Çantası (Backpack)');
+    expect(itemNames).toContain('Şifa İksiri');
+    expect(itemNames).toContain('Sırt Çantası');
 
     // Kataloğun geri kalanı (Plate armor, rapier vb.) bu savaşçının çantasında olmamalı!
-    expect(itemNames).not.toContain('Tam Plaka Zırh (Plate)');
-    expect(itemNames).not.toContain('Meç (Rapier)');
+    expect(itemNames).not.toContain('Tam Plaka Zırh');
+    expect(itemNames).not.toContain('Meç');
   });
 
   it('Rogue için rapier, hançer çifti ve hırsız aletlerini verir', () => {

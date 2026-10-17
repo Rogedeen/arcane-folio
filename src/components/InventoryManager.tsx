@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ItemData } from '../types/content';
 import { localDatabase } from '../data/localDatabase';
 import { open5eClient } from '../data/open5eClient';
-import { calculateCarryingCapacity, calculateTotalWeight, isEncumbered } from '../rules/inventory';
+import { calculateCarryingCapacity, calculateTotalWeight, getDetailedEncumbranceStatus } from '../rules/inventory';
 import { useReference } from '../context/ReferenceContext';
 import { calculatePotionHealing, isPotionItem } from '../rules/potions';
 import { soundEffects } from '../utils/soundEffects';
@@ -116,7 +116,7 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
 
   const carryingCapacity = calculateCarryingCapacity(strScore);
   const totalWeight = Math.round(calculateTotalWeight(items) * 10) / 10;
-  const encumbered = isEncumbered(strScore, totalWeight);
+  const encStatus = getDetailedEncumbranceStatus(strScore, totalWeight);
   const weightPercent = Math.min(100, Math.round((totalWeight / carryingCapacity) * 100));
 
   // Kuşan / Çıkar (Tek Zırh Kuralı: Aynı anda sadece 1 adet zırh kuşanılabilir)
@@ -256,34 +256,51 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
 
   return (
     <div id="inventory-manager-container" className="inventory-card">
-      {/* Bildirim Toast'ı */}
-      {feedbackToast && (
-        <div
-          style={{
-            background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.2) 0%, rgba(21, 128, 61, 0.3) 100%)',
-            border: '1px solid #22c55e',
-            color: '#86efac',
-            padding: '0.6rem 1rem',
-            borderRadius: '8px',
-            marginBottom: '1rem',
-            fontSize: '0.85rem',
-            fontWeight: 700,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            boxShadow: '0 4px 12px rgba(34, 197, 94, 0.2)',
-            animation: 'fadeIn 0.2s ease-out',
-          }}
-        >
-          <span>{feedbackToast}</span>
-          <button
-            onClick={() => setFeedbackToast(null)}
-            style={{ background: 'none', border: 'none', color: '#86efac', cursor: 'pointer', fontSize: '1rem' }}
+      {/* Bildirim Toast'ı (Uyarılar Kırmızı/Turuncu, Başarılı İşlemler Yeşil) */}
+      {feedbackToast && (() => {
+        const isWarning =
+          feedbackToast.includes('⚠️') ||
+          feedbackToast.includes('UYARI') ||
+          feedbackToast.toLowerCase().includes('warning');
+
+        return (
+          <div
+            style={{
+              background: isWarning
+                ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.25) 0%, rgba(185, 28, 28, 0.35) 100%)'
+                : 'linear-gradient(135deg, rgba(34, 197, 94, 0.2) 0%, rgba(21, 128, 61, 0.3) 100%)',
+              border: isWarning ? '1px solid #ef4444' : '1px solid #22c55e',
+              color: isWarning ? '#fca5a5' : '#86efac',
+              padding: '0.6rem 1rem',
+              borderRadius: '8px',
+              marginBottom: '1rem',
+              fontSize: '0.85rem',
+              fontWeight: 700,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              boxShadow: isWarning
+                ? '0 4px 12px rgba(239, 68, 68, 0.3)'
+                : '0 4px 12px rgba(34, 197, 94, 0.2)',
+              animation: 'fadeIn 0.2s ease-out',
+            }}
           >
-            ✕
-          </button>
-        </div>
-      )}
+            <span>{feedbackToast}</span>
+            <button
+              onClick={() => setFeedbackToast(null)}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: isWarning ? '#fca5a5' : '#86efac',
+                cursor: 'pointer',
+                fontSize: '1rem',
+              }}
+            >
+              ✕
+            </button>
+          </div>
+        );
+      })()}
 
       {/* Para Kesesi / Cüzdan (Altın GP, Gümüş SP, Bakır CP) */}
       <div
@@ -493,11 +510,25 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
           <div className="carrying-header">
             <span>Yük Kapasitesi:</span>
             <strong>{totalWeight} / {carryingCapacity} lbs</strong>
-            {encumbered && <span className="encumbered-tag">⚠️ AĞIR YÜK!</span>}
+            {encStatus.tier === 'over-capacity' && (
+              <span className="encumbered-tag" style={{ background: '#ef4444', color: '#fff' }}>
+                ⚠️ KAPASİTE AŞILDI!
+              </span>
+            )}
+            {encStatus.tier === 'heavily-encumbered' && (
+              <span className="encumbered-tag" style={{ background: '#f97316', color: '#fff' }}>
+                ⚠️ AĞIR YÜK (-20 ft)
+              </span>
+            )}
+            {encStatus.tier === 'encumbered' && (
+              <span className="encumbered-tag" style={{ background: '#eab308', color: '#000' }}>
+                ⚠️ YÜKLÜ (-10 ft)
+              </span>
+            )}
           </div>
           <div className="carrying-progress-bg">
             <div
-              className={`carrying-progress-fill ${encumbered ? 'danger' : ''}`}
+              className={`carrying-progress-fill ${encStatus.tier === 'over-capacity' ? 'danger' : encStatus.tier !== 'unencumbered' ? 'warning' : ''}`}
               style={{ width: `${weightPercent}%` }}
             />
           </div>

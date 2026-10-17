@@ -44,7 +44,11 @@ export function sanitizeCharacter(char: FullCharacter): FullCharacter {
     const filtered = c.inventory.filter((item) => {
       // Zırh kontrolü: Karakterin aktif kuşanılmış zırhı varsa sadece onu tut, diğerlerini çantadan at
       if (item.type === 'armor') {
-        return equippedArmorName ? item.name.toLowerCase().includes(equippedArmorName) : Boolean(item.equipped);
+        if (!equippedArmorName) return Boolean(item.equipped);
+        const normArmor = equippedArmorName.replace(/[-_]/g, ' ');
+        const normItemName = item.name.toLowerCase().replace(/[-_]/g, ' ');
+        const normItemSlug = item.slug.toLowerCase().replace(/[-_]/g, ' ');
+        return normItemName.includes(normArmor) || normArmor.includes(normItemName) || normItemSlug.includes(normArmor);
       }
       // Kalkan kontrolü: Sadece hasShield true ise kalkanı tut
       if (item.type === 'shield' || item.slug === 'shield') {
@@ -52,9 +56,13 @@ export function sanitizeCharacter(char: FullCharacter): FullCharacter {
       }
       // Silah kontrolü: Karakterin silah listesinde varsa tut
       if (item.type === 'weapon') {
-        return weaponNames.length > 0
-          ? weaponNames.some((wn) => item.name.toLowerCase().includes(wn) || wn.includes(item.name.toLowerCase()))
-          : Boolean(item.equipped);
+        if (weaponNames.length === 0) return Boolean(item.equipped);
+        return weaponNames.some((wn) => {
+          const normWn = wn.replace(/[-_]/g, ' ');
+          const normItemName = item.name.toLowerCase().replace(/[-_]/g, ' ');
+          const normItemSlug = item.slug.toLowerCase().replace(/[-_]/g, ' ');
+          return normItemName.includes(normWn) || normWn.includes(normItemName) || normItemSlug.includes(normWn);
+        });
       }
       // İksir ve temel kamp ekipmanları tutulur
       if (item.type === 'potion' || item.type === 'gear') return true;
