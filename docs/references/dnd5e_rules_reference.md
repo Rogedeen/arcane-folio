@@ -83,3 +83,17 @@ Bir karakter, sahip olduğu sınıf seviyesinin izin verdiği büyü yuvası (sp
 | **Silah Ustalığı (Weapon Mastery)** | Yalnızca standart özellikler | Savaşçı sınıflar silaha özel ustalık uygular (Nick, Vex, Graze, Topple vb.) |
 | **Tükenmişlik (Exhaustion)** | 6 ölümcül basamak | Seviye başına tüm zarlara -1 (10'da ölüm) |
 | **Kahramanlık İlhamı (Heroic Inspiration)** | Avantaj zarı verir | Atılan herhangi bir zarı yeniden attırır |
+
+---
+
+## 5. TAŞIMA KAPASİTESİ VE YÜK KURALLARI (CARRYING CAPACITY & ENCUMBRANCE)
+
+1. **Standart Kural (SRD 5.1 sf. 60 / PHB sf. 176 - Varsayılan Sistem):**
+   - **Taşıma Kapasitesi = Güç (STR) × 15 lbs**
+   - Karakter bu kapasite sınırına kadar hiçbir ceza almaz. Hızı düşmez, kontrollerinde dezavantaj olmaz.
+   - Sadece `STR × 15 lbs` sınırı aşıldığında aşırı yük (Over Capacity) devreye girer.
+2. **Varyant Yük Kuralı (Variant Encumbrance - Opsiyonel):**
+   - `STR × 5 lbs`: Yüklü (-10 ft hız cezası).
+   - `STR × 10 lbs`: Ağır Yüklü (-20 ft hız cezası ve STR/DEX/CON testlerinde dezavantaj).
+3. **Zırh Güç Gereksinimi (Armor Strength Requirement - SRD 5.1 sf. 62):**
+   - Ağır zırhların (Chain Mail: 13 STR, Splint: 15 STR, Plate: 15 STR) Güç gereksinimi karşılanamazsa karakterin yürüme hızı **10 fit düşer**.

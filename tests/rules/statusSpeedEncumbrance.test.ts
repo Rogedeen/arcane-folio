@@ -4,57 +4,39 @@ import { getDetailedEncumbranceStatus } from '../../src/rules/inventory';
 import type { ItemData } from '../../src/types/content';
 
 describe('Durum, Yük (Encumbrance) ve Hız Cezası Kuralları', () => {
-  it('STR 10 karakter 45 lb taşırken yüksüz (unencumbered) olmalı ve hız cezası 0 olmalıdır', () => {
-    const enc = getDetailedEncumbranceStatus(10, 45);
+  it('STR 15 karakter 78.5 lb taşırken (kapasite 225 lbs) standart kuralla yüksüz olmalı ve hız cezası almamalıdır', () => {
+    const enc = getDetailedEncumbranceStatus(15, 78.5);
     expect(enc.tier).toBe('unencumbered');
     expect(enc.speedPenalty).toBe(0);
 
     const status = computeCharacterAdvantageState({
-      charClass: 'druid',
-      strScore: 10,
-      inventory: [{ slug: 'bag', name: 'Sırt Çantası', type: 'gear', cost: '2 gp', weight: 45, quantity: 1, properties: [], description: 'Çanta', source: 'SRD 5.1', source_ref: 'PHB', license: 'CC-BY-4.0' }],
+      charClass: 'fighter',
+      strScore: 15,
+      inventory: [{ slug: 'bag', name: 'Sırt Çantası', type: 'gear', cost: '2 gp', weight: 78.5, quantity: 1, properties: [], description: 'Çanta', source: 'SRD 5.1', source_ref: 'PHB', license: 'CC-BY-4.0' }],
       conditions: []
     });
 
-    // Ağır yük olmamasına rağmen gereksiz uyarı etiketi OLMAMALIDIR
+    // 225 lbs kapasite içinde olduğu için gereksiz uyarı veya hız cezası olmamalıdır
     const encTag = status.tags.find((t) => t.id.startsWith('encumbrance-'));
     expect(encTag).toBeUndefined();
     expect(status.speedPenalty).toBe(0);
   });
 
-  it('STR 10 karakter 60 lb taşırken "Yüklü" olmalı ve -10 ft hız cezası almalıdır (Ağır Yük değil, Yüklü)', () => {
-    const enc = getDetailedEncumbranceStatus(10, 60);
-    expect(enc.tier).toBe('encumbered');
-    expect(enc.speedPenalty).toBe(10);
-
-    const status = computeCharacterAdvantageState({
-      charClass: 'druid',
-      strScore: 10,
-      inventory: [{ slug: 'heavy-bag', name: 'Ağır Çanta', type: 'gear', cost: '2 gp', weight: 60, quantity: 1, properties: [], description: 'Ağır çanta', source: 'SRD 5.1', source_ref: 'PHB', license: 'CC-BY-4.0' }],
-      conditions: []
-    });
-
-    const encTag = status.tags.find((t) => t.id === 'encumbrance-encumbered');
-    expect(encTag).toBeDefined();
-    expect(encTag?.labelTr).toBe('Yüklü'); // 'Ağır Yük' değil, 'Yüklü' olmalı
-    expect(status.speedPenalty).toBe(10);
-  });
-
-  it('STR 10 karakter 110 lb taşırken "Ağır Yük" (Heavily Encumbered) olmalı ve -20 ft hız cezası + dezavantaj almalıdır', () => {
-    const enc = getDetailedEncumbranceStatus(10, 110);
-    expect(enc.tier).toBe('heavily-encumbered');
+  it('STR 10 karakter kapasitesi olan 150 lbs sınırını aştığında (160 lb) Kapasite Aşıldı uyarısı ve hız cezası almalıdır', () => {
+    const enc = getDetailedEncumbranceStatus(10, 160);
+    expect(enc.tier).toBe('over-capacity');
     expect(enc.speedPenalty).toBe(20);
 
     const status = computeCharacterAdvantageState({
       charClass: 'druid',
       strScore: 10,
-      inventory: [{ slug: 'very-heavy-bag', name: 'Çok Ağır Çanta', type: 'gear', cost: '2 gp', weight: 110, quantity: 1, properties: [], description: 'Çok ağır çanta', source: 'SRD 5.1', source_ref: 'PHB', license: 'CC-BY-4.0' }],
+      inventory: [{ slug: 'excess-weight', name: 'Aşırı Yük Eşyası', type: 'gear', cost: '10 gp', weight: 160, quantity: 1, properties: [], description: 'Ağır ganimet sandığı', source: 'SRD 5.1', source_ref: 'PHB', license: 'CC-BY-4.0' }],
       conditions: []
     });
 
-    const encTag = status.tags.find((t) => t.id === 'encumbrance-heavily-encumbered');
+    const encTag = status.tags.find((t) => t.id === 'encumbrance-over-capacity');
     expect(encTag).toBeDefined();
-    expect(encTag?.labelTr).toBe('Ağır Yük');
+    expect(encTag?.labelTr).toBe('Kapasite Aşıldı');
     expect(status.speedPenalty).toBe(20);
     expect(status.hasStrDexCheckDisadvantage).toBe(true);
   });

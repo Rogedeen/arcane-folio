@@ -34,27 +34,45 @@ describe('Envanter ve Taşıma Kapasitesi Kuralları [SRD 5.1 sf. 60 Lifting and
     expect(isEncumbered(10, 151)).toBe(true);
   });
 
-  describe('Variant Encumbrance Kuralları [PHB sf. 176]', () => {
-    it('STR 10 karakter için 50 lb üzeri Encumbered (-10 ft), 100 lb üzeri Heavily Encumbered (-20 ft + dezavantaj), 150 üzeri Over Capacity', () => {
+  describe('Standart Taşıma Kapasitesi Kuralı [SRD 5.1 sf. 60 - Varsayılan]', () => {
+    it('STR 15 olan karakter 78.5 lbs veya 225 lbs altındayken yüksüz (unencumbered) olmalı ve 0 ceza almalıdır', () => {
+      const normal = getDetailedEncumbranceStatus(15, 78.5);
+      expect(normal.tier).toBe('unencumbered');
+      expect(normal.speedPenalty).toBe(0);
+      expect(normal.hasDisadvantageOnChecks).toBe(false);
+
+      const maxLimit = getDetailedEncumbranceStatus(15, 225);
+      expect(maxLimit.tier).toBe('unencumbered');
+      expect(maxLimit.speedPenalty).toBe(0);
+
+      const over = getDetailedEncumbranceStatus(15, 226);
+      expect(over.tier).toBe('over-capacity');
+      expect(over.speedPenalty).toBe(20);
+      expect(over.hasDisadvantageOnChecks).toBe(true);
+    });
+  });
+
+  describe('Variant Encumbrance Kuralları [PHB sf. 176 - Opsiyonel]', () => {
+    it('STR 10 karakter için useVariant=true iken 50 lb üzeri Encumbered (-10 ft), 100 lb üzeri Heavily Encumbered (-20 ft + dezavantaj), 150 üzeri Over Capacity', () => {
       // Unencumbered
-      const unenc = getDetailedEncumbranceStatus(10, 45);
+      const unenc = getDetailedEncumbranceStatus(10, 45, true);
       expect(unenc.tier).toBe('unencumbered');
       expect(unenc.speedPenalty).toBe(0);
 
       // Encumbered (> 50 lb)
-      const enc = getDetailedEncumbranceStatus(10, 60);
+      const enc = getDetailedEncumbranceStatus(10, 60, true);
       expect(enc.tier).toBe('encumbered');
       expect(enc.speedPenalty).toBe(10);
       expect(enc.hasDisadvantageOnChecks).toBe(false);
 
       // Heavily Encumbered (> 100 lb)
-      const heavy = getDetailedEncumbranceStatus(10, 110);
+      const heavy = getDetailedEncumbranceStatus(10, 110, true);
       expect(heavy.tier).toBe('heavily-encumbered');
       expect(heavy.speedPenalty).toBe(20);
       expect(heavy.hasDisadvantageOnChecks).toBe(true);
 
       // Over capacity (> 150 lb)
-      const over = getDetailedEncumbranceStatus(10, 155);
+      const over = getDetailedEncumbranceStatus(10, 155, true);
       expect(over.tier).toBe('over-capacity');
       expect(over.speedPenalty).toBe(30);
     });

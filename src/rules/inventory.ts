@@ -27,38 +27,65 @@ export interface EncumbranceStatus {
 }
 
 /**
- * Variant Encumbrance Kuralı (SRD 5.1 / PHB sf. 176):
- * - Toplam ağırlık > STR * 5 lb: Encumbered (-10 ft hız)
- * - Toplam ağırlık > STR * 10 lb: Heavily Encumbered (-20 ft hız, STR/DEX/CON testlerine dezavantaj)
- * - Toplam ağırlık > STR * 15 lb: Over Capacity (Taşıma sınırı aşıldı, hareket edilemez)
+ * Taşıma Kapasitesi ve Yük Kuralı (SRD 5.1 sf. 60 & PHB sf. 176):
+ * 1. STANDART KURAL (Varsayılan):
+ *    - Karakter STR * 15 lbs'ye kadar sıfır ceza ile taşır. Hızı düşmez, dezavantaj almaz.
+ *    - Yalnızca STR * 15 lbs aşıldığında aşırı yük (over-capacity) devreye girer.
+ * 2. VARYANT KURAL (useVariant = true):
+ *    - STR * 5 lb üzeri: Yüklü (-10 ft hız)
+ *    - STR * 10 lb üzeri: Ağır Yüklü (-20 ft hız, STR/DEX/CON kontrollerinde dezavantaj)
+ *    - STR * 15 lb üzeri: Kapasite Aşıldı
  */
-export function getDetailedEncumbranceStatus(strScore: number, totalWeight: number): EncumbranceStatus {
+export function getDetailedEncumbranceStatus(
+  strScore: number,
+  totalWeight: number,
+  useVariant: boolean = false
+): EncumbranceStatus {
   const safeStr = Math.max(1, strScore);
   const maxCapacity = safeStr * 15;
 
+  if (useVariant) {
+    if (totalWeight > maxCapacity) {
+      return {
+        tier: 'over-capacity',
+        speedPenalty: 30,
+        hasDisadvantageOnChecks: true,
+        maxCapacity
+      };
+    }
+
+    if (totalWeight > safeStr * 10) {
+      return {
+        tier: 'heavily-encumbered',
+        speedPenalty: 20,
+        hasDisadvantageOnChecks: true,
+        maxCapacity
+      };
+    }
+
+    if (totalWeight > safeStr * 5) {
+      return {
+        tier: 'encumbered',
+        speedPenalty: 10,
+        hasDisadvantageOnChecks: false,
+        maxCapacity
+      };
+    }
+
+    return {
+      tier: 'unencumbered',
+      speedPenalty: 0,
+      hasDisadvantageOnChecks: false,
+      maxCapacity
+    };
+  }
+
+  // Standart D&D 5e Kuralı (SRD 5.1 sf. 60 - Varsayılan)
   if (totalWeight > maxCapacity) {
     return {
       tier: 'over-capacity',
-      speedPenalty: 30, // Hareketsiz / 0 ft
-      hasDisadvantageOnChecks: true,
-      maxCapacity
-    };
-  }
-
-  if (totalWeight > safeStr * 10) {
-    return {
-      tier: 'heavily-encumbered',
       speedPenalty: 20,
       hasDisadvantageOnChecks: true,
-      maxCapacity
-    };
-  }
-
-  if (totalWeight > safeStr * 5) {
-    return {
-      tier: 'encumbered',
-      speedPenalty: 10,
-      hasDisadvantageOnChecks: false,
       maxCapacity
     };
   }
