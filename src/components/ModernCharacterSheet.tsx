@@ -776,7 +776,12 @@ export const ModernCharacterSheet: React.FC = () => {
           {activeTab === 'spells' && (
             <div id="tab-content-spells">
               {isSpellcaster ? (
-                <Spellbook level={character.level} castingModifier={intMod} />
+                <Spellbook
+                  level={character.level}
+                  castingModifier={intMod}
+                  charClass={character.class}
+                  subclass={character.subclass}
+                />
               ) : (
                 <FeaturesTabContent character={character} onSecondWind={handleSecondWind} />
               )}

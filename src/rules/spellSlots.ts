@@ -104,3 +104,55 @@ export function getSpellSlotsForLevel(
 
   return result;
 }
+
+/**
+ * Karakterin sınıfı, alt sınıfı ve seviyesine göre hazırlayabileceği / öğrenebileceği
+ * MAKSİMUM büyü yuvası seviyesini hesaplar (0 - 9).
+ * Örn: 3. seviye Fighter (Eldritch Knight) -> 1
+ * 3. seviye Wizard -> 2
+ * 5. seviye Wizard -> 3
+ * 17. seviye Wizard -> 9
+ */
+export function getMaxSpellLevelForCharacter(
+  charClass: string,
+  subclass?: string,
+  level: number = 1
+): number {
+  const c = charClass.toLowerCase();
+  const sc = (subclass || '').toLowerCase();
+  const clampedLevel = Math.max(1, Math.min(20, level));
+
+  // Full Casters (Wizard, Cleric, Druid, Sorcerer, Bard)
+  if (['wizard', 'cleric', 'druid', 'sorcerer', 'bard'].includes(c)) {
+    return Math.min(9, Math.ceil(clampedLevel / 2));
+  }
+
+  // Warlock (Pact Magic - En fazla 5. seviye slot)
+  if (c === 'warlock') {
+    return Math.min(5, Math.ceil(clampedLevel / 2));
+  }
+
+  // Half Casters (Paladin, Ranger - 2. seviyede başlar)
+  if (['paladin', 'ranger'].includes(c)) {
+    if (clampedLevel < 2) return 0;
+    return Math.min(5, Math.ceil(clampedLevel / 4));
+  }
+
+  // One-Third Casters (Eldritch Knight Fighter, Arcane Trickster Rogue - 3. seviyede başlar)
+  const normalizedSc = sc.replace(/[-_]/g, ' ');
+  if (
+    normalizedSc.includes('eldritch knight') ||
+    normalizedSc.includes('arcane trickster') ||
+    normalizedSc.includes('şövalye') ||
+    normalizedSc.includes('düzenbaz')
+  ) {
+    if (clampedLevel < 3) return 0;
+    if (clampedLevel < 7) return 1;
+    if (clampedLevel < 13) return 2;
+    if (clampedLevel < 19) return 3;
+    return 4;
+  }
+
+  // Büyücü olmayan sınıflar
+  return 0;
+}

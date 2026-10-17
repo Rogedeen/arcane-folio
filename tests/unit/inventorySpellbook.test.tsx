@@ -53,4 +53,39 @@ describe('Spellbook Component', () => {
     fireEvent.click(prepBtn);
     expect(prepBtn.textContent).not.toBe(before);
   });
+
+  it('restricts tabs and visible spells to max legal spell level for Eldritch Knight 3', () => {
+    // Level 3 Eldritch Knight can ONLY cast 1st level spells
+    render(<Spellbook level={3} castingModifier={2} charClass="fighter" subclass="eldritch-knight" />);
+
+    // Tabs 0 and 1 should exist, but tab 2 or 3 must NOT exist
+    expect(screen.getByRole('button', { name: /Cantripler/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /1\. Seviye Büyüler/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /2\. Seviye Büyüler/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /3\. Seviye Büyüler/i })).not.toBeInTheDocument();
+
+    // Fireball is 3rd level, so it must not be visible
+    expect(screen.queryByText('Fireball')).not.toBeInTheDocument();
+  });
+
+  it('filters spells by the prepared tab', () => {
+    render(<Spellbook level={5} castingModifier={4} charClass="wizard" />);
+
+    // First prepare a spell (e.g. Magic Missile)
+    const prepBtn = screen.getByRole('button', { name: /Magic Missile hazırla/i });
+    fireEvent.click(prepBtn);
+    expect(prepBtn.textContent).toContain('✓ Hazırlandı');
+
+    // Switch to Prepared tab
+    const preparedTab = screen.getByRole('button', { name: /Sadece Hazırlanan Büyüler/i });
+    fireEvent.click(preparedTab);
+
+    // Verify prepared cards are shown and they are marked as prepared
+    const prepButtons = document.querySelectorAll<HTMLButtonElement>('[id^="btn-prepare-"]');
+    expect(prepButtons.length).toBeGreaterThan(0);
+    prepButtons.forEach((btn) => {
+      expect(btn.textContent).toContain('✓ Hazırlandı');
+    });
+  });
 });
+
