@@ -14,4 +14,9 @@ The project adheres strictly to the rules and standards defined in `.agents/rule
 8. **2014 Rules First:** Prioritize 100% complete 2014 PHB rules over 2024 revisions until finalized.
 9. **Strict Branching Workflow (Dev -> Main):** Never commit directly to `main`. At the end of every feature development / turn, always verify tests (`npx vitest run`), ensure zero TypeScript errors (`npx tsc --noEmit`), and commit & push all changes to GitHub on the `dev` branch (`git checkout dev ; git add . ; git commit -m '...' ; git push origin dev`). Merging to `main` must only occur after verification and approval, ensuring production stays rock-solid for live users.
 10. **Strict D&D 5e Rule Compliance:** Always refer to and update `docs/references/dnd5e_rules_compliance_roadmap.md` and `.agents/skills/dnd5e-rules-master/SKILL.md`. Every mechanic (spellcasting type, weapon damage bonus, resting hit dice, encumbrance, concentration) must strictly obey official 5e rules.
+11. **Plan First, Research Thoroughly & Await Approval (No Blind Coding):** Never jump straight into code for major features or architectural additions. Always execute in this strict sequence:
+    1. **Thorough Research & Feasibility Study:** Investigate external APIs, asset catalogs, licensing (CC-BY / OGL), bundle size impact, and architectural trade-offs.
+    2. **Detailed Architectural Plan:** Outline schemas, dynamic styling models, caching strategies, fallback paths, and UI integration touchpoints.
+    3. **User Confirmation & Approval:** Present the plan clearly to the user and wait for explicit approval before altering codebase files.
+    4. **Rigorous Testing & Verification:** Implement comprehensive unit tests (`vitest`), ensure zero TypeScript errors (`tsc --noEmit`), and adhere to branch workflows.
 
