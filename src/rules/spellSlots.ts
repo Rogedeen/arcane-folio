@@ -74,16 +74,49 @@ const WARLOCK_TABLE: [number, number][] = [
   [4, 5], // 20
 ];
 
+// 1/3 Caster Slot Tablosu (Eldritch Knight, Arcane Trickster) (SRD 5.1 sf. 27, 40)
+// Seviye 1-20 için [1. slot, 2. slot, 3. slot, 4. slot]
+const ONE_THIRD_CASTER_TABLE: number[][] = [
+  [],           // 1
+  [],           // 2
+  [2],          // 3
+  [3],          // 4
+  [3],          // 5
+  [3],          // 6
+  [4, 2],       // 7
+  [4, 2],       // 8
+  [4, 2],       // 9
+  [4, 3],       // 10
+  [4, 3],       // 11
+  [4, 3],       // 12
+  [4, 3, 2],    // 13
+  [4, 3, 2],    // 14
+  [4, 3, 2],    // 15
+  [4, 3, 3],    // 16
+  [4, 3, 3],    // 17
+  [4, 3, 3],    // 18
+  [4, 3, 3, 1], // 19
+  [4, 3, 3, 1], // 20
+];
+
 export function getSpellSlotsForLevel(
-  charClass: CharacterClass,
-  level: number
+  charClass: CharacterClass | string,
+  level: number,
+  subclass?: string
 ): Record<number, SpellSlotTier> {
   const result: Record<number, SpellSlotTier> = {};
   const clampedLevel = Math.max(1, Math.min(20, level));
+  const c = charClass.toLowerCase();
+  const sc = (subclass || '').toLowerCase().replace(/[-_]/g, ' ');
 
-  const isFullCaster = ['wizard', 'sorcerer', 'cleric', 'druid', 'bard'].includes(charClass);
-  const isHalfCaster = ['paladin', 'ranger'].includes(charClass);
-  const isWarlock = charClass === 'warlock';
+  const isFullCaster = ['wizard', 'sorcerer', 'cleric', 'druid', 'bard'].includes(c);
+  const isHalfCaster = ['paladin', 'ranger'].includes(c);
+  const isWarlock = c === 'warlock';
+  const isOneThirdCaster =
+    sc.includes('eldritch knight') ||
+    sc.includes('arcane trickster') ||
+    sc.includes('şövalye') ||
+    sc.includes('düzenbaz');
 
   if (isFullCaster) {
     const row = FULL_CASTER_TABLE[clampedLevel - 1];
@@ -100,6 +133,12 @@ export function getSpellSlotsForLevel(
   } else if (isWarlock) {
     const [count, slotLevel] = WARLOCK_TABLE[clampedLevel - 1];
     result[slotLevel] = { tier: slotLevel, total: count, expended: 0 };
+  } else if (isOneThirdCaster) {
+    const row = ONE_THIRD_CASTER_TABLE[clampedLevel - 1] || [];
+    row.forEach((count, idx) => {
+      const tier = idx + 1;
+      result[tier] = { tier, total: count, expended: 0 };
+    });
   }
 
   return result;

@@ -46,6 +46,9 @@ import { ActionsTabContent, type ActionSubPill } from './sheet/ActionsTabContent
 import { FeaturesTabContent } from './sheet/FeaturesTabContent';
 import { BackgroundTabContent } from './sheet/BackgroundTabContent';
 import { NotesTabContent } from './sheet/NotesTabContent';
+import { StatusAdvantageBanner } from './sheet/StatusAdvantageBanner';
+import { computeCharacterAdvantageState } from '../rules/statusAnalysis';
+import { getSpellSlotsForLevel } from '../rules/spellSlots';
 
 const DEMO_CHARACTER: FullCharacter = {
   id: 'demo-char',
@@ -206,6 +209,19 @@ export const ModernCharacterSheet: React.FC = () => {
     armor: character.equippedArmor,
     hasShield: character.hasShield,
   });
+
+  // Karakter Durum, Yetkinlik ve Avantaj/Dezavantaj Durumu
+  const advantageStatus = computeCharacterAdvantageState({
+    charClass: character.class,
+    strScore: character.baseAbilities.str,
+    inventory: character.inventory ?? [],
+    conditions: character.activeConditions ?? [],
+  });
+
+  // Karakter Büyü Yuvaları (Spell Slots) State'i
+  const [spellSlots, setSpellSlots] = useState(() =>
+    getSpellSlotsForLevel(character.class, character.level, character.subclass)
+  );
 
   // Sefer Kodu State'i (DM'in Seferine Katılma)
   const [joinedCampaignCode, setJoinedCampaignCode] = useState<string | null>(() => {
@@ -538,14 +554,28 @@ export const ModernCharacterSheet: React.FC = () => {
     const hitDieRoll = Math.floor(Math.random() * 10) + 1 + conMod;
     const nextHp = Math.min(character.maxHp, character.currentHp + Math.max(1, hitDieRoll));
     handleHpUpdate(nextHp);
-    setQuickToast({ text: `🏕️ Kısa Dinlenme: 1 Can Zarı atıldı (+${hitDieRoll} HP). HP: ${nextHp}/${character.maxHp}` });
+
+    // Warlock Pact Magic slotları Kısa Dinlenmede tamamen dolar!
+    if (character.class.toLowerCase() === 'warlock') {
+      const resetWarlock = getSpellSlotsForLevel('warlock', character.level, character.subclass);
+      setSpellSlots(resetWarlock);
+    }
+
+    setQuickToast({
+      text: `🏕️ Kısa Dinlenme: 1 Can Zarı atıldı (+${hitDieRoll} HP).${character.class.toLowerCase() === 'warlock' ? ' Warlock büyü slotları tamamen doldu!' : ''} HP: ${nextHp}/${character.maxHp}`
+    });
     setTimeout(() => setQuickToast(null), 4000);
   };
 
   const handleLongRest = () => {
     soundEffects.playCritSound();
     handleHpUpdate(character.maxHp, 0);
-    setQuickToast({ text: `🌅 Uzun Dinlenme: Tüm can puanları ve yetenekler yenilendi! (${character.maxHp}/${character.maxHp} HP)` });
+
+    // Uzun Dinlenmede tüm büyü slotları tamamen dolar!
+    const resetAllSlots = getSpellSlotsForLevel(character.class, character.level, character.subclass);
+    setSpellSlots(resetAllSlots);
+
+    setQuickToast({ text: `🌅 Uzun Dinlenme: Tüm can puanları ve büyü yuvaları yenilendi! (${character.maxHp}/${character.maxHp} HP)` });
     setTimeout(() => setQuickToast(null), 4500);
   };
 
@@ -598,6 +628,19 @@ export const ModernCharacterSheet: React.FC = () => {
         onToggleLock={() => setIsLocked(!isLocked)}
         onJoinCampaign={handlePlayerJoinCampaign}
         joinedCampaignCode={joinedCampaignCode}
+      />
+
+      {/* 🛡️ AKTİF DURUMLAR & AVANTAJ / DEZAVANTAJ BANNER'I */}
+      <StatusAdvantageBanner
+        status={advantageStatus}
+        onRemoveCondition={(condId: string) => {
+          if (!isDemo) {
+            const nextConditions = (character.activeConditions || []).filter(
+              (c: string) => c.toLowerCase() !== condId.toLowerCase()
+            );
+            saveCharacter({ ...character, activeConditions: nextConditions });
+          }
+        }}
       />
 
       {/* 2. SAVAŞ & STAT ROZETLERİ BANDI */}
@@ -781,6 +824,8 @@ export const ModernCharacterSheet: React.FC = () => {
                   castingModifier={intMod}
                   charClass={character.class}
                   subclass={character.subclass}
+                  initialSpellSlots={spellSlots}
+                  onSpellSlotsChange={(updated) => setSpellSlots(updated)}
                 />
               ) : (
                 <FeaturesTabContent character={character} onSecondWind={handleSecondWind} />
@@ -793,6 +838,7 @@ export const ModernCharacterSheet: React.FC = () => {
             <div id="tab-content-inventory">
               <InventoryManager
                 strScore={character.baseAbilities.str}
+                charClass={character.class}
                 inventory={character.inventory ?? []}
                 currency={character.currency ?? { cp: 0, sp: 0, gp: 15 }}
                 onCurrencyChange={(newCurr) => {

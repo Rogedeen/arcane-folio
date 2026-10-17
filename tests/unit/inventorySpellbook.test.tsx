@@ -87,5 +87,26 @@ describe('Spellbook Component', () => {
       expect(btn.textContent).toContain('✓ Hazırlandı');
     });
   });
+
+  it('renders interactive spell slots tracker and prevents preparing more spells than capacity', () => {
+    // Level 1 Wizard with INT mod 0 -> max capacity = 1 spell
+    render(<Spellbook level={1} castingModifier={0} charClass="wizard" />);
+
+    // Spell slot bar should be rendered
+    expect(screen.getByText(/BÜYÜ YUVALARI/i)).toBeInTheDocument();
+    expect(screen.getByText(/1\. Kademe:/i)).toBeInTheDocument();
+
+    // Prepare 1st level spell (e.g. Magic Missile) -> reaches limit (1/1)
+    const mmBtn = screen.getByRole('button', { name: /Magic Missile hazırla/i });
+    fireEvent.click(mmBtn);
+    expect(mmBtn.textContent).toContain('✓ Hazırlandı');
+
+    // Try to prepare 2nd spell (Shield) -> should be blocked and show alert
+    const shieldBtn = screen.getByRole('button', { name: /Shield hazırla/i });
+    fireEvent.click(shieldBtn);
+
+    expect(screen.getByText(/sınırı doldu/i)).toBeInTheDocument();
+    expect(shieldBtn.textContent).not.toContain('✓ Hazırlandı');
+  });
 });
 

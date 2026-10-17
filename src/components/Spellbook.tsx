@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { SpellData } from '../types/content';
 import { contentService } from '../data/contentService';
 import { calculateSpellCapacity } from '../rules/spellPreparation';
-import { getMaxSpellLevelForCharacter } from '../rules/spellSlots';
+import { getMaxSpellLevelForCharacter, getSpellSlotsForLevel } from '../rules/spellSlots';
 import { useReference } from '../context/ReferenceContext';
 import { RpgIcon } from './common/RpgIcon';
 
@@ -11,20 +11,58 @@ interface SpellbookProps {
   castingModifier: number;
   charClass?: string;
   subclass?: string;
+  onSpellSlotsChange?: (slots: Record<number, { tier: number; total: number; expended: number }>) => void;
+  initialSpellSlots?: Record<number, { tier: number; total: number; expended: number }>;
 }
 
-export const Spellbook: React.FC<SpellbookProps> = ({ level, castingModifier, charClass = 'wizard', subclass }) => {
+export const Spellbook: React.FC<SpellbookProps> = ({
+  level,
+  castingModifier,
+  charClass = 'wizard',
+  subclass,
+  initialSpellSlots,
+  onSpellSlotsChange
+}) => {
   const { openReference } = useReference();
   const [spells, setSpells] = useState<SpellData[]>(contentService.getInitialSpells());
   const [levelFilter, setLevelFilter] = useState<number | 'all' | 'prepared'>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [isSearching, setIsSearching] = useState<boolean>(false);
+  const [prepLimitMessage, setPrepLimitMessage] = useState<string | null>(null);
+
+  // Spell slots state
+  const baseSlots = getSpellSlotsForLevel(charClass, level, subclass);
+  const [spellSlotsState, setSpellSlotsState] = useState<Record<number, { tier: number; total: number; expended: number }>>(
+    () => initialSpellSlots || baseSlots
+  );
 
   // Character legal max spell level calculation
   const maxSpellLevel = getMaxSpellLevelForCharacter(charClass, subclass, level);
 
   // Spellcasting model & capacity calculation (Prepared vs Known vs Pact Magic)
   const capacityInfo = calculateSpellCapacity(charClass, level, castingModifier, subclass);
+
+  const toggleSlotExpend = (tier: number, slotIdx: number) => {
+    const slotTier = spellSlotsState[tier];
+    if (!slotTier) return;
+
+    // slotIdx 0-indexed: eğer slotIdx < expended ise bu slotu geri al (expended - 1), yoksa harca (expended + 1)
+    const newExpended = slotIdx < slotTier.expended ? slotIdx : slotIdx + 1;
+    const clamped = Math.max(0, Math.min(slotTier.total, newExpended));
+
+    const updated = {
+      ...spellSlotsState,
+      [tier]: { ...slotTier, expended: clamped }
+    };
+    setSpellSlotsState(updated);
+    onSpellSlotsChange?.(updated);
+  };
+
+  useEffect(() => {
+    if (initialSpellSlots) {
+      setSpellSlotsState(initialSpellSlots);
+    }
+  }, [initialSpellSlots]);
 
   useEffect(() => {
     let active = true;
@@ -73,11 +111,28 @@ export const Spellbook: React.FC<SpellbookProps> = ({ level, castingModifier, ch
   const maxCapacity = capacityInfo.maxCount;
   const currentPreparedCount = spells.filter((s) => s.level > 0 && s.prepared).length;
 
+  // D&D 5e Kuralı: Büyü hazırlama sınırı aşılamaz!
   const togglePrepare = (slug: string) => {
+    const target = spells.find((s) => s.slug === slug);
+    if (!target) return;
+
+    const willPrepare = !target.prepared;
+
+    // Eğer 1+ seviye büyü hazırlanıyorsa ve sınır dolmuşsa engelle!
+    if (willPrepare && target.level > 0 && currentPreparedCount >= maxCapacity) {
+      setPrepLimitMessage(
+        `⚠️ ${capacityInfo.labelTr} sınırı doldu! (Maksimum: ${maxCapacity}). Yeni bir büyü hazırlamak için önce hazırlananlardan birini çıkarın.`
+      );
+      setTimeout(() => {
+        setPrepLimitMessage(null);
+      }, 4000);
+      return;
+    }
+
     setSpells((prev) =>
       prev.map((s) => {
         if (s.slug === slug) {
-          return { ...s, prepared: !s.prepared };
+          return { ...s, prepared: willPrepare };
         }
         return s;
       })
@@ -150,6 +205,114 @@ export const Spellbook: React.FC<SpellbookProps> = ({ level, castingModifier, ch
           </span>
         </div>
       </div>
+
+      {/* Hazırlama Sınırı Uyarı Mesajı */}
+      {prepLimitMessage && (
+        <div
+          id="spellbook-prep-limit-alert"
+          style={{
+            background: 'rgba(239, 68, 68, 0.15)',
+            border: '1px solid #ef4444',
+            color: '#fca5a5',
+            padding: '0.5rem 0.8rem',
+            borderRadius: '6px',
+            marginBottom: '0.75rem',
+            fontSize: '0.82rem',
+            fontWeight: 600,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between'
+          }}
+        >
+          <span>{prepLimitMessage}</span>
+          <button
+            type="button"
+            onClick={() => setPrepLimitMessage(null)}
+            style={{ background: 'none', border: 'none', color: '#fca5a5', cursor: 'pointer', fontWeight: 800 }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      {/* 🔮 İnteraktif Büyü Yuvaları (Spell Slots Tracker) Barı */}
+      {Object.keys(spellSlotsState).length > 0 && (
+        <div
+          id="spell-slots-tracker-bar"
+          style={{
+            background: 'rgba(10, 13, 22, 0.8)',
+            border: '1px solid rgba(56, 189, 248, 0.25)',
+            borderRadius: '6px',
+            padding: '0.6rem 0.8rem',
+            marginBottom: '0.8rem',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '6px'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#38bdf8', letterSpacing: '0.04em' }}>
+              🔮 BÜYÜ YUVALARI (SPELL SLOTS)
+            </span>
+            <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>
+              {charClass.toLowerCase() === 'warlock' ? 'Kısa Dinlenmede (Short Rest) Dolar' : 'Uzun Dinlenmede (Long Rest) Dolar'}
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+            {Object.entries(spellSlotsState).map(([tierStr, slot]) => {
+              const tier = Number(tierStr);
+              const remaining = slot.total - slot.expended;
+
+              return (
+                <div
+                  key={tier}
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.03)',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    borderRadius: '4px',
+                    padding: '4px 8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
+                    {tier}. Kademe:
+                  </span>
+                  <div style={{ display: 'flex', gap: '4px' }}>
+                    {Array.from({ length: slot.total }).map((_, slotIdx) => {
+                      const isExpended = slotIdx < slot.expended;
+                      return (
+                        <button
+                          key={slotIdx}
+                          type="button"
+                          onClick={() => toggleSlotExpend(tier, slotIdx)}
+                          style={{
+                            width: '14px',
+                            height: '14px',
+                            borderRadius: '50%',
+                            background: isExpended ? 'transparent' : '#38bdf8',
+                            border: '1.5px solid #38bdf8',
+                            boxShadow: isExpended ? 'none' : '0 0 6px rgba(56, 189, 248, 0.6)',
+                            cursor: 'pointer',
+                            padding: 0,
+                            transition: 'all 0.15s ease'
+                          }}
+                          title={`Kademe ${tier} Yuva ${slotIdx + 1} (${isExpended ? 'Harcanmış' : 'Kullanılabilir'})`}
+                        />
+                      );
+                    })}
+                  </div>
+                  <span style={{ fontSize: '0.72rem', color: remaining > 0 ? '#38bdf8' : 'var(--text-muted)', fontWeight: 700 }}>
+                    ({remaining}/{slot.total})
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Arama & Seviye Filtreleri */}
       <div className="spellbook-toolbar">

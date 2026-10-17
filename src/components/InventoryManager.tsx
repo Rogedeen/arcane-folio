@@ -7,9 +7,11 @@ import { useReference } from '../context/ReferenceContext';
 import { calculatePotionHealing, isPotionItem } from '../rules/potions';
 import { soundEffects } from '../utils/soundEffects';
 import { RpgIcon } from './common/RpgIcon';
+import { checkArmorProficiency, checkWeaponProficiency } from '../rules/proficiency';
 
 interface InventoryManagerProps {
   strScore: number;
+  charClass?: string;
   inventory?: ItemData[];
   currency?: {
     cp: number;
@@ -56,6 +58,7 @@ const DEFAULT_STANDALONE_ITEMS: ItemData[] = [
 
 export const InventoryManager: React.FC<InventoryManagerProps> = ({
   strScore,
+  charClass = 'fighter',
   inventory: externalInventory,
   currency: externalCurrency,
   onCurrencyChange,
@@ -579,16 +582,40 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
                     </div>
 
                     {/* Kuşanma / Çıkarma Butonu */}
-                    {['weapon', 'armor', 'shield'].includes(item.type) && (
-                      <button
-                        id={`btn-equip-${item.slug}`}
-                        className={`equip-toggle-btn ${item.equipped ? 'active' : ''}`}
-                        onClick={() => toggleEquip(item.slug)}
-                        aria-label={`${item.name} kuşan/çıkar`}
-                      >
-                        {item.equipped ? 'Çıkar' : 'Kuşan'}
-                      </button>
-                    )}
+                    {['weapon', 'armor', 'shield'].includes(item.type) && (() => {
+                      const prof = ['armor', 'shield'].includes(item.type)
+                        ? checkArmorProficiency(charClass, item.type, item.name)
+                        : checkWeaponProficiency(charClass, item.slug, item.properties?.includes('martial') || false);
+
+                      return (
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
+                          <button
+                            id={`btn-equip-${item.slug}`}
+                            className={`equip-toggle-btn ${item.equipped ? 'active' : ''}`}
+                            onClick={() => {
+                              if (!prof.isProficient && !item.equipped) {
+                                setFeedbackToast(`⚠️ UYARI: ${prof.reasonTr}`);
+                              }
+                              toggleEquip(item.slug);
+                            }}
+                            aria-label={`${item.name} kuşan/çıkar`}
+                            style={
+                              !prof.isProficient && !item.equipped
+                                ? { borderColor: 'rgba(239, 68, 68, 0.6)', color: '#fca5a5' }
+                                : undefined
+                            }
+                            title={!prof.isProficient ? prof.reasonTr : undefined}
+                          >
+                            {item.equipped ? 'Çıkar' : 'Kuşan'}
+                          </button>
+                          {!prof.isProficient && !item.equipped && (
+                            <span style={{ fontSize: '0.62rem', color: '#f87171', fontWeight: 700 }}>
+                              Yetkinlik Yok
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })()}
 
                     {/* İksir İçme (Potion Usage) Butonu */}
                     {isPotionItem(item.name || item.type) && (
